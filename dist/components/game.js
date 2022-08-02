@@ -44,6 +44,7 @@ class Game {
         this.currentTileY = 0;
         this.gameStatus = 'game';
         this.selectedStarter = 1;
+        this.selectedConfirm = true;
         this.keyDown = false;
         this.gameCtx = gameCtx;
         this.overlayCtx = overlayCtx;
@@ -52,11 +53,11 @@ class Game {
         if (!playerData.location) {
             playerData = this.player.createNewPlayer(true);
         }
-        if (!gameTriggers.chooseStarter) {
-            gameTriggers = {
-                chooseStarter: false,
-            };
-        }
+        // if (!gameTriggers.chooseStarter) {
+        gameTriggers = {
+            chooseStarter: false,
+        };
+        // }
         this.currentMap = playerData.location;
         this.gameTriggers = gameTriggers;
         const p = this.load();
@@ -98,7 +99,7 @@ class Game {
             let delta = (elapsed - this._previousElapsed) / 1000.0;
             delta = Math.min(delta, 0.25); // maximum delta of 250 ms
             this._previousElapsed = elapsed;
-            if (this.gameStatus === 'chooseStarter') {
+            if (this.gameStatus === 'chooseStarter' || this.gameStatus === 'confirmStarter') {
                 this.chooseStarter(delta);
             }
             else {
@@ -157,54 +158,107 @@ class Game {
         this.overlayCtx.drawImage(this.starterAtlas, pokeballSource1, 160, 23, 20, 110, 78, 23, 20);
         this.overlayCtx.drawImage(this.starterAtlas, pokeballSource2, 160, 23, 20, 170, 54, 23, 20);
         this.overlayCtx.drawImage(this.starterAtlas, 202, 160, 25, 27, handXcoor, handYcoor, 25, 27);
-        if (this.selectedStarter === 0) {
-            this.overlayCtx.globalAlpha = 0.4;
-            this.overlayCtx.beginPath();
-            this.overlayCtx.rect(0, 72, 108, 32);
-            this.overlayCtx.fill();
-            this.overlayCtx.globalAlpha = 1;
-            this.overlayCtx.drawImage(this.starterAtlas, 0, 224, 86, 10, 6, 76, 86, 10);
-            this.overlayCtx.drawImage(this.starterAtlas, 0, 234, 42, 10, 31, 92, 42, 10);
-        }
-        else if (this.selectedStarter === 1) {
-            this.overlayCtx.globalAlpha = 0.4;
-            this.overlayCtx.beginPath();
-            this.overlayCtx.rect(132, 80, 104, 32);
-            this.overlayCtx.fill();
-            this.overlayCtx.globalAlpha = 1;
-            this.overlayCtx.drawImage(this.starterAtlas, 86, 224, 62, 10, 140, 82, 62, 10);
-            this.overlayCtx.drawImage(this.starterAtlas, 86, 234, 42, 10, 186, 98, 42, 10);
-        }
-        else {
-            this.overlayCtx.globalAlpha = 0.4;
-            this.overlayCtx.beginPath();
-            this.overlayCtx.rect(60, 32, 112, 32);
-            this.overlayCtx.fill();
-            this.overlayCtx.globalAlpha = 1;
-            this.overlayCtx.drawImage(this.starterAtlas, 148, 224, 75, 10, 78, 36, 75, 10);
-            this.overlayCtx.drawImage(this.starterAtlas, 148, 234, 42, 10, 98, 52, 42, 10);
-        }
-        this.overlayCtx.drawImage(this.starterAtlas, 0, 244, 206, 46, 17, 114, 206, 46);
-        (0, helper_1.drawText)(this.overlayCtx, this.font, 'PROF. BIRCH is in trouble!', 0, 0, 24, 121);
-        (0, helper_1.drawText)(this.overlayCtx, this.font, 'Release a POKéMON and rescue him!', 0, 0, 24, 137);
-        if (!this.keyDown) {
-            if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT) && this.selectedStarter !== 0) {
-                this.selectedStarter--;
+        this.overlayCtx.drawImage(this.starterAtlas, 0, 244, 206, 46, 17, 113, 206, 46);
+        if (this.gameStatus === 'chooseStarter') {
+            if (this.selectedStarter === 0) {
+                this.overlayCtx.globalAlpha = 0.4;
+                this.overlayCtx.beginPath();
+                this.overlayCtx.rect(0, 72, 108, 32);
+                this.overlayCtx.fill();
+                this.overlayCtx.globalAlpha = 1;
+                this.overlayCtx.drawImage(this.starterAtlas, 0, 224, 86, 10, 6, 76, 86, 10);
+                this.overlayCtx.drawImage(this.starterAtlas, 0, 234, 42, 10, 31, 92, 42, 10);
+            }
+            else if (this.selectedStarter === 1) {
+                this.overlayCtx.globalAlpha = 0.4;
+                this.overlayCtx.beginPath();
+                this.overlayCtx.rect(132, 80, 104, 32);
+                this.overlayCtx.fill();
+                this.overlayCtx.globalAlpha = 1;
+                this.overlayCtx.drawImage(this.starterAtlas, 86, 224, 62, 10, 140, 82, 62, 10);
+                this.overlayCtx.drawImage(this.starterAtlas, 86, 234, 42, 10, 186, 98, 42, 10);
+            }
+            else {
+                this.overlayCtx.globalAlpha = 0.4;
+                this.overlayCtx.beginPath();
+                this.overlayCtx.rect(60, 32, 112, 32);
+                this.overlayCtx.fill();
+                this.overlayCtx.globalAlpha = 1;
+                this.overlayCtx.drawImage(this.starterAtlas, 148, 224, 75, 10, 78, 36, 75, 10);
+                this.overlayCtx.drawImage(this.starterAtlas, 148, 234, 42, 10, 98, 52, 42, 10);
+            }
+            (0, helper_1.drawText)(this.overlayCtx, this.font, 'PROF. BIRCH is in trouble!', 0, 0, 24, 121);
+            (0, helper_1.drawText)(this.overlayCtx, this.font, 'Release a POKéMON and rescue him!', 0, 0, 24, 137);
+            if (!this.keyDown) {
+                if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT) && this.selectedStarter !== 0) {
+                    this.selectedStarter--;
+                    this.keyDown = true;
+                }
+                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.RIGHT) && this.selectedStarter !== 2) {
+                    this.selectedStarter++;
+                    this.keyDown = true;
+                }
+            }
+            if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER) && !this.keyDown) {
+                this.gameStatus = 'confirmStarter';
                 this.keyDown = true;
             }
-            else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.RIGHT) && this.selectedStarter !== 2) {
-                this.selectedStarter++;
+            this.selectedConfirm = true;
+        }
+        if (this.gameStatus === 'confirmStarter') {
+            (0, helper_1.drawText)(this.overlayCtx, this.font, 'Do you choose this POKéMON?', 0, 0, 24, 121);
+            const xPixel = 120;
+            const yPixel = 65;
+            const pokemonId = (this.selectedStarter === 0) ? 252 : (this.selectedStarter === 1) ? 255 : 258;
+            const generation = 2;
+            const pokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (generation + 1), constants_1.constants.ASSETS_POKEMON_HEIGHT[generation], constants_1.constants.ASSETS_POKEMON_WIDTH);
+            const xSource = (pokemonId - constants_1.constants.ASSETS_GENERATION_OFFSET[generation] - 1) % 3 * constants_1.constants.POKEMON_SPRITE_WIDTH;
+            const ySource = (((pokemonId - constants_1.constants.ASSETS_GENERATION_OFFSET[generation] - 1) / 3) << 0) * constants_1.constants.POKEMON_SIZE;
+            this.overlayCtx.fillStyle = '#ffffff';
+            this.overlayCtx.beginPath();
+            this.overlayCtx.arc(xPixel, yPixel, 40, 0, 2 * Math.PI);
+            this.overlayCtx.fill();
+            this.overlayCtx.fillStyle = '#000000';
+            this.overlayCtx.drawImage(pokemonSprite, xSource, ySource, constants_1.constants.POKEMON_SIZE, constants_1.constants.POKEMON_SIZE, (xPixel - constants_1.constants.POKEMON_SIZE / 2) << 0, (yPixel - constants_1.constants.POKEMON_SIZE / 2) << 0, constants_1.constants.POKEMON_SIZE, constants_1.constants.POKEMON_SIZE);
+            this.overlayCtx.drawImage(this.starterAtlas, 206, 244, 54, 46, 170, 58, 54, 46);
+            const yOffset = (!this.selectedConfirm) ? 16 : 0;
+            this.overlayCtx.beginPath();
+            this.overlayCtx.moveTo(177, 64.5 + yOffset);
+            this.overlayCtx.lineTo(216, 64.5 + yOffset);
+            this.overlayCtx.moveTo(216.5, 65 + yOffset);
+            this.overlayCtx.lineTo(216.5, 78 + yOffset);
+            this.overlayCtx.moveTo(216, 78.5 + yOffset);
+            this.overlayCtx.lineTo(177, 78.5 + yOffset);
+            this.overlayCtx.moveTo(176.5, 78 + yOffset);
+            this.overlayCtx.lineTo(176.5, 65 + yOffset);
+            this.overlayCtx.lineWidth = 1;
+            this.overlayCtx.globalAlpha = 1;
+            this.overlayCtx.strokeStyle = '#f86058';
+            this.overlayCtx.stroke();
+            if (!this.keyDown) {
+                if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.DOWN) && this.selectedConfirm !== false) {
+                    this.selectedConfirm = false;
+                    this.keyDown = true;
+                }
+                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.UP) && this.selectedConfirm !== true) {
+                    this.selectedConfirm = true;
+                    this.keyDown = true;
+                }
+            }
+            if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER) && !this.keyDown) {
                 this.keyDown = true;
+                if (!this.selectedConfirm) {
+                    this.gameStatus = 'chooseStarter';
+                }
+                else {
+                    this.player.addPlayerPokemon(pokemonId, [5, -1]);
+                    this.gameStatus = 'game';
+                    this.gameTriggers.chooseStarter = true;
+                }
             }
         }
-        if (!keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT) && !keyboard_1.keyboard.isDown(keyboard_1.keyboard.RIGHT)) {
+        if (!keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT) && !keyboard_1.keyboard.isDown(keyboard_1.keyboard.RIGHT) && !keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
             this.keyDown = false;
-        }
-        if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
-            const chosenPokemonId = (this.selectedStarter === 0) ? 252 : (this.selectedStarter === 1) ? 255 : 258;
-            this.player.addPlayerPokemon(chosenPokemonId, [5, -1]);
-            this.gameTriggers.chooseStarter = true;
-            this.gameStatus = 'game';
         }
     }
     loadAdjacentMaps(fromDirection = false) {
@@ -257,9 +311,6 @@ class Game {
         if (typeof isNextMap !== 'boolean') {
             this.currentMap = isNextMap[0];
             console.log('Entered new area: ' + this.currentMap);
-            // const fileName = this.currentMap.replace(' ', '_');
-            // console.log(fileName)
-            // this.buildingTiles = this.loader.loadImageToCanvas(fileName, constants.ASSETS_LOCATION_TILES[fileName].height, constants.ASSETS_LOCATION_TILES[fileName].width);
             this.map.updateMap(this.currentMap);
             const addedTiles = this.loadAdjacentMaps(isNextMap[1]);
             if (addedTiles) {

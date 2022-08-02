@@ -1,4 +1,4 @@
-import { MapsType, SizeTableType, AssetsLocationTilesType } from '../utils/types';
+import { MapsType, SizeTableType } from '../utils/types';
 
 const GAME_HEIGHT = 160;
 const GAME_WIDTH = 240;
@@ -101,8 +101,8 @@ const ASSETS_POKEMON_HEIGHT = [ 3264, 2760, 2944 ]
 const ASSETS_POKEMON_WIDTH = 1728;
 const ASSETS_GENERATION_OFFSET = [ 0, 151, 251 ];
 
-const ASSETS_STARTER_HEIGHT = 296;
-const ASSETS_STARTER_WIDTH = 240;
+const ASSETS_STARTER_HEIGHT = 290;
+const ASSETS_STARTER_WIDTH = 260;
 
 const ASSETS_HEALTH_OFFSET = 512;
 const ASSETS_ENEMY_HEALTH_HEIGHT = 28;
