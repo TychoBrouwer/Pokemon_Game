@@ -6,8 +6,11 @@ class Map {
     constructor(map) {
         this.prevMapCols = 0;
         this.prevMapRows = 0;
+        // Set the currentMap
         this.currentMap = map;
+        // Set the adjacent loaded maps object
         this.adjacentMaps = {};
+        // Reset the location of the currentMap on the whole map
         this.MapLocation = {
             xBegin: 0,
             xEnd: this.currentMap.COLS,
@@ -16,13 +19,18 @@ class Map {
         };
     }
     getTile(layer, col, row) {
+        // Get the tile number of the supplied layer, column, and row
         return this.currentMap.layers[layer][row * this.currentMap.COLS + col];
     }
     updateMap(mapName) {
+        // Set the previous map columns and rows variables
         this.prevMapCols = this.currentMap.COLS;
         this.prevMapRows = this.currentMap.ROWS;
-        this.currentMap = Object.assign({}, constants_1.constants.MAPS[mapName]);
+        // Update the currentMap
+        this.currentMap = constants_1.c.MAPS[mapName];
+        // Reset the adjacent loaded maps object
         this.adjacentMaps = {};
+        // Reset the location of the currentMap on the whole map
         this.MapLocation = {
             xBegin: 0,
             xEnd: this.currentMap.COLS,
@@ -32,10 +40,12 @@ class Map {
     }
     isNextMap(x, y) {
         if (this.MapLocation) {
+            // Get the column and row of the coordinates
             const currentCol = this.getCol(x);
             const currentRow = this.getRow(y);
             // console.debug('x-axis: ' + this.MapLocation.xBegin + ' : ' + currentCol + ' : ' + this.MapLocation.xEnd)
             // console.debug('y-axis: ' + this.MapLocation.yBegin + ' : ' + currentRow + ' : ' + this.MapLocation.yEnd)
+            // Check if x and y fall outside of currentMap and return the entered map if needed
             if (this.MapLocation.xBegin < currentCol && currentCol < this.MapLocation.xEnd) {
                 if (this.MapLocation.yBegin > currentRow)
                     return [this.adjacentMaps['top'], 'top'];
@@ -49,59 +59,75 @@ class Map {
                     return [this.adjacentMaps['right'], 'right'];
             }
         }
+        // Else return false
         return false;
     }
     isSolidTileAtXY(x, y, dirX, dirY) {
-        const col = Math.floor(x / constants_1.constants.MAP_TSIZE);
-        const row = Math.floor(y / constants_1.constants.MAP_TSIZE);
+        // Get the column and row of the coordinates
+        const col = this.getCol(x);
+        const row = this.getRow(y);
+        // Go through and reduce through all layers
         return this.currentMap.layers.reduce((res, layer, index) => {
-            const tile = this.getTile(index, col, row);
-            // const isSolid = tile === 10 || tile === 11 || tile === 12 || tile === 13 || tile === 36 || tile === 37 ||
-            //                 tile === 38 || tile === 39 || tile === 40 || tile === 41 || tile === 42 ||
-            //                 tile === 38 || tile === 39 || tile === 40 || tile === 41 || tile === 42;
+            // Array of completely solid tiles
             const solidTiles = [
                 10, 11, 12, 13, 36, 37, 38, 39, 40, 41, 42,
                 549, 550, 551, 552, 553, 554, 555, 556, 557, 558, 559, 560,
                 565, 566, 567, 568, 569, 570, 571, 572, 573, 574, 575, 576,
                 581, 582, 583, 584, 585, 597, 598, 599, 600, 601,
             ];
+            // Get the current tile
+            const tile = this.getTile(index, col, row);
+            // Check if completely solid
             const isSolid = solidTiles.includes(tile);
+            // Get halve columns and rows
             const colHalfTile = col + 0.5;
             const rowHalfTile = row + 0.5;
-            const oneWay = (tile === 3 && rowHalfTile * constants_1.constants.MAP_TSIZE < y && (dirY === -1 || dirX !== 0)) ||
-                (tile === 4 && rowHalfTile * constants_1.constants.MAP_TSIZE < y && (dirY === -1 || dirX === -1)) ||
-                (tile === 7 && rowHalfTile * constants_1.constants.MAP_TSIZE < y && (dirY === -1 || dirX === 1)) ||
-                (tile === 5 && rowHalfTile * constants_1.constants.MAP_TSIZE < y && colHalfTile * constants_1.constants.MAP_TSIZE < x) ||
-                (tile === 8 && rowHalfTile * constants_1.constants.MAP_TSIZE < y && colHalfTile * constants_1.constants.MAP_TSIZE > x) ||
+            // compute solid in one way or partly solid tiles
+            const partlySolid = (tile === 3 && rowHalfTile * constants_1.c.MAP_TSIZE < y && (dirY === -1 || dirX !== 0)) ||
+                (tile === 4 && rowHalfTile * constants_1.c.MAP_TSIZE < y && (dirY === -1 || dirX === -1)) ||
+                (tile === 7 && rowHalfTile * constants_1.c.MAP_TSIZE < y && (dirY === -1 || dirX === 1)) ||
+                (tile === 5 && rowHalfTile * constants_1.c.MAP_TSIZE < y && colHalfTile * constants_1.c.MAP_TSIZE < x) ||
+                (tile === 8 && rowHalfTile * constants_1.c.MAP_TSIZE < y && colHalfTile * constants_1.c.MAP_TSIZE > x) ||
                 (tile === 6 &&
-                    (rowHalfTile * constants_1.constants.MAP_TSIZE < y || colHalfTile * constants_1.constants.MAP_TSIZE < x) &&
+                    (rowHalfTile * constants_1.c.MAP_TSIZE < y || colHalfTile * constants_1.c.MAP_TSIZE < x) &&
                     (dirX === -1 || dirY === -1)) ||
-                (tile === 9 && (rowHalfTile * constants_1.constants.MAP_TSIZE < y || colHalfTile * constants_1.constants.MAP_TSIZE < x &&
+                (tile === 9 && (rowHalfTile * constants_1.c.MAP_TSIZE < y || colHalfTile * constants_1.c.MAP_TSIZE < x &&
                     (dirX === 1 || dirY === -1))) ||
-                (tile === 30 && (row + 0.3) * constants_1.constants.MAP_TSIZE < y) ||
-                (tile === 33 && colHalfTile * constants_1.constants.MAP_TSIZE < x && (dirX === -1 || dirY !== 0)) ||
-                (tile === 34 && colHalfTile * constants_1.constants.MAP_TSIZE < x && (dirX === -1 || dirY === 1));
+                (tile === 30 && (row + 0.3) * constants_1.c.MAP_TSIZE < y) ||
+                (tile === 33 && colHalfTile * constants_1.c.MAP_TSIZE < x && (dirX === -1 || dirY !== 0)) ||
+                (tile === 34 && colHalfTile * constants_1.c.MAP_TSIZE < x && (dirX === -1 || dirY === 1));
             (tile === 35 &&
-                (rowHalfTile * constants_1.constants.MAP_TSIZE < y ||
-                    colHalfTile * constants_1.constants.MAP_TSIZE < x) && (dirX === -1 || dirY !== 0));
-            return res || isSolid || oneWay;
+                (rowHalfTile * constants_1.c.MAP_TSIZE < y ||
+                    colHalfTile * constants_1.c.MAP_TSIZE < x) && (dirX === -1 || dirY !== 0));
+            // Return and compute the result of the solidity determination
+            return res || isSolid || partlySolid;
         }, false);
     }
     addMap(mapName, location, tileOffset) {
-        const mapToAdd = Object.assign({}, constants_1.constants.MAPS[mapName]);
+        // Get the map to add
+        const mapToAdd = Object.assign({}, constants_1.c.MAPS[mapName]);
+        // Initialize the final layers array to be returned
         const finalLayers = [];
+        // Initialize the variables for the final size of the complete map
         let finalCols = 0, finalRows = 0;
+        // Foreach layer combine the mapToAdd and the currentMap
         for (let layer = 0; layer < this.currentMap.layers.length; layer++) {
+            // If layer does not exist, initialize it
             if (!finalLayers[layer])
                 finalLayers[layer] = [];
             if (location === 'right' || location === 'left') {
+                // Foreach row, combine the arrays appropriate
                 for (let row = 0; row < this.currentMap.ROWS; row++) {
+                    // Compute the begin and end columns of the currentMap for this row
                     const begin = row * this.currentMap.COLS;
                     const end = begin + this.currentMap.COLS;
+                    // Compute the begin and end columns of the mapToAdd for this row
                     const begin2 = row * mapToAdd.COLS;
                     const end2 = begin2 + mapToAdd.COLS;
+                    // Slice the map arrays for the row
                     const arrayCurrentMap = this.currentMap.layers[layer].slice(begin, end);
                     const arrayAddedMap = (typeof mapToAdd.layers[layer][begin2] === 'number') ? mapToAdd.layers[layer].slice(begin2, end2) : Array(end2 - begin2).fill(0);
+                    // Push the arrays to the final array in the proper order
                     if (location === 'left') {
                         finalLayers[layer].push(...arrayAddedMap);
                     }
@@ -111,18 +137,18 @@ class Map {
                     }
                 }
                 if (location === 'left' && layer === 0) {
-                    // console.log('loading ' +  mapName + ' to left') 
+                    // Change the location of the currentMap on the whole map
                     this.MapLocation.xBegin = this.MapLocation.xBegin + mapToAdd.COLS;
                     this.MapLocation.xEnd = this.MapLocation.xEnd + mapToAdd.COLS;
                 }
-                // if (location === 'right' && layer === 0) {
-                //   console.log('loading ' +  mapName + ' to right')
-                // }
+                // Set the final dimensions of the whole map appropriately
                 finalCols = this.currentMap.COLS + mapToAdd.COLS;
                 finalRows = this.currentMap.ROWS;
             }
             else if (location === 'top' || location === 'bottom') {
+                // Initialize the array to be added
                 const arrayAddedMap = [];
+                // Construct the array of the mapToAdd to be added
                 for (let row = 0; row < mapToAdd.ROWS; row++) {
                     for (let col = 0; col < this.currentMap.COLS; col++) {
                         if (col >= tileOffset && col < this.currentMap.COLS + tileOffset) {
@@ -133,21 +159,20 @@ class Map {
                         }
                     }
                 }
+                // Push the arrays to the final array in the proper order
                 if (location === 'bottom') {
-                    // if (layer === 0) {
-                    //   console.log('loading ' +  mapName + ' to bottom')
-                    // }
                     finalLayers[layer].push(...this.currentMap.layers[layer]);
                 }
                 finalLayers[layer].push(...arrayAddedMap);
                 if (location === 'top') {
                     finalLayers[layer].push(...this.currentMap.layers[layer]);
                     if (layer === 0) {
-                        // console.log('loading ' +  mapName + ' to top')
+                        // Change the location of the currentMap on the whole map
                         this.MapLocation.yBegin = this.MapLocation.yBegin + mapToAdd.ROWS;
                         this.MapLocation.yEnd = this.MapLocation.yEnd + mapToAdd.ROWS;
                     }
                 }
+                // Set the final dimensions of the whole map appropriately
                 finalCols = this.currentMap.COLS;
                 finalRows = this.currentMap.ROWS + mapToAdd.ROWS;
             }
@@ -160,18 +185,22 @@ class Map {
         // console.log('cols difference: ' + (finalCols - this.prevMapCols))
         // console.log('previous to left: ' + this.prevAddedCols + '   | added cols to left: ' + this.added[0])
         // console.log('cols added difference: ' + (this.added[0] - this.prevAddedCols))
+        // Add the added map to the adjacently loaded maps object
         this.adjacentMaps[location] = mapName;
+        // Set the new whole currentMap
         this.currentMap = {
             layers: finalLayers,
             COLS: finalCols,
             ROWS: finalRows,
         };
+        // Return the needed variables
         return {
             currentMap: this.currentMap,
             diff: [finalCols - this.prevMapCols, finalRows - this.prevMapRows],
         };
     }
-    getAjacent(mapName) {
+    getAdjacent(mapName) {
+        // Return the adjacent maps according to supplied map
         if (mapName === 'route 101') {
             return [
                 { name: 'littleroot town', position: 'bottom' },
@@ -197,16 +226,20 @@ class Map {
         return [];
     }
     getCol(x) {
-        return Math.floor(x / constants_1.constants.MAP_TSIZE);
+        // Get the column of an x coordinate
+        return Math.floor(x / constants_1.c.MAP_TSIZE);
     }
     getRow(y) {
-        return Math.floor(y / constants_1.constants.MAP_TSIZE);
+        // Get the row of a y coordinate
+        return Math.floor(y / constants_1.c.MAP_TSIZE);
     }
     getX(col) {
-        return col * constants_1.constants.MAP_TSIZE;
+        // Get x of a column of the map
+        return col * constants_1.c.MAP_TSIZE;
     }
     getY(row) {
-        return row * constants_1.constants.MAP_TSIZE;
+        // Get y of a row of the map
+        return row * constants_1.c.MAP_TSIZE;
     }
 }
 exports.Map = Map;

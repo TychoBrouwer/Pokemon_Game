@@ -24,26 +24,35 @@ const pokedex = __importStar(require("../pokedex.json"));
 const helper_1 = require("../utils/helper");
 class Player {
     constructor() {
+        // Get playerData from localStorage
         this.playerData = (0, helper_1.getLocalStorage)('playerData');
         this.pokedex = pokedex;
     }
     getPlayerData() {
+        // Return playerData
         return this.playerData;
     }
     getStoredPlayerData(key) {
+        // Get key from localStorage
         return (0, helper_1.getLocalStorage)(key);
     }
     setPlayerPosition(location, x, y) {
+        // Update the player position to the supplied
         this.playerData.location = location;
         this.playerData.position.x = x;
         this.playerData.position.y = y;
     }
-    addPlayerPokemon(pokemonId, levelRange) {
-        this.playerData.pokemon.push((0, helper_1.generatePokemon)(this.pokedex[pokemonId.toString()], levelRange, pokemonId, 2));
+    addPokemon(pokemonId, levelRange) {
+        // Generate new pokemon from supplied 
+        const pokemon = (0, helper_1.generatePokemon)(this.pokedex[pokemonId.toString()], levelRange, pokemonId, 2);
+        // Push new pokemon to playerData
+        this.playerData.pokemon.push(pokemon);
         console.log(this.playerData.pokemon);
     }
     createNewPlayer(male) {
+        // Set the avatar name
         const avatar = male ? 'Brendan' : 'May';
+        // Create the default playerData object
         this.playerData = {
             position: {
                 x: 100,
@@ -53,11 +62,14 @@ class Player {
             pokemon: [],
             currentPokemon: 0,
         };
+        // Create the accountData object
         const accountData = {
             avatar: avatar,
         };
+        // Set the playerData and accountData objects in localStorage
         (0, helper_1.setLocalStorage)('playerData', this.playerData);
         (0, helper_1.setLocalStorage)('accountData', accountData);
+        // Return playerData
         return this.playerData;
     }
 }

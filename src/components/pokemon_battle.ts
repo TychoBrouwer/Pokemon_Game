@@ -5,7 +5,7 @@ import { Loader } from '../utils/loader';
 import { Player } from './player';
 
 import { randomFromArray, generatePokemon, drawText } from '../utils/helper';
-import { constants } from '../utils/constants';
+import { c } from '../utils/constants';
 import { keyboard } from '../utils/keyboard';
 
 import { PlayerDataType, EncounterTableType, PokedexType, PokemonDataType } from '../utils/types';
@@ -35,9 +35,9 @@ export class PokemonBattle {
   private encounterMethod: number;
   private route: string;
   private ctx: CanvasRenderingContext2D;
-  private battleAssets!: HTMLCanvasElement;
-  private font!: HTMLCanvasElement;
-  private avatarAssets!: HTMLCanvasElement;
+  private battleAssets: HTMLCanvasElement;
+  private font: HTMLCanvasElement;
+  private avatarAssets: HTMLCanvasElement;
 
   private enemyPokemonSprite!: HTMLCanvasElement;
   private enemyPokemon: PokemonDataType;
@@ -61,71 +61,91 @@ export class PokemonBattle {
   private X_writeTextToBattleBox = 0;
 
   constructor(context: CanvasRenderingContext2D, loader: Loader, player: Player, route: string, encounterMethod: number) {
+    // Set the loader to the supplied
     this.loader = loader;
+
+    // Get the pokedex and encounterTable
     this.pokedex = pokedex;
     this.encounterTable = encounterTable;
 
+    // Set the supplied variables
     this.encounterMethod = encounterMethod;
     this.route = route;
     this.ctx = context;
 
+    // Set the necessary assets
+    this.battleAssets = this.loader.loadImageToCanvas('battleAssets', c.ASSETS_BATTLE_HEIGHT, c.ASSETS_BATTLE_WIDTH);
+    this.font = this.loader.loadImageToCanvas('font', c.ASSETS_FONT_HEIGHT, c.ASSETS_FONT_WIDTH);
+    this.avatarAssets = this.loader.loadImageToCanvas('avatar', c.ASSETS_AVATAR_HEIGHT, c.ASSETS_AVATAR_WIDTH);
+
+    // Get the playerData
     this.playerData = player.getPlayerData();
 
+    // Get the current player pokemon from the PlayerData
     this.playerPokemon = this.playerData.pokemon[this.playerData.currentPokemon];
 
-    const enemyPokemonData = this.init();
-    this.enemyPokemon = enemyPokemonData;
+    // Get and generate the enemy pokemon and load necessary assets 
+    this.enemyPokemon = this.init();
 
     console.log(this.enemyPokemon);
     console.log(this.playerPokemon);
   }
 
   init() {
-    const candinates = this.encounterTable[this.route][this.encounterMethod.toString()];
+    // Set the candidate pokemon 
+    const candidates = this.encounterTable[this.route][this.encounterMethod.toString()];
 
-    const candinateIds: number[] = [];
-    for (const pokemonIndex in candinates) {
-      candinateIds.push(...Array(candinates[pokemonIndex].rate).fill(parseInt(pokemonIndex)))
+    // Get the candidate ids taking in mind the encounter rates
+    const candidateIds: number[] = [];
+    for (const pokemonIndex in candidates) {
+      candidateIds.push(...Array(candidates[pokemonIndex].rate).fill(parseInt(pokemonIndex)))
     }
 
-    const pokemonId = randomFromArray(candinateIds);
-    const enemyPokemon = generatePokemon(this.pokedex[pokemonId.toString()], candinates[pokemonId].level, pokemonId, -1);
+    // Randomly choose the pokemon from candidateIds
+    const pokemonId = randomFromArray(candidateIds);
+    // Generate enemy pokemon
+    const enemyPokemon = generatePokemon(this.pokedex[pokemonId.toString()], candidates[pokemonId].level, pokemonId, -1);
 
-    this.battleAssets = this.loader.loadImageToCanvas('battleAssets', constants.ASSETS_BATTLE_HEIGHT, constants.ASSETS_BATTLE_WIDTH);
-    this.font = this.loader.loadImageToCanvas('font', constants.ASSETS_FONT_HEIGHT, constants.ASSETS_FONT_WIDTH);
-    this.avatarAssets = this.loader.loadImageToCanvas('avatar', constants.ASSETS_AVATAR_HEIGHT, constants.ASSETS_AVATAR_WIDTH);
-    this.enemyPokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (enemyPokemon.generation + 1), constants.ASSETS_POKEMON_HEIGHT[enemyPokemon.generation], constants.ASSETS_POKEMON_WIDTH);
+    // Set the necessary assets
+    this.enemyPokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (enemyPokemon.generation + 1), c.ASSETS_POKEMON_HEIGHT[enemyPokemon.generation], c.ASSETS_POKEMON_WIDTH);
     if (enemyPokemon.generation === this.playerPokemon.generation) {
       this.playerPokemonSprite = this.enemyPokemonSprite;
     } else {
-      this.playerPokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (this.playerPokemon.generation + 1), constants.ASSETS_POKEMON_HEIGHT[this.playerPokemon.generation], constants.ASSETS_POKEMON_WIDTH);
+      this.playerPokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (this.playerPokemon.generation + 1), c.ASSETS_POKEMON_HEIGHT[this.playerPokemon.generation], c.ASSETS_POKEMON_WIDTH);
     }
     
     return enemyPokemon;
   }
   
   async battle() {
+    // Start the tick loop with a canvas animation request
     window.requestAnimationFrame(this.tick.bind(this));
 
-    await this.waitForBattleFinised();
+    // Wait for battle finished
+    await this.battleFinished();
 
+    // Battle return object
     const battleData = {
       result: this.battleResultWin,
       pokemon: this.enemyPokemon,
     };
 
-    this.ctx.clearRect(0, 0, constants.GAME_WIDTH, constants.GAME_HEIGHT);
+    // Clear battle canvas rendering context
+    this.ctx.clearRect(0, 0, c.GAME_WIDTH, c.GAME_HEIGHT);
 
+    // Return battleData
     return battleData;
   }
 
-  waitForBattleFinised(): Promise<void> {
+  battleFinished(): Promise<void> {
     return new Promise((resolve) => {
+      // resolve if battle is finished
       if (BATTLE_STATUS[this.battleStatus] === 'finished') {
         resolve();
       } else {
+        // Check every 10 ms for battleFinished
         setTimeout(async () => { 
-          await this.waitForBattleFinised();
+          await this.battleFinished();
           resolve();
         }, 10);
       }
@@ -133,43 +153,59 @@ export class PokemonBattle {
   }
 
   nextBattlePhase() {
+    // Increment battleStatus;
     this.battleStatus++;
   }
 
-  async tick(elapsed: number): Promise<boolean> {
+  async tick(elapsed: number) {
+    // Calculate the delta between the ticks
     let delta = (elapsed - this._previousElapsed) / 1000.0;
     delta = Math.min(delta, 0.25); // maximum delta of 250 ms
-
     this._previousElapsed = elapsed;
 
     if (BATTLE_STATUS[this.battleStatus] === 'slidePokemonIn') {
       this.drawBattleArena();
+      // Draw enemy pokemon with slide, with avatar, with next phase
       this.drawEnemyPokemon(delta, true, true);
+      // Draw action box without the player action selector
       this.drawActionBox(false);
 
     } else if (BATTLE_STATUS[this.battleStatus] === 'writeAppearText') {
       this.drawBattleArena();
-      this.drawEnemyPokemon(0, true);
+      // Draw enemy pokemon without slide, with avatar, without next phase
+      this.drawEnemyPokemon(0, true, false);
+      // Draw action box without player action selector
       this.drawActionBox(false);
+      // Write appear text to dialogue box, with next phase
       this.writeTextToBattleBox('Wild ' + this.enemyPokemon.pokemonName.toUpperCase() + ' appeared!|', 0, 1, delta, 1, 0, true, true);
-      this.drawEnemyHealth(delta, true);
+      // Draw enemy health with slide
+      this.drawEnemyHealth(delta);
 
     } else if (BATTLE_STATUS[this.battleStatus] === 'writeGoText') {
+      // Write go text to dialogue box, with next phase
       this.writeTextToBattleBox('Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!', 0, 1, delta, 0, 0, true, true);
 
     } else if (BATTLE_STATUS[this.battleStatus] === 'throwPokemon') {
       this.drawBattleArena();
-      this.drawEnemyPokemon(0);
-      this.drawEnemyHealth(0, false);
+      // Draw enemy pokemon without slide, without avatar, without next phase
+      this.drawEnemyPokemon(0, false, false);
+      // Draw enemy health without slide
+      this.drawEnemyHealth(0);
+      // Draw enemy pokemon with slide, with throw, with next phase
       this.drawPlayerPokemon(delta, true, true);
+      // Draw action box without player action selector
       this.drawActionBox(false);
+      // Draw go text to dialogue box
       drawText(this.ctx, this.font, 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!', 0, 1, 16, 121)
 
     } else if (BATTLE_STATUS[this.battleStatus] === 'playerActionSelect') {
+      // Draw action box with player action selector
       this.drawActionBox(true);
+      // Write action select text to dialogue box, without next phase
       this.writeTextToBattleBox('What should ', 0, 1, delta, 0, 0, false, false);
       this.writeTextToBattleBox(this.playerPokemon.pokemonName.toUpperCase() + ' do?', 0, 1, delta, 0, 1, false, false);
 
+      // Detect keyboard press and increment/ decrement battleAction accordingly
       if (keyboard.isDown(keyboard.LEFT)) {
         if (this.battleAction === 1 || this.battleAction === 3) {
           this.battleAction--;
@@ -187,29 +223,28 @@ export class PokemonBattle {
           this.battleAction += 2;
         }
       } else if (keyboard.isDown(keyboard.ENTER)) {
+        // On enter go to next battle phase
         this.nextBattlePhase();
       }
 
+      // Set the offset and column for the battle action selector
       let xOffset = this.battleAction * 46;
       let yColumn = 0;
-  
       if (this.battleAction === 2 || this.battleAction === 3)  {
         xOffset = (this.battleAction - 2) * 46;
         yColumn = 1;
       }
   
-      this.drawActionSelector(constants.GAME_WIDTH - constants.ACTION_BOX_WIDTH + 8 + xOffset, constants.GAME_WIDTH - constants.ACTION_BOX_WIDTH + 8 + 42 + xOffset, yColumn);
+      // Draw the action selector
+      this.drawActionSelector(c.GAME_WIDTH - c.ACTION_BOX_WIDTH + 8 + xOffset, c.GAME_WIDTH - c.ACTION_BOX_WIDTH + 8 + 42 + xOffset, yColumn);
     
     } else if (BATTLE_STATUS[this.battleStatus] === 'playerAction') {
       console.log(this.battleAction);
     }
     
     if (BATTLE_STATUS[this.battleStatus] !== 'finished') {
+      // If battle is not finished request new animation frame
       window.requestAnimationFrame(this.tick.bind(this));
-
-      return false;
-    } else {
-      return true;
     }
   }
 
@@ -219,19 +254,19 @@ export class PokemonBattle {
 
     this.ctx.drawImage(
       this.battleAssets,
-      this.encounterMethod % 3 * constants.BATTLE_SCENE_WIDTH,
-      ((0.5 + this.encounterMethod / 3) << 0) * constants.BATTLE_SCENE_HEIGHT + 3 * constants.BATTLE_ARENA_HEIGHT + constants.ACTION_BOX_HEIGHT,
-      constants.BATTLE_SCENE_WIDTH,
-      constants.BATTLE_SCENE_HEIGHT,
-      xPixel - constants.BATTLE_SCENE_WIDTH,
+      this.encounterMethod % 3 * c.BATTLE_SCENE_WIDTH,
+      ((0.5 + this.encounterMethod / 3) << 0) * c.BATTLE_SCENE_HEIGHT + 3 * c.BATTLE_ARENA_HEIGHT + c.ACTION_BOX_HEIGHT,
+      c.BATTLE_SCENE_WIDTH,
+      c.BATTLE_SCENE_HEIGHT,
+      xPixel - c.BATTLE_SCENE_WIDTH,
       48,
-      constants.BATTLE_SCENE_WIDTH,
-      constants.BATTLE_SCENE_HEIGHT,
+      c.BATTLE_SCENE_WIDTH,
+      c.BATTLE_SCENE_HEIGHT,
     );
 
     const enemyPokemonCtx = this.enemyPokemonSprite.getContext('2d');
 
-    if (enemyPokemonCtx && xPixel <= constants.GAME_WIDTH - 1) {
+    if (enemyPokemonCtx && xPixel <= c.GAME_WIDTH - 1) {
       this.ctx.globalAlpha = 0.8;
     }
 
@@ -239,42 +274,42 @@ export class PokemonBattle {
       this.enemyPokemonSprite,
       this.enemyPokemon.xSource,
       this.enemyPokemon.ySource,
-      constants.POKEMON_SIZE,
-      constants.POKEMON_SIZE,
-      xPixel - 0.75 * constants.BATTLE_SCENE_WIDTH,
-      48 - constants.POKEMON_SIZE / 2,
-      constants.POKEMON_SIZE,
-      constants.POKEMON_SIZE,
+      c.POKEMON_SIZE,
+      c.POKEMON_SIZE,
+      xPixel - 0.75 * c.BATTLE_SCENE_WIDTH,
+      48 - c.POKEMON_SIZE / 2,
+      c.POKEMON_SIZE,
+      c.POKEMON_SIZE,
     );
 
     this.ctx.globalAlpha = 1;
 
     this.ctx.drawImage(
       this.battleAssets,
-      this.encounterMethod % 3 * constants.BATTLE_SCENE_WIDTH,
-      ((0.5 + this.encounterMethod / 3) << 0) * constants.BATTLE_SCENE_HEIGHT + 3 * constants.BATTLE_ARENA_HEIGHT + constants.ACTION_BOX_HEIGHT,
-      constants.BATTLE_SCENE_WIDTH,
-      constants.BATTLE_SCENE_HEIGHT,
-      constants.GAME_WIDTH - xPixel,
+      this.encounterMethod % 3 * c.BATTLE_SCENE_WIDTH,
+      ((0.5 + this.encounterMethod / 3) << 0) * c.BATTLE_SCENE_HEIGHT + 3 * c.BATTLE_ARENA_HEIGHT + c.ACTION_BOX_HEIGHT,
+      c.BATTLE_SCENE_WIDTH,
+      c.BATTLE_SCENE_HEIGHT,
+      c.GAME_WIDTH - xPixel,
       100,
-      constants.BATTLE_SCENE_WIDTH,
-      constants.BATTLE_SCENE_HEIGHT,
+      c.BATTLE_SCENE_WIDTH,
+      c.BATTLE_SCENE_HEIGHT,
     );
     
     if (drawPlayer) {
       this.ctx.drawImage(
         this.avatarAssets,
-        constants.AVATAR_BATTLE_OFFSET,
+        c.AVATAR_BATTLE_OFFSET,
         0,
-        constants.AVATAR_BATTLE_WIDTH,
-        constants.AVATAR_BATTLE_HEIGHT,
-        constants.GAME_WIDTH - xPixel + 0.5 * constants.BATTLE_SCENE_WIDTH,
-        constants.BATTLE_ARENA_HEIGHT - constants.AVATAR_BATTLE_HEIGHT,
-        constants.AVATAR_BATTLE_WIDTH,
-        constants.AVATAR_BATTLE_HEIGHT,
+        c.AVATAR_BATTLE_WIDTH,
+        c.AVATAR_BATTLE_HEIGHT,
+        c.GAME_WIDTH - xPixel + 0.5 * c.BATTLE_SCENE_WIDTH,
+        c.BATTLE_ARENA_HEIGHT - c.AVATAR_BATTLE_HEIGHT,
+        c.AVATAR_BATTLE_WIDTH,
+        c.AVATAR_BATTLE_HEIGHT,
       );
 
-      if (xPixel >= constants.GAME_WIDTH && nextPhase) {
+      if (xPixel >= c.GAME_WIDTH && nextPhase) {
         this.nextBattlePhase();
       }
 
@@ -283,22 +318,22 @@ export class PokemonBattle {
     }
   }
 
-  drawEnemyHealth(delta: number, slideIn: boolean) {
+  drawEnemyHealth(delta: number) {
     const speed = 224;
-    let xPixel = (this.X_slideEnemyHealth + delta * speed - constants.ASSETS_ENEMY_HEALTH_WIDTH) << 0;
+    let xPixel = (this.X_slideEnemyHealth + delta * speed - c.ASSETS_ENEMY_HEALTH_WIDTH) << 0;
 
     if (xPixel > 13) xPixel = 13;
 
     this.ctx.drawImage(
       this.battleAssets,
-      constants.ASSETS_PLAYER_HEALTH_WIDTH,
-      constants.ASSETS_HEALTH_OFFSET,
-      constants.ASSETS_ENEMY_HEALTH_WIDTH,
-      constants.ASSETS_ENEMY_HEALTH_HEIGHT,
+      c.ASSETS_PLAYER_HEALTH_WIDTH,
+      c.ASSETS_HEALTH_OFFSET,
+      c.ASSETS_ENEMY_HEALTH_WIDTH,
+      c.ASSETS_ENEMY_HEALTH_HEIGHT,
       xPixel,
       16,
-      constants.ASSETS_ENEMY_HEALTH_WIDTH,
-      constants.ASSETS_ENEMY_HEALTH_HEIGHT,
+      c.ASSETS_ENEMY_HEALTH_WIDTH,
+      c.ASSETS_ENEMY_HEALTH_HEIGHT,
     );
 
     const healthFrac = this.enemyPokemon.health / this.enemyPokemon.stats.hp;
@@ -307,8 +342,8 @@ export class PokemonBattle {
 
     this.ctx.drawImage(
       this.battleAssets,
-      constants.ASSETS_ENEMY_HEALTH_WIDTH + constants.ASSETS_PLAYER_HEALTH_WIDTH,
-      constants.ASSETS_HEALTH_OFFSET + healthbarOffset,
+      c.ASSETS_ENEMY_HEALTH_WIDTH + c.ASSETS_PLAYER_HEALTH_WIDTH,
+      c.ASSETS_HEALTH_OFFSET + healthbarOffset,
       healthbarWidth,
       2,
       xPixel + 39,
@@ -320,9 +355,7 @@ export class PokemonBattle {
     drawText(this.ctx, this.font, this.enemyPokemon.pokemonName.toUpperCase() + ((this.enemyPokemon.gender) ? '#' : '^'), 1, 0, xPixel - 13 + 20, 22);
     drawText(this.ctx, this.font, this.enemyPokemon.level.toString(), 1, 0, xPixel - 13 + 89, 22);
 
-    if (slideIn) {
-      this.X_slideEnemyHealth += delta * speed;
-    }
+    this.X_slideEnemyHealth += delta * speed;
   }
 
   drawPlayerPokemon(delta: number, throwPokemon = false, nextPhase = false) {
@@ -331,9 +364,9 @@ export class PokemonBattle {
 
     const xPixel = (this.X_throwPokemon + delta * speed) << 0;
 
-    const assetOffset = (xPixel < constants.GAME_WIDTH + 0.6 * constants.BATTLE_SCENE_WIDTH) ? constants.AVATAR_BATTLE_HEIGHT : 
-                        (xPixel < constants.GAME_WIDTH + 0.75 * constants.BATTLE_SCENE_WIDTH) ? 2 * constants.AVATAR_BATTLE_HEIGHT : 
-                        3 * constants.AVATAR_BATTLE_HEIGHT;
+    const assetOffset = (xPixel < c.GAME_WIDTH + 0.6 * c.BATTLE_SCENE_WIDTH) ? c.AVATAR_BATTLE_HEIGHT : 
+                        (xPixel < c.GAME_WIDTH + 0.75 * c.BATTLE_SCENE_WIDTH) ? 2 * c.AVATAR_BATTLE_HEIGHT : 
+                        3 * c.AVATAR_BATTLE_HEIGHT;
                     
     let xPixelPokeball = 0;
     if (xPixel >= 340) {
@@ -344,14 +377,14 @@ export class PokemonBattle {
 
       this.ctx.drawImage(
         this.battleAssets,
-        constants.POKEBALL_OFFSET_X + this.playerPokemon.pokeball * constants.POKEBALL_SIZE,
-        constants.POKEBALL_OFFSET_Y + 37 + (this.pokeballAnimation << 0) * constants.POKEBALL_SIZE,
-        constants.POKEBALL_SIZE,
-        constants.POKEBALL_SIZE,
+        c.POKEBALL_OFFSET_X + this.playerPokemon.pokeball * c.POKEBALL_SIZE,
+        c.POKEBALL_OFFSET_Y + 37 + (this.pokeballAnimation << 0) * c.POKEBALL_SIZE,
+        c.POKEBALL_SIZE,
+        c.POKEBALL_SIZE,
         xPixelPokeball + 25,
         yPixelPokeball,
-        constants.POKEBALL_SIZE,
-        constants.POKEBALL_SIZE,
+        c.POKEBALL_SIZE,
+        c.POKEBALL_SIZE,
       );
 
       if (throwPokemon) {
@@ -366,14 +399,14 @@ export class PokemonBattle {
       if (opacity > 0) {      
         this.ctx.drawImage(
           this.playerPokemonSprite,
-          this.playerPokemon.xSource + 2 * constants.POKEMON_SIZE + constants.POKEMON_ALTERNATIVE_OFFSET,
+          this.playerPokemon.xSource + 2 * c.POKEMON_SIZE + c.POKEMON_ALTERNATIVE_OFFSET,
           this.playerPokemon.ySource,
-          constants.POKEMON_SIZE,
-          constants.POKEMON_SIZE,
-          (0.5 * (constants.BATTLE_SCENE_WIDTH - constants.POKEMON_SIZE) + 0.5 * (constants.POKEMON_SIZE - (xPixelPokeball - 30) / 40 * constants.POKEMON_SIZE) << 0),
-          (constants.BATTLE_ARENA_HEIGHT - constants.AVATAR_BATTLE_HEIGHT + constants.POKEMON_SIZE - (xPixelPokeball - 30) / 40 * constants.POKEMON_SIZE) << 0,
-          constants.POKEMON_SIZE * (xPixelPokeball - 30) / 40,
-          constants.POKEMON_SIZE * (xPixelPokeball - 30) / 40,
+          c.POKEMON_SIZE,
+          c.POKEMON_SIZE,
+          (0.5 * (c.BATTLE_SCENE_WIDTH - c.POKEMON_SIZE) + 0.5 * (c.POKEMON_SIZE - (xPixelPokeball - 30) / 40 * c.POKEMON_SIZE) << 0),
+          (c.BATTLE_ARENA_HEIGHT - c.AVATAR_BATTLE_HEIGHT + c.POKEMON_SIZE - (xPixelPokeball - 30) / 40 * c.POKEMON_SIZE) << 0,
+          c.POKEMON_SIZE * (xPixelPokeball - 30) / 40,
+          c.POKEMON_SIZE * (xPixelPokeball - 30) / 40,
         );
       }
 
@@ -382,33 +415,33 @@ export class PokemonBattle {
       if (xPixelPokeball >= 70) {
         this.ctx.drawImage(
           this.playerPokemonSprite,
-          this.playerPokemon.xSource + 2 * constants.POKEMON_SIZE,
+          this.playerPokemon.xSource + 2 * c.POKEMON_SIZE,
           this.playerPokemon.ySource,
-          constants.POKEMON_SIZE,
-          constants.POKEMON_SIZE,
-          0.5 * (constants.BATTLE_SCENE_WIDTH - constants.POKEMON_SIZE),
-          constants.BATTLE_ARENA_HEIGHT - constants.AVATAR_BATTLE_HEIGHT,
-          constants.POKEMON_SIZE,
-          constants.POKEMON_SIZE,
+          c.POKEMON_SIZE,
+          c.POKEMON_SIZE,
+          0.5 * (c.BATTLE_SCENE_WIDTH - c.POKEMON_SIZE),
+          c.BATTLE_ARENA_HEIGHT - c.AVATAR_BATTLE_HEIGHT,
+          c.POKEMON_SIZE,
+          c.POKEMON_SIZE,
         );
 
         this.pokemoinAlternativeOpacity -= delta * 8;
 
         const speedHealth = 224;
-        let xPixelPlayerHealth = (this.X_slidePlayerHealth - delta * speedHealth + constants.GAME_WIDTH) << 0;
+        let xPixelPlayerHealth = (this.X_slidePlayerHealth - delta * speedHealth + c.GAME_WIDTH) << 0;
     
         if (xPixelPlayerHealth < 127) xPixelPlayerHealth = 127;
 
         this.ctx.drawImage(
           this.battleAssets,
           0,
-          constants.ASSETS_HEALTH_OFFSET,
-          constants.ASSETS_PLAYER_HEALTH_WIDTH,
-          constants.ASSETS_PLAYER_HEALTH_HEIGHT,
+          c.ASSETS_HEALTH_OFFSET,
+          c.ASSETS_PLAYER_HEALTH_WIDTH,
+          c.ASSETS_PLAYER_HEALTH_HEIGHT,
           xPixelPlayerHealth,
           75,
-          constants.ASSETS_PLAYER_HEALTH_WIDTH,
-          constants.ASSETS_PLAYER_HEALTH_HEIGHT,
+          c.ASSETS_PLAYER_HEALTH_WIDTH,
+          c.ASSETS_PLAYER_HEALTH_HEIGHT,
         );
 
         const healthFrac = this.playerPokemon.health / this.playerPokemon.stats.hp;
@@ -417,8 +450,8 @@ export class PokemonBattle {
 
         this.ctx.drawImage(
           this.battleAssets,
-          constants.ASSETS_ENEMY_HEALTH_WIDTH + constants.ASSETS_PLAYER_HEALTH_WIDTH,
-          constants.ASSETS_HEALTH_OFFSET + healthbarOffset,
+          c.ASSETS_ENEMY_HEALTH_WIDTH + c.ASSETS_PLAYER_HEALTH_WIDTH,
+          c.ASSETS_HEALTH_OFFSET + healthbarOffset,
           healthbarWidth,
           2,
           xPixelPlayerHealth + 47,
@@ -441,14 +474,14 @@ export class PokemonBattle {
                     
     this.ctx.drawImage(
       this.avatarAssets,
-      constants.AVATAR_BATTLE_OFFSET,
+      c.AVATAR_BATTLE_OFFSET,
       assetOffset,
-      constants.AVATAR_BATTLE_WIDTH,
-      constants.AVATAR_BATTLE_HEIGHT,
-      constants.GAME_WIDTH - xPixel + 0.5 * constants.BATTLE_SCENE_WIDTH,
-      constants.BATTLE_ARENA_HEIGHT - constants.AVATAR_BATTLE_HEIGHT,
-      constants.AVATAR_BATTLE_WIDTH,
-      constants.AVATAR_BATTLE_HEIGHT,
+      c.AVATAR_BATTLE_WIDTH,
+      c.AVATAR_BATTLE_HEIGHT,
+      c.GAME_WIDTH - xPixel + 0.5 * c.BATTLE_SCENE_WIDTH,
+      c.BATTLE_ARENA_HEIGHT - c.AVATAR_BATTLE_HEIGHT,
+      c.AVATAR_BATTLE_WIDTH,
+      c.AVATAR_BATTLE_HEIGHT,
     );
 
     if (xPixelPokeball >= 100 && nextPhase) {
@@ -505,41 +538,41 @@ export class PokemonBattle {
   drawBattleArena() {
     this.ctx.drawImage(
       this.battleAssets,
-      this.encounterMethod % 4 * constants.GAME_WIDTH,
-      ((0.5 + this.encounterMethod / 4) << 0) * constants.BATTLE_ARENA_HEIGHT,
-      constants.GAME_WIDTH,
-      constants.BATTLE_ARENA_HEIGHT,
+      this.encounterMethod % 4 * c.GAME_WIDTH,
+      ((0.5 + this.encounterMethod / 4) << 0) * c.BATTLE_ARENA_HEIGHT,
+      c.GAME_WIDTH,
+      c.BATTLE_ARENA_HEIGHT,
       0,
       0,
-      constants.GAME_WIDTH,
-      constants.BATTLE_ARENA_HEIGHT,
+      c.GAME_WIDTH,
+      c.BATTLE_ARENA_HEIGHT,
     );
   }
 
-  drawActionBox(actionchoice: boolean) {
+  drawActionBox(actionChoice: boolean) {
     this.ctx.drawImage(
       this.battleAssets,
       0,
-      3 * constants.BATTLE_ARENA_HEIGHT,
-      constants.GAME_WIDTH,
-      constants.ACTION_BOX_HEIGHT,
+      3 * c.BATTLE_ARENA_HEIGHT,
+      c.GAME_WIDTH,
+      c.ACTION_BOX_HEIGHT,
       0,
-      constants.BATTLE_ARENA_HEIGHT,
-      constants.GAME_WIDTH,
-      constants.ACTION_BOX_HEIGHT,
+      c.BATTLE_ARENA_HEIGHT,
+      c.GAME_WIDTH,
+      c.ACTION_BOX_HEIGHT,
     );  
 
-    if (actionchoice) {
+    if (actionChoice) {
       this.ctx.drawImage(
         this.battleAssets,
-        constants.GAME_WIDTH,
-        3 * constants.BATTLE_ARENA_HEIGHT,
-        constants.ACTION_BOX_WIDTH,
-        constants.ACTION_BOX_HEIGHT,
-        constants.GAME_WIDTH - constants.ACTION_BOX_WIDTH,
-        constants.BATTLE_ARENA_HEIGHT,
-        constants.ACTION_BOX_WIDTH,
-        constants.ACTION_BOX_HEIGHT,
+        c.GAME_WIDTH,
+        3 * c.BATTLE_ARENA_HEIGHT,
+        c.ACTION_BOX_WIDTH,
+        c.ACTION_BOX_HEIGHT,
+        c.GAME_WIDTH - c.ACTION_BOX_WIDTH,
+        c.BATTLE_ARENA_HEIGHT,
+        c.ACTION_BOX_WIDTH,
+        c.ACTION_BOX_HEIGHT,
       );
     }
   }

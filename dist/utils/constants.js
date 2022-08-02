@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.constants = void 0;
+exports.c = void 0;
 const GAME_HEIGHT = 160;
 const GAME_WIDTH = 240;
 const MAP_TSIZE = 16;
@@ -497,7 +497,7 @@ const POKEMON_PERSONALITIES = {
         speed: [2, 7, 17, 22],
     },
 };
-exports.constants = {
+exports.c = {
     GAME_HEIGHT,
     GAME_WIDTH,
     MAP_TSIZE,

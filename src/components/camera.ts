@@ -2,7 +2,7 @@ import { Avatar } from './avatar';
 
 import { MapType } from '../utils/types';
 
-import { constants } from '../utils/constants';
+import { c } from '../utils/constants';
 
 export class Camera {
   public x = 0;
@@ -14,24 +14,29 @@ export class Camera {
   private following?: Avatar;
 
   constructor(map: MapType, width: number, height: number) {
+    // Set camera properties to supplied values
     this.width = width;
     this.height = height;
 
-    this.maxX = map.COLS * constants.MAP_TSIZE - width;
-    this.maxY = map.ROWS * constants.MAP_TSIZE - height;
+    // Set the max x and y for the camera
+    this.maxX = map.COLS * c.MAP_TSIZE - width;
+    this.maxY = map.ROWS * c.MAP_TSIZE - height;
   }
 
   updateMap(currentMap: MapType) {
-    this.maxX = currentMap.COLS * constants.MAP_TSIZE - this.width;
-    this.maxY = currentMap.ROWS * constants.MAP_TSIZE - this.height;
+    // Update the max x and y for the camera to the new map
+    this.maxX = currentMap.COLS * c.MAP_TSIZE - this.width;
+    this.maxY = currentMap.ROWS * c.MAP_TSIZE - this.height;
   }
 
   follow(sprite: Avatar): void {
+    // Set the avatar to be followed
     this.following = sprite;
   }
 
   update(): void {
     if (this.following) {
+      // Compute and and set new x and y for the camera 
       this.following.screenX = this.width / 2;
       this.following.screenY = this.height / 2;
   

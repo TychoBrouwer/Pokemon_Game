@@ -522,7 +522,7 @@ const POKEMON_PERSONALITIES = {
   },
 }
 
-export const constants = {
+export const c = {
   GAME_HEIGHT,
   GAME_WIDTH,
   MAP_TSIZE,

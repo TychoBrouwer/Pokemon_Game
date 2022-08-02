@@ -6,20 +6,25 @@ class Camera {
     constructor(map, width, height) {
         this.x = 0;
         this.y = 0;
+        // Set camera properties to supplied values
         this.width = width;
         this.height = height;
-        this.maxX = map.COLS * constants_1.constants.MAP_TSIZE - width;
-        this.maxY = map.ROWS * constants_1.constants.MAP_TSIZE - height;
+        // Set the max x and y for the camera
+        this.maxX = map.COLS * constants_1.c.MAP_TSIZE - width;
+        this.maxY = map.ROWS * constants_1.c.MAP_TSIZE - height;
     }
     updateMap(currentMap) {
-        this.maxX = currentMap.COLS * constants_1.constants.MAP_TSIZE - this.width;
-        this.maxY = currentMap.ROWS * constants_1.constants.MAP_TSIZE - this.height;
+        // Update the max x and y for the camera to the new map
+        this.maxX = currentMap.COLS * constants_1.c.MAP_TSIZE - this.width;
+        this.maxY = currentMap.ROWS * constants_1.c.MAP_TSIZE - this.height;
     }
     follow(sprite) {
+        // Set the avatar to be followed
         this.following = sprite;
     }
     update() {
         if (this.following) {
+            // Compute and and set new x and y for the camera 
             this.following.screenX = this.width / 2;
             this.following.screenY = this.height / 2;
             this.x = this.following.x - this.width / 2;

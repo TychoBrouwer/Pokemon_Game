@@ -27,10 +27,10 @@ exports.getLocalStorage = getLocalStorage;
 function drawText(ctx, font, text, fontsize, fontColor, posX, posY) {
     for (let i = 0; i < text.length; i++) {
         const positions = {
-            posX: constants_1.constants.CHAR_IN_FONT.indexOf(text[i]) % 40 * constants_1.constants.FONT_WIDTH[fontsize],
-            posY: ((constants_1.constants.CHAR_IN_FONT.indexOf(text[i]) / 40) << 0) * constants_1.constants.FONT_HEIGHT[fontsize],
+            posX: constants_1.c.CHAR_IN_FONT.indexOf(text[i]) % 40 * constants_1.c.FONT_WIDTH[fontsize],
+            posY: ((constants_1.c.CHAR_IN_FONT.indexOf(text[i]) / 40) << 0) * constants_1.c.FONT_HEIGHT[fontsize],
         };
-        let width = constants_1.constants.FONT_WIDTH[fontsize];
+        let width = constants_1.c.FONT_WIDTH[fontsize];
         if (text[i] === '|') { // characters that are seven pixels wide
             width = 7;
         }
@@ -40,10 +40,10 @@ function drawText(ctx, font, text, fontsize, fontColor, posX, posY) {
         if (text[i] === 'i') { // characters that are four pixels wide
             width = 4;
         }
-        const yOffset = (fontsize === 0) ? fontColor * 2 * constants_1.constants.FONT_HEIGHT[fontsize] : 56 + fontColor * 2 * constants_1.constants.FONT_HEIGHT[fontsize];
-        ctx.drawImage(font, positions.posX, positions.posY + yOffset, width, constants_1.constants.FONT_HEIGHT[fontsize], posX + constants_1.constants.FONT_WIDTH[fontsize] * i
+        const yOffset = (fontsize === 0) ? fontColor * 2 * constants_1.c.FONT_HEIGHT[fontsize] : 56 + fontColor * 2 * constants_1.c.FONT_HEIGHT[fontsize];
+        ctx.drawImage(font, positions.posX, positions.posY + yOffset, width, constants_1.c.FONT_HEIGHT[fontsize], posX + constants_1.c.FONT_WIDTH[fontsize] * i
             - 3 * (text.substring(0, i).match(/ |l|\./g) || []).length
-            - 2 * (text.substring(0, i).match(/i/g) || []).length, posY, width, constants_1.constants.FONT_HEIGHT[fontsize]);
+            - 2 * (text.substring(0, i).match(/i/g) || []).length, posY, width, constants_1.c.FONT_HEIGHT[fontsize]);
     }
 }
 exports.drawText = drawText;
@@ -52,20 +52,20 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
     const personality = randomFromMinMax(0, 24);
     const nature = {
         hp: 1,
-        attack: (constants_1.constants.POKEMON_PERSONALITIES.increase.attack.includes(personality)) ? 1.1 :
-            (constants_1.constants.POKEMON_PERSONALITIES.decrease.attack.includes(personality)) ? 0.9 :
+        attack: (constants_1.c.POKEMON_PERSONALITIES.increase.attack.includes(personality)) ? 1.1 :
+            (constants_1.c.POKEMON_PERSONALITIES.decrease.attack.includes(personality)) ? 0.9 :
                 1,
-        defense: (constants_1.constants.POKEMON_PERSONALITIES.increase.defense.includes(personality)) ? 1.1 :
-            (constants_1.constants.POKEMON_PERSONALITIES.decrease.defense.includes(personality)) ? 0.9 :
+        defense: (constants_1.c.POKEMON_PERSONALITIES.increase.defense.includes(personality)) ? 1.1 :
+            (constants_1.c.POKEMON_PERSONALITIES.decrease.defense.includes(personality)) ? 0.9 :
                 1,
-        specialDefense: (constants_1.constants.POKEMON_PERSONALITIES.increase.specialDefense.includes(personality)) ? 1.1 :
-            (constants_1.constants.POKEMON_PERSONALITIES.decrease.specialDefense.includes(personality)) ? 0.9 :
+        specialDefense: (constants_1.c.POKEMON_PERSONALITIES.increase.specialDefense.includes(personality)) ? 1.1 :
+            (constants_1.c.POKEMON_PERSONALITIES.decrease.specialDefense.includes(personality)) ? 0.9 :
                 1,
-        specialAttack: (constants_1.constants.POKEMON_PERSONALITIES.increase.specialAttack.includes(personality)) ? 1.1 :
-            (constants_1.constants.POKEMON_PERSONALITIES.decrease.specialAttack.includes(personality)) ? 0.9 :
+        specialAttack: (constants_1.c.POKEMON_PERSONALITIES.increase.specialAttack.includes(personality)) ? 1.1 :
+            (constants_1.c.POKEMON_PERSONALITIES.decrease.specialAttack.includes(personality)) ? 0.9 :
                 1,
-        speed: (constants_1.constants.POKEMON_PERSONALITIES.increase.speed.includes(personality)) ? 1.1 :
-            (constants_1.constants.POKEMON_PERSONALITIES.decrease.speed.includes(personality)) ? 0.9 :
+        speed: (constants_1.c.POKEMON_PERSONALITIES.increase.speed.includes(personality)) ? 1.1 :
+            (constants_1.c.POKEMON_PERSONALITIES.decrease.speed.includes(personality)) ? 0.9 :
                 1,
     };
     const IV = {
@@ -88,7 +88,7 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
     const generation = (pokemonId <= 151) ? 0 : (pokemonId < 251) ? 1 : 2;
     let height = 0;
     const size = randomFromMinMax(0, 65535);
-    for (const [maxSize, values] of Object.entries(constants_1.constants.SIZE_TABLE)) {
+    for (const [maxSize, values] of Object.entries(constants_1.c.SIZE_TABLE)) {
         if (size <= parseInt(maxSize)) {
             height = Math.floor(pokedexEntry.height * Math.floor((size - values.z) / values.y + values.x) / 10);
             break;
@@ -118,8 +118,8 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
             specialDefense: Math.floor((Math.floor((2 * pokedexEntry.stats[4].base_stat + IV.specialDefense + Math.floor(EV.specialDefense / 4)) * level / 100) + 5) * nature.specialDefense),
             speed: Math.floor((Math.floor((2 * pokedexEntry.stats[5].base_stat + IV.speed + Math.floor(EV.speed / 4)) * level / 100) + 5) * nature.speed),
         },
-        xSource: (pokemonId - constants_1.constants.ASSETS_GENERATION_OFFSET[generation] - 1) % 3 * constants_1.constants.POKEMON_SPRITE_WIDTH,
-        ySource: (((pokemonId - constants_1.constants.ASSETS_GENERATION_OFFSET[generation] - 1) / 3) << 0) * constants_1.constants.POKEMON_SIZE,
+        xSource: (pokemonId - constants_1.c.ASSETS_GENERATION_OFFSET[generation] - 1) % 3 * constants_1.c.POKEMON_SPRITE_WIDTH,
+        ySource: (((pokemonId - constants_1.c.ASSETS_GENERATION_OFFSET[generation] - 1) / 3) << 0) * constants_1.c.POKEMON_SIZE,
     };
     return pokemonData;
 }
