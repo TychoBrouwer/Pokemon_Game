@@ -69,11 +69,11 @@ export class Game {
     }
 
     // If gameTriggers in localStorage does not have data, create gameTriggers object
-    // if (!gameTriggers.chooseStarter) {
+    if (!gameTriggers.chooseStarter) {
       gameTriggers = {
         chooseStarter: false,
       }
-    // }
+    }
     
     // Set the currentMap to location retrieved from localStorage
     this.currentMap = playerData.location;
@@ -533,7 +533,9 @@ export class Game {
     }
 
     // Reset keyDown variable if not down anymore
-    if (!keyboard.isDown(keyboard.LEFT) && !keyboard.isDown(keyboard.RIGHT) && !keyboard.isDown(keyboard.ENTER)) {
+    if (!keyboard.isDown(keyboard.LEFT) && !keyboard.isDown(keyboard.RIGHT) && 
+        !keyboard.isDown(keyboard.UP) && !keyboard.isDown(keyboard.DOWN) && 
+        !keyboard.isDown(keyboard.ENTER)) {
       this.keyDown = false;
     }
   }

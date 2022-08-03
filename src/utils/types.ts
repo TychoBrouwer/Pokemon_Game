@@ -8,6 +8,12 @@ export interface PlayerDataType {
   currentPokemon: number;
 }
 
+// move: "cut"
+// version_group_details: Array(1)
+// 0:
+// level_learned_at: 0
+// move_learn_method: "machine
+
 export interface PokemonDataType {
   pokemonId: number;
   generation: number;
@@ -20,6 +26,12 @@ export interface PokemonDataType {
     is_hidden: boolean;
     slot: number;
   };
+  moves: {
+    move: string;
+    type: string;
+    pp: number;
+    ppMax: number;
+  }[];
   shininess: boolean;
   size: number;
   height: number;
@@ -29,6 +41,10 @@ export interface PokemonDataType {
   EV: PokemonStatsType;
   IV: PokemonStatsType;
   stats: PokemonStatsType;
+  types: {
+    slot: number;
+    type: string;
+  }[];
   xSource: number;
   ySource: number;
 }
@@ -138,6 +154,10 @@ export interface PokemonInfoType {
   }[];
   moves: {
     move: string;
+    version_group_details: {
+      move_learn_method: string;
+      level_learned_at: number;
+    }[]
   }[];
   types: {
     slot: number;
@@ -147,4 +167,65 @@ export interface PokemonInfoType {
 
 export interface PokedexType { 
   [id_string: string]: PokemonInfoType;
+}
+
+export interface MoveType {
+  accuracy: number | null;
+  contest_combos: {
+    normal: {
+      use_after: {
+        name: string;
+      }[] | null;
+      use_before: {
+          name: string;
+      }[] | null;
+    };
+    super: {
+      use_after: {
+        name: string;
+      }[] | null;
+      use_before: {
+        name: string;
+      }[] | null;
+    };
+  } | null;
+  contest_effect: number;
+  contest_type: string;
+  damage_class: string;
+  effect_chance: number | null;
+  effect_entries: {
+    effect: string;
+    short_effect: string;
+  }[];
+  flavor_text_entries: {
+    flavor_text: string;
+  }[];
+  id: number;
+  // "machines": [],
+  // "meta": {
+  //   "ailment": "none",
+  //   "ailment_chance": 0,
+  //   "category": "damage",
+  //   "crit_rate": 0,
+  //   "drain": 0,
+  //   "flinch_chance": 0,
+  //   "healing": 0,
+  //   "max_hits": null,
+  //   "max_turns": null,
+  //   "min_hits": null,
+  //   "min_turns": null,
+  //   "stat_chance": 0
+  // },
+  name: string;
+  power: number | null;
+  pp: number;
+  priority: number;
+  // "stat_changes": [],
+  super_contest_effect: number;
+  target: string;
+  type: string;
+}
+
+export interface MoveIndexType {
+  [moveName: string]: MoveType;
 }

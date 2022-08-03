@@ -77,10 +77,11 @@ const CHAR_IN_FONT = [
   '`', // high dot
   '!',
   '?',
+  '-',
   '^', // female
   '#', // male
   '/',
-  '_', // double lower dot
+  ':', // double lower dot
   '“',
   '”',
   '‘',
