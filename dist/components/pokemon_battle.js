@@ -217,12 +217,12 @@ class PokemonBattle {
         }
         else if (this.battleStatus === 3 /* ThrowPokemon */) {
             this.battleBackground.render();
-            // Draw enemy pokemon without slide, without avatar, without next phase
+            // Draw enemy pokemon without slide
             this.drawEnemyPokemon(delta, false);
             // Draw enemy health without slide
             this.drawEnemyHealth(delta, false);
-            // Draw player pokemon with slide, with throw, with next phase
-            const isFinished = this.drawThrowPlayerPokemon(delta, true);
+            // Draw player pokemon with slide, with throw
+            const isFinished = this.drawThrowPlayerPokemon(delta);
             // Draw action box without player action selector
             this.drawActionBox(false);
             // Draw go text to dialogue box
@@ -382,11 +382,11 @@ class PokemonBattle {
                     const counter2 = this.writeTextToBattleBox(text2, 0, 1, delta, 1, 1);
                     if (counter2 >= text2.length + 50) {
                         this.battleBackground.render();
-                        // Draw enemy pokemon without slide, without avatar, without next phase
+                        // Draw enemy pokemon without slide
                         this.drawEnemyPokemon(delta, false);
                         // Draw enemy health without slide
                         this.drawEnemyHealth(delta, false);
-                        // Draw player health
+                        // Draw player health without slide
                         this.drawPlayerHealth(delta, false);
                         // Draw player pokemon attack
                         const isFinished = this.drawPokemonAttack(delta, true);
@@ -456,52 +456,26 @@ class PokemonBattle {
         }
     }
     getTypeEffectiveness(defenderType, moveType) {
-        const types = [
-            'normal', 'fight', 'flying', 'poison', 'ground', 'rock', 'bug', 'ghost', 'steel',
-            'fire', 'water', 'grass', 'electric', 'psychic', 'ice', 'dragon', 'dark', 'fairy',
-        ];
-        const typesEffectiveness = [
-            1, 1, 1, 1, 1, 0.5, 1, 0, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-            2, 1, 0.5, 0.5, 1, 2, 0.5, 0, 2, 1, 1, 1, 1, 0.5, 2, 1, 2, 0.5,
-            1, 2, 1, 1, 1, 0.5, 2, 1, 0.5, 1, 1, 2, 0.5, 1, 1, 1, 1, 1,
-            1, 1, 1, 0.5, 0.5, 0.5, 1, 0.5, 0, 1, 1, 2, 1, 1, 1, 1, 1, 2,
-            1, 1, 0, 2, 1, 2, 0.5, 1, 2, 2, 1, 0.5, 2, 1, 1, 1, 1, 1,
-            1, 0.5, 2, 1, 0.5, 1, 3, 1, 0.5, 2, 1, 1, 1, 1, 2, 1, 1, 1,
-            1, 0.5, 0.5, 0.5, 1, 1, 1, 0.5, 0.5, 0.5, 1, 2, 1, 2, 1, 1, 2, 0.5,
-            0, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 0.5, 1,
-            1, 1, 1, 1, 1, 2, 1, 1, 0.5, 0.5, 0.5, 1, 0.5, 1, 2, 1, 1, 2,
-            1, 1, 1, 1, 1, 0.5, 2, 1, 2, 0.5, 0.5, 2, 1, 1, 2, 0.5, 1, 1,
-            1, 1, 1, 1, 2, 2, 1, 1, 1, 2, 0.5, 0.5, 1, 1, 1, 0.5, 1, 1,
-            1, 1, 0.5, 0.5, 2, 2, 0.5, 1, 0.5, 0.5, 2, 0.5, 1, 1, 1, 0.5, 1, 1,
-            1, 1, 2, 1, 0, 1, 1, 1, 1, 1, 2, 0.5, 0.5, 1, 1, 0.5, 1, 1,
-            1, 2, 1, 2, 1, 1, 1, 1, 0.5, 1, 1, 1, 1, 0.5, 1, 1, 0, 1,
-            1, 1, 2, 1, 2, 1, 1, 1, 0.5, 0.5, 0.5, 2, 1, 1, 0.5, 2, 1, 1,
-            1, 1, 1, 1, 1, 1, 1, 1, 0.5, 1, 1, 1, 1, 1, 1, 2, 1, 2,
-            1, 0.5, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 0.5, 0.5,
-            1, 2, 1, 0.5, 1, 1, 1, 1, 0.5, 0.5, 1, 1, 1, 1, 1, 2, 2, 1,
-        ];
-        return typesEffectiveness[18 * ((types.indexOf(moveType) / 18) << 0) + types.indexOf(defenderType)];
+        return constants_1.c.TYPES_EFFECTIVENESS[18 * ((constants_1.c.TYPES.indexOf(moveType) / 18) << 0) + constants_1.c.TYPES.indexOf(defenderType)];
     }
-    drawThrowPlayerPokemon(delta, throwPokemon) {
+    drawThrowPlayerPokemon(delta) {
         const speedPokeball = 64;
         let pokeballThrown = false;
         let pokemonAltFinished = false;
         let healthSlideFinished = false;
         // Draw battle grounds player pokemon
         this.playerBattleGrounds.render();
-        if (throwPokemon) {
-            if (this.drawAvatarFinished) {
-                // Calculate the x and y for the pokeball
-                const pokeballPosition = this.pokeball.getPosition();
-                const xPixelPokeball = pokeballPosition.x + delta * speedPokeball;
-                const yPixelPokeball = 0.1 * Math.pow(xPixelPokeball, 2) - 7.5 * xPixelPokeball + 195;
-                // Draw the pokeball
-                this.pokeball.updateSourcePosition(constants_1.c.POKEBALL_OFFSET_X + this.playerPokemon.pokeball * constants_1.c.POKEBALL_SIZE, constants_1.c.POKEBALL_OFFSET_Y + 37);
-                this.pokeball.setPosition(xPixelPokeball, yPixelPokeball);
-                this.pokeball.render(delta);
-                if (pokeballPosition.x > 60) {
-                    pokeballThrown = true;
-                }
+        if (this.drawAvatarFinished) {
+            // Calculate the x and y for the pokeball
+            const pokeballPosition = this.pokeball.getPosition();
+            const xPixelPokeball = pokeballPosition.x + delta * speedPokeball;
+            const yPixelPokeball = 0.1 * Math.pow(xPixelPokeball, 2) - 7.5 * xPixelPokeball + 195;
+            // Draw the pokeball
+            this.pokeball.updateSourcePosition(constants_1.c.POKEBALL_OFFSET_X + this.playerPokemon.pokeball * constants_1.c.POKEBALL_SIZE, constants_1.c.POKEBALL_OFFSET_Y + 37);
+            this.pokeball.setPosition(xPixelPokeball, yPixelPokeball);
+            this.pokeball.render(delta);
+            if (pokeballPosition.x > 60) {
+                pokeballThrown = true;
             }
         }
         // Pokemon appear animation
@@ -658,19 +632,22 @@ class PokemonBattle {
     }
     drawEnemyPokemon(delta, slideIn) {
         const speed = 176;
-        // Draw battle grounds enemy pokemon
-        this.enemyBattleGrounds.animate(delta, speed, 1, 0, constants_1.c.GAME_WIDTH - constants_1.c.BATTLE_SCENE_WIDTH, 48, true);
-        // Set alpha of enemy pokemon when sliding in
-        if (slideIn) {
-            this.enemyPokemonObject.setOpacity(0.8);
-        }
-        else {
-            this.enemyPokemonObject.setOpacity(1);
-        }
-        // Draw enemy pokemon
         const x = constants_1.c.GAME_WIDTH - (constants_1.c.BATTLE_SCENE_WIDTH + constants_1.c.POKEMON_SIZE) / 2;
         const y = 48 - constants_1.c.POKEMON_SIZE / 2;
-        this.enemyPokemonObject.animate(delta, speed, 1, 0, x, y, true);
+        if (slideIn) {
+            // Draw battle grounds enemy pokemon
+            this.enemyBattleGrounds.animate(delta, speed, 1, 0, constants_1.c.GAME_WIDTH - constants_1.c.BATTLE_SCENE_WIDTH, 48, true);
+            // Set alpha of enemy pokemon when sliding in
+            this.enemyPokemonObject.setOpacity(0.8);
+            // Draw enemy pokemon
+            this.enemyPokemonObject.animate(delta, speed, 1, 0, x, y, true);
+        }
+        else {
+            // Draw battle grounds enemy pokemon
+            this.enemyBattleGrounds.render();
+            this.enemyPokemonObject.setOpacity(1);
+            this.enemyPokemonObject.render();
+        }
     }
     writeTextToBattleBox(text, fontsize, fontColor, delta, delayAfter, textLine) {
         const speed = 304;

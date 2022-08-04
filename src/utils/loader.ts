@@ -1,9 +1,7 @@
-interface ImageType {
-  [imageKey: string]: HTMLImageElement;
-}
-
 export class Loader {
-  private images: ImageType
+  private images: {
+    [imageKey: string]: HTMLImageElement;
+  }
 
   constructor() {
     this.images = {};
@@ -28,7 +26,7 @@ export class Loader {
     return d;
   }
 
-  getImage (key: string): HTMLImageElement | undefined {
+  private getImage (key: string): HTMLImageElement | undefined {
     if (key in this.images) {
       return this.images[key];
     }

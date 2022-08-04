@@ -8,12 +8,6 @@ export interface PlayerDataType {
   currentPokemon: number;
 }
 
-// move: "cut"
-// version_group_details: Array(1)
-// 0:
-// level_learned_at: 0
-// move_learn_method: "machine
-
 export interface PokemonDataType {
   pokemonId: number;
   generation: number;
@@ -58,13 +52,6 @@ interface PokemonStatsType {
   speed: number;
 }
 
-export interface AssetsLocationTilesType {
-  [location: string]: {
-    width: number;
-    height: number;
-  }
-}
-
 export interface MapType {
   COLS: number;
   ROWS: number;
@@ -92,10 +79,10 @@ export interface Keyboard {
   DOWN: string;
   ENTER: string;
 
-  _keys: Keys;
+  keys: Keys;
   listenForEvents: (keys: string[]) => void;
-  _onKeyDown: (event: KeyboardEvent) => void;
-  _onKeyUp: (event: KeyboardEvent) => void;
+  onKeyDown: (event: KeyboardEvent) => void;
+  onKeyUp: (event: KeyboardEvent) => void;
   isDown: (keyCode: string) => boolean;
 }
 
@@ -107,15 +94,13 @@ export interface Keys {
   enter: boolean;
 }
 
-export interface PokemonType {
-  rate: number;
-  level: number[];
-}
-
 export interface EncounterTableType {
   [route: string]: {
     [encounterMethod: string]: {
-      [id: number]: PokemonType;
+      [id: number]: {
+        rate: number;
+        level: number[];
+      }
     }
   }
 }

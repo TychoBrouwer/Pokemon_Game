@@ -111,7 +111,7 @@ export class Game {
     });
   }
 
-  load(): Promise<HTMLImageElement | string>[] {
+  private load(): Promise<HTMLImageElement | string>[] {
     return [
       this.loader.loadImage('tiles', tileMap),
       this.loader.loadImage('avatar', avatarAssets),
@@ -125,7 +125,7 @@ export class Game {
     ];
   }
 
-  init(): void {
+  private init(): void {
     // Start the eventListeners for the supplied keys
     keyboard.listenForEvents([keyboard.LEFT, keyboard.RIGHT, keyboard.UP, keyboard.DOWN, keyboard.ENTER]);
 
@@ -165,7 +165,7 @@ export class Game {
     window.requestAnimationFrame(this.tick.bind(this));
   }
 
-  saveToLocalStorage() {
+  private saveToLocalStorage() {
     if (this.avatar) {
       this.player.setPlayerPosition(this.currentMap, this.avatar.x, this.avatar.y);
       const playerData = this.player.getPlayerData();
@@ -206,7 +206,7 @@ export class Game {
     }
   }
 
-  chooseStarter(delta: number) {
+  private chooseStarter(delta: number) {
     // Increment animation counter
     this.animation = this.animation < 9.94 ? this.animation + 10 * delta : 0;
 
@@ -540,7 +540,7 @@ export class Game {
     }
   }
 
-  loadAdjacentMaps(fromDirection: string | boolean = false) {
+  private loadAdjacentMaps(fromDirection: string | boolean = false) {
     // get list of adjacent map objects
     const Adjacent = this.map.getAdjacent(this.currentMap);
     // Construct list of added map strings
@@ -579,7 +579,7 @@ export class Game {
     }
   }
 
-  update(delta: number) {
+  private update(delta: number) {
     this.dirx = 0;
     this.diry = 0;
 
@@ -621,7 +621,7 @@ export class Game {
     this.camera.update();
   }
 
-  render(delta: number): void {
+  private render(delta: number): void {
     // Draw bottom, background layer of the game
     this.drawLayer(0);
 
@@ -638,7 +638,7 @@ export class Game {
     this.drawLayer(2);
   }
 
-  drawLayer(layer: number): void {
+  private drawLayer(layer: number): void {
     // get the render boundaries from the camera position
     const startCol = Math.floor(this.camera.x / c.MAP_TSIZE);
     const endCol = startCol + (this.camera.width / c.MAP_TSIZE);
@@ -686,7 +686,7 @@ export class Game {
     }
   }
 
-  drawPlayer(delta: number, onlyDrawTop: boolean): void {
+  private drawPlayer(delta: number, onlyDrawTop: boolean): void {
     if (!onlyDrawTop) {
       // Set player direction and increment animation counter
       this.direction = this.diry === 1 ? 0 : this.dirx === -1 ? 1 : this.diry === -1 ? 2 : this.dirx === 1 ? 3 : this.direction;

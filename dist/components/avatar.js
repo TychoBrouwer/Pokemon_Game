@@ -36,7 +36,7 @@ class Avatar {
             this.x += dirx * constants_1.c.AVATAR_SPEED_WALK * delta;
             this.y += diry * constants_1.c.AVATAR_SPEED_WALK * delta;
             // Check for collision
-            this._collide(dirx, diry, x, y);
+            this.collide(dirx, diry, x, y);
             // Compute max allowable values of x and y
             const maxX = this.map.currentMap.COLS * constants_1.c.MAP_TSIZE;
             const maxY = this.map.currentMap.ROWS * constants_1.c.MAP_TSIZE;
@@ -45,7 +45,7 @@ class Avatar {
             this.y = Math.max(0, Math.min(this.y, maxY));
         }
     }
-    _collide(dirx, diry, x, y) {
+    collide(dirx, diry, x, y) {
         if (this.map) {
             // Coordinates of different points on hitbox
             const left = this.x - constants_1.c.AVATAR_WIDTH / 2;

@@ -7,7 +7,7 @@ exports.keyboard = {
     UP: 'w',
     DOWN: 's',
     ENTER: 'Enter',
-    _keys: {
+    keys: {
         a: false,
         d: false,
         w: false,
@@ -15,31 +15,31 @@ exports.keyboard = {
         enter: false,
     },
     listenForEvents: function (keys) {
-        window.addEventListener('keydown', this._onKeyDown.bind(this));
-        window.addEventListener('keyup', this._onKeyUp.bind(this));
+        window.addEventListener('keydown', this.onKeyDown.bind(this));
+        window.addEventListener('keyup', this.onKeyUp.bind(this));
         keys.forEach(function (keyCode) {
-            this._keys[keyCode] = false;
+            this.keys[keyCode] = false;
         }.bind(this));
     },
-    _onKeyDown: function (event) {
+    onKeyDown: function (event) {
         const keyCode = event.key;
-        if (keyCode in this._keys) {
+        if (keyCode in this.keys) {
             event.preventDefault();
-            this._keys[keyCode] = true;
+            this.keys[keyCode] = true;
         }
     },
-    _onKeyUp: function (event) {
+    onKeyUp: function (event) {
         const keyCode = event.key;
-        if (keyCode in this._keys) {
+        if (keyCode in this.keys) {
             event.preventDefault();
-            this._keys[keyCode] = false;
+            this.keys[keyCode] = false;
         }
     },
     isDown: function (keyCode) {
-        if (!(keyCode in this._keys)) {
+        if (!(keyCode in this.keys)) {
             throw new Error('Keycode ' + keyCode + ' is not being listened to');
         }
-        return this._keys[keyCode];
+        return this.keys[keyCode];
     }
 };
 //# sourceMappingURL=keyboard.js.map
