@@ -187,25 +187,24 @@ export interface MoveType {
   }[];
   id: number;
   // "machines": [],
-  // "meta": {
-  //   "ailment": "none",
-  //   "ailment_chance": 0,
-  //   "category": "damage",
-  //   "crit_rate": 0,
-  //   "drain": 0,
-  //   "flinch_chance": 0,
-  //   "healing": 0,
-  //   "max_hits": null,
-  //   "max_turns": null,
-  //   "min_hits": null,
-  //   "min_turns": null,
-  //   "stat_chance": 0
-  // },
+  meta: {
+    ailment: string;
+    ailment_chance: number;
+    category: string;
+    crit_rate: number;
+    drain: number;
+    flinch_chance: number;
+    healing: number;
+    max_hits: number | null;
+    max_turns: number | null;
+    min_hits: number | null;
+    min_turns: number | null;
+    stat_chance: number;
+  },
   name: string;
   power: number | null;
   pp: number;
   priority: number;
-  // "stat_changes": [],
   super_contest_effect: number;
   target: string;
   type: string;

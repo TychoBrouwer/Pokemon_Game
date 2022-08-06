@@ -46,7 +46,7 @@ class PokemonBattle {
         this.battleStatus = 0;
         this.keyDown = false;
         this.damageCalculated = false;
-        this.lastDamage = 0;
+        this.newHealth = 0;
         this.attackHalfWay = false;
         this.defenseHalfWay = false;
         this.drawAvatarFinished = false;
@@ -72,8 +72,7 @@ class PokemonBattle {
         // Get and generate the enemy pokemon and load necessary assets 
         this.enemyPokemon = this.init();
         this.loadGameObjects();
-        console.log(this.enemyPokemon);
-        console.log(this.playerPokemon);
+        // Create Canvas for the health texts
         this.playerHealthTextCanvas = document.createElement('canvas');
         this.playerHealthTextCanvas.height = constants_1.c.ASSETS_PLAYER_HEALTH_HEIGHT;
         this.playerHealthTextCanvas.width = constants_1.c.ASSETS_PLAYER_HEALTH_WIDTH;
@@ -82,6 +81,8 @@ class PokemonBattle {
         this.enemyHealthTextCanvas.height = constants_1.c.ASSETS_PLAYER_HEALTH_HEIGHT;
         this.enemyHealthTextCanvas.width = constants_1.c.ASSETS_PLAYER_HEALTH_WIDTH;
         this.enemyHealthTextCtx = this.enemyHealthTextCanvas.getContext('2d');
+        console.log(this.enemyPokemon);
+        console.log(this.playerPokemon);
     }
     init() {
         // Set the candidate pokemon 
@@ -148,7 +149,7 @@ class PokemonBattle {
     battleFinished() {
         return new Promise((resolve) => {
             // resolve if battle is finished
-            if (this.battleStatus === 11 /* Finished */) {
+            if (this.battleStatus === 12 /* Finished */) {
                 resolve();
             }
             else {
@@ -405,11 +406,22 @@ class PokemonBattle {
         else if (this.battleStatus === 10 /* EnemyTakesDamage */) {
             const moveData = this.moveIndex[this.battleMoveName];
             if (this.damageCalculated === false) {
-                this.lastDamage = (_a = this.calculateMoveDamage(true, moveData)) !== null && _a !== void 0 ? _a : 0;
+                this.newHealth = this.enemyPokemon.health - ((_a = this.calculateMoveDamage(true, moveData)) !== null && _a !== void 0 ? _a : 0);
                 this.damageCalculated = true;
-                console.log(this.enemyPokemon.health);
-                console.log('-' + this.lastDamage);
             }
+            else {
+                if (this.enemyPokemon.health > this.newHealth) {
+                    this.enemyPokemon.health -= 16 * delta;
+                }
+                else {
+                    this.enemyPokemon.health = this.newHealth;
+                    this.nextBattlePhase();
+                }
+                this.drawEnemyHealth(delta, false);
+            }
+        }
+        else if (this.battleStatus === 11 /* EnemyMove */) {
+            //
         }
         // Reset keyDown variable if not down anymore
         if (!keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT) && !keyboard_1.keyboard.isDown(keyboard_1.keyboard.RIGHT) &&
@@ -417,7 +429,7 @@ class PokemonBattle {
             !keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
             this.keyDown = false;
         }
-        if (this.battleStatus !== 11 /* Finished */) {
+        if (this.battleStatus !== 12 /* Finished */) {
             // If battle is not finished request new animation frame
             window.requestAnimationFrame(this.tick.bind(this));
         }

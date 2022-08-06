@@ -24,6 +24,7 @@ const enum BattleStatus {
   PlayerRun,
   PlayerMove,
   EnemyTakesDamage,
+  EnemyMove,
   Finished,
 }
 
@@ -78,16 +79,16 @@ export class PokemonBattle {
   private enemyPokemonHealthText!: GameObject;
 
   private damageCalculated = false;
-  private lastDamage = 0;
+  private newHealth = 0;
   private attackHalfWay = false;
   private defenseHalfWay = false;
   private drawAvatarFinished = false;
   private X_writeTextToBattleBox = 0;
 
-  playerHealthTextCanvas: HTMLCanvasElement;
-  playerHealthTextCtx: CanvasRenderingContext2D | null;
-  enemyHealthTextCanvas: HTMLCanvasElement;
-  enemyHealthTextCtx: CanvasRenderingContext2D | null;
+  private playerHealthTextCanvas: HTMLCanvasElement;
+  private playerHealthTextCtx: CanvasRenderingContext2D | null;
+  private enemyHealthTextCanvas: HTMLCanvasElement;
+  private enemyHealthTextCtx: CanvasRenderingContext2D | null;
 
   constructor(context: CanvasRenderingContext2D, loader: Loader, player: Player, route: string, encounterMethod: number) {
     // Set the loader to the supplied
@@ -119,10 +120,7 @@ export class PokemonBattle {
 
     this.loadGameObjects();
 
-    console.log(this.enemyPokemon);
-    console.log(this.playerPokemon);
-
-
+    // Create Canvas for the health texts
     this.playerHealthTextCanvas = document.createElement('canvas');
     this.playerHealthTextCanvas.height= c.ASSETS_PLAYER_HEALTH_HEIGHT;
     this.playerHealthTextCanvas.width = c.ASSETS_PLAYER_HEALTH_WIDTH;
@@ -133,6 +131,8 @@ export class PokemonBattle {
     this.enemyHealthTextCanvas.width = c.ASSETS_PLAYER_HEALTH_WIDTH;
     this.enemyHealthTextCtx = this.enemyHealthTextCanvas.getContext('2d');
 
+    console.log(this.enemyPokemon);
+    console.log(this.playerPokemon);
   }
 
   private init() {
@@ -655,12 +655,21 @@ export class PokemonBattle {
       const moveData = this.moveIndex[this.battleMoveName];
 
       if (this.damageCalculated === false) {
-        this.lastDamage = this.calculateMoveDamage(true, moveData) ?? 0;
+        this.newHealth = this.enemyPokemon.health - (this.calculateMoveDamage(true, moveData) ?? 0);
         this.damageCalculated = true;
+      } else {
+        if (this.enemyPokemon.health > this.newHealth) {
+          this.enemyPokemon.health -= 16 * delta;
+        } else {
+          this.enemyPokemon.health = this.newHealth;
 
-        console.log(this.enemyPokemon.health);
-        console.log('-' + this.lastDamage);
+          this.nextBattlePhase();
+        }
+
+        this.drawEnemyHealth(delta, false);
       }
+    } else if (this.battleStatus === BattleStatus.EnemyMove) {
+      //
     }
 
     // Reset keyDown variable if not down anymore
