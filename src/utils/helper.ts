@@ -4,7 +4,7 @@ import { c } from '../utils/constants';
 
 import { PokemonDataType, PokemonInfoType } from '../utils/types';
 
-export function randomFromArray(propbabilityArray: number[]) {
+export function randomFromArray(propbabilityArray: any[]) {
   // Get random from array
   return propbabilityArray[Math.floor(Math.random() * propbabilityArray.length)];
 }
