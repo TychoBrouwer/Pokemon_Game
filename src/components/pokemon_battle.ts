@@ -22,8 +22,10 @@ const enum BattleStatus {
   PlayerBag,
   PlayerChoosePokemon,
   PlayerRun,
+  PlayerMoveText,
   PlayerMove,
   EnemyTakesDamage,
+  EnemyMoveText,
   EnemyMove,
   PlayerTakesDamage,
   Finished,
@@ -84,6 +86,7 @@ export class PokemonBattle {
   private attackHalfWay = false;
   private defenseHalfWay = false;
   private drawAvatarFinished = false;
+  private writeSecondLine= false;
   private X_writeTextToBattleBox = 0;
 
   private playerHealthTextCanvas: HTMLCanvasElement;
@@ -432,7 +435,7 @@ export class PokemonBattle {
       this.drawActionBox(false);
       // Write appear text to dialogue box, with next phase
       const text = 'Wild ' + this.enemyPokemon.pokemonName.toUpperCase() + ' appeared!|';
-      const isFinished = this.writeTextToBattleBox(text, 0, 1, delta, 1, 0);
+      const isFinished = this.writeTextToBattleBox(delta, 1, text, 0, 1, 0);
       // Draw enemy health with slide
       this.drawEnemyHealth(delta, true);
 
@@ -443,7 +446,7 @@ export class PokemonBattle {
     } else if (this.battleStatus === BattleStatus.WriteGoText) {
       // Write go text to dialogue box, with next phase
       const text = 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!';
-      const isFinished = this.writeTextToBattleBox(text, 0, 1, delta, 1, 0);
+      const isFinished = this.writeTextToBattleBox(delta, 1, text, 0, 1, 0);
 
       if (isFinished) {
         this.nextBattlePhase();
@@ -610,44 +613,60 @@ export class PokemonBattle {
       // Draw the action selector
       this.drawActionSelector(8 + xOffset, 8 + 74 + xOffset, yColumn);
 
-    } else if (this.battleStatus === BattleStatus.PlayerMove) {
+    } else if (this.battleStatus === BattleStatus.PlayerMoveText) {
       const moveData = this.moveIndex[this.battleMoveName];
 
       if (moveData.damage_class === 'status') {
         // Non damage move
       } else {
+        const text1 = this.playerPokemon.pokemonName.toUpperCase() + ' used';
+        const text2 = this.battleMoveName.toUpperCase() + '!';
+
         // Draw action box without player action selector
         this.drawActionBox(false);
 
         // Damage move
-        const text1 = this.playerPokemon.pokemonName.toUpperCase() + ' used';
-        const isFinished = this.writeTextToBattleBox(text1, 0, 1, delta, 1, 0);
+        let isFinished = false;
+        if (!this.writeSecondLine) {
+          isFinished = this.writeTextToBattleBox(delta, 0, text1, 0, 1, 0);  
+        }
 
-        if (isFinished) {
-          const text2 = this.battleMoveName.toUpperCase() + '!';
-          const isFinished2 = this.writeTextToBattleBox(text2, 0, 1, delta, 1, 1);
+        if (isFinished || this.writeSecondLine) {
+          this.writeSecondLine = true;
+
+          drawText(this.ctx, this.font, text1, 0, 1, 16, 121);
+          const isFinished2 = this.writeTextToBattleBox(delta, 1, text2, 0, 1, 1);
 
           if (isFinished2) {
-            this.battleBackground.render();
-            // Draw enemy pokemon without slide
-            this.drawEnemyPokemon(delta, false);
-            // Draw enemy health without slide
-            this.drawEnemyHealth(delta, false);
-            // Draw player health without slide
-            this.drawPlayerHealth(delta, false);
-            // Draw player pokemon attack
-            const isFinished = this.drawPokemonAttack(delta, true);
-            // Draw action box without player action selector
-            this.drawActionBox(false);
-            // Draw text to dialogue box
-            drawText(this.ctx, this.font, text1, 0, 1, 16, 121);
-            drawText(this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
-            
-            if (isFinished) {
-              this.nextBattlePhase();
-            }
+            this.writeSecondLine = false;
+
+            this.nextBattlePhase();
           }
         }
+      }
+    } else if (this.battleStatus === BattleStatus.PlayerMove) {
+      const text1 = this.playerPokemon.pokemonName.toUpperCase() + ' used';
+      const text2 = this.battleMoveName.toUpperCase() + '!';
+
+      this.battleBackground.render();
+      // Draw enemy pokemon without slide
+      this.drawEnemyPokemon(delta, false);
+      // Draw enemy health without slide
+      this.drawEnemyHealth(delta, false);
+      // Draw player health without slide
+      this.drawPlayerHealth(delta, false);
+      // Draw player pokemon attack
+      const isFinished = this.drawPokemonAttack(delta, true);
+      // Draw action box without player action selector
+      this.drawActionBox(false);
+      // Draw text to dialogue box
+      drawText(this.ctx, this.font, text1, 0, 1, 16, 121);
+      drawText(this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
+      
+      if (isFinished) {
+        this.writeSecondLine = false;
+
+        this.nextBattlePhase();
       }
     } else if (this.battleStatus === BattleStatus.EnemyTakesDamage) {
       const moveData = this.moveIndex[this.battleMoveName];
@@ -675,44 +694,57 @@ export class PokemonBattle {
       } else if (this.moveStatus === 2) {
         // Execute status move
       }
-    } else if (this.battleStatus === BattleStatus.EnemyMove) {
+    } else if (this.battleStatus === BattleStatus.EnemyMoveText) {
       const moveData: MoveType = randomFromArray(this.enemyPokemon.moves);
 
       if (moveData.damage_class === 'status') {
         // Non damage move
       } else {
+        const text1 = this.enemyPokemon.pokemonName.toUpperCase() + ' used';
+        const text2 = this.battleMoveName.toUpperCase() + '!';
+
         // Draw action box without player action selector
         this.drawActionBox(false);
 
         // Damage move
-        const text1 = this.enemyPokemon.pokemonName.toUpperCase() + ' used';
-        const isFinished = this.writeTextToBattleBox(text1, 0, 1, delta, 1, 0);
+        let isFinished = false;
+        if (!this.writeSecondLine) {
+          isFinished = this.writeTextToBattleBox(delta, 0, text1, 0, 1, 0);
+        }
 
-        if (isFinished) {
-          const text2 = this.battleMoveName.toUpperCase() + '!';
-          const isFinished2 = this.writeTextToBattleBox(text2, 0, 1, delta, 1, 1);
+        if (isFinished || this.writeSecondLine) {
+          this.writeSecondLine = true;
+
+          const isFinished2 = this.writeTextToBattleBox(delta, 1, text2, 0, 1, 1);
 
           if (isFinished2) {
-            this.battleBackground.render();
-            // Draw enemy pokemon without slide
-            this.drawEnemyPokemon(delta, false);
-            // Draw enemy health without slide
-            this.drawEnemyHealth(delta, false);
-            // Draw player health without slide
-            this.drawPlayerHealth(delta, false);
-            // Draw player pokemon attack
-            const isFinished = this.drawPokemonAttack(delta, false);
-            // Draw action box without player action selector
-            this.drawActionBox(false);
-            // Draw text to dialogue box
-            drawText(this.ctx, this.font, text1, 0, 1, 16, 121);
-            drawText(this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
-            
-            if (isFinished) {
-              this.nextBattlePhase();
-            }
+            this.writeSecondLine = false;
+
+            this.nextBattlePhase();
           }
         }
+      }
+    } else if (this.battleStatus === BattleStatus.EnemyMove) {
+      const text1 = this.enemyPokemon.pokemonName.toUpperCase() + ' used';
+      const text2 = this.battleMoveName.toUpperCase() + '!';
+
+      this.battleBackground.render();
+      // Draw enemy pokemon without slide
+      this.drawEnemyPokemon(delta, false);
+      // Draw enemy health without slide
+      this.drawEnemyHealth(delta, false);
+      // Draw player health without slide
+      this.drawPlayerHealth(delta, false);
+      // Draw player pokemon attack
+      const isFinished = this.drawPokemonAttack(delta, false);
+      // Draw action box without player action selector
+      this.drawActionBox(false);
+      // Draw text to dialogue box
+      drawText(this.ctx, this.font, text1, 0, 1, 16, 121);
+      drawText(this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
+      
+      if (isFinished) {
+        this.nextBattlePhase();
       }
     } else if (this.battleStatus === BattleStatus.PlayerTakesDamage) {
     //   if (moveData.damage_class === 'status') {
@@ -1054,17 +1086,17 @@ export class PokemonBattle {
     }
   }
 
-  private writeTextToBattleBox(text: string, fontsize: number, fontColor: number, delta: number, delayAfter: number, textLine: number) {
-    const speed = 304;
+  private writeTextToBattleBox(delta: number, delayAfter: number, text: string, fontsize: number, fontColor: number, textLine: number) {
+    const speed = 16;
     const yText = 121 + 16 * textLine;
 
-    const i = ((this.X_writeTextToBattleBox + delta * speed) / 6) << 0;
+    const i = (this.X_writeTextToBattleBox + delta * speed) << 0;
     const textToDisplay = text.slice(0, i);
 
     // Draw the text
     drawText(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
 
-    if (i < text.length + delayAfter * speed / 6) {
+    if (i < text.length + delayAfter * delta * 1792) {
       this.X_writeTextToBattleBox += delta * speed;
     } else {
       this.X_writeTextToBattleBox = 0;
