@@ -583,7 +583,7 @@ export class PokemonBattle {
           this.battleMoveName = this.playerPokemon.moves[this.battleMove].move;
           console.log(this.playerPokemon.pokemonName + ' used ' + this.battleMoveName)
 
-          this.nextBattlePhase(BattleStatus.PlayerMove);
+          this.nextBattlePhase(BattleStatus.PlayerMoveText);
         }
       }
 
@@ -618,7 +618,7 @@ export class PokemonBattle {
 
       if (moveData.damage_class === 'status') {
         // Non damage move
-      } else {
+      } else {        
         const text1 = this.playerPokemon.pokemonName.toUpperCase() + ' used';
         const text2 = this.battleMoveName.toUpperCase() + '!';
 
@@ -628,7 +628,7 @@ export class PokemonBattle {
         // Damage move
         let isFinished = false;
         if (!this.writeSecondLine) {
-          isFinished = this.writeTextToBattleBox(delta, 0, text1, 0, 1, 0);  
+          isFinished = this.writeTextToBattleBox(delta, 0, text1, 0, 1, 0);
         }
 
         if (isFinished || this.writeSecondLine) {
@@ -675,10 +675,12 @@ export class PokemonBattle {
         if (moveData.damage_class === 'status') {
           this.moveStatus = 2;
 
-          console.log('pokemon used status move')
+          console.log('pokemon used status move');
         } else {
           this.newHealth = this.enemyPokemon.health - (this.calculateMoveDamage(true, moveData) ?? 0);
           this.moveStatus = 1;
+
+          console.log(this.newHealth)
         }
       } else if (this.moveStatus === 1) {
         if (this.enemyPokemon.health > this.newHealth) {
@@ -687,7 +689,11 @@ export class PokemonBattle {
           this.enemyPokemon.health = this.newHealth;
           this.moveStatus = 0;
 
-          this.nextBattlePhase();
+          if (this.enemyPokemon.health <= 0) {
+            this.nextBattlePhase(BattleStatus.Finished);
+          } else {
+            this.nextBattlePhase();
+          }
         }
 
         this.drawEnemyHealth(delta, false);
@@ -715,6 +721,7 @@ export class PokemonBattle {
         if (isFinished || this.writeSecondLine) {
           this.writeSecondLine = true;
 
+          drawText(this.ctx, this.font, text1, 0, 1, 16, 121);
           const isFinished2 = this.writeTextToBattleBox(delta, 1, text2, 0, 1, 1);
 
           if (isFinished2) {
@@ -747,39 +754,35 @@ export class PokemonBattle {
         this.nextBattlePhase();
       }
     } else if (this.battleStatus === BattleStatus.PlayerTakesDamage) {
-    //   if (moveData.damage_class === 'status') {
-    //     // Non damage move
-    //   } else {
-    //     // Draw action box without player action selector
-    //   }
-    // } else if (this.battleStatus === BattleStatus.PlayerTakesDamage) {
-    //   if (this.moveStatus === 0) {
-    //     const moveData: MoveType = randomFromArray(this.enemyPokemon.moves);
+      const moveData = this.moveIndex[this.battleMoveName];
 
-    //     if (moveData.damage_class === 'status') {
-    //       this.moveStatus = 2;
+      if (this.moveStatus === 0) {
+        if (moveData.damage_class === 'status') {
+          this.moveStatus = 2;
 
-    //       console.log('pokemon used status move');
-    //     } else {
-    //       this.newHealth = this.enemyPokemon.health - (this.calculateMoveDamage(false, moveData) ?? 0);
-    //       this.moveStatus = 1;
+          console.log('pokemon used status move');
+        } else {
+          this.newHealth = this.playerPokemon.health - (this.calculateMoveDamage(true, moveData) ?? 0);
+          this.moveStatus = 1;
+        }
+      } else if (this.moveStatus === 1) {
+        if (this.playerPokemon.health > this.newHealth) {
+          this.playerPokemon.health -= 16 * delta;
+        } else {
+          this.playerPokemon.health = this.newHealth;
+          this.moveStatus = 0;
 
-    //       console.log(this.newHealth);
-    //     }
-    //   } else if (this.moveStatus === 1) {
-    //     if (this.enemyPokemon.health > this.newHealth) {
-    //       this.enemyPokemon.health -= 16 * delta;
-    //     } else {
-    //       this.enemyPokemon.health = this.newHealth;
-    //       this.moveStatus = 0;
+          if (this.playerPokemon.health <= 0) {
+            this.nextBattlePhase(BattleStatus.Finished);
+          } else {
+            this.nextBattlePhase(BattleStatus.PlayerActionSelect);
+          }
+        }
 
-    //       this.nextBattlePhase();
-    //     }
-
-    //     this.drawPlayerHealth(delta, false);
-    //   } else if (this.moveStatus === 2) {
-    //     // Execute status move
-    //   }
+        this.drawPlayerHealth(delta, false);
+      } else if (this.moveStatus === 2) {
+        // Execute status move
+      }
     }
 
     // Reset keyDown variable if not down anymore
@@ -893,6 +896,7 @@ export class PokemonBattle {
 
     // Set gameObjects and base x and y positions for the pokemon
     let attacker, defender, xPosAttacker, yPosAttacker, xPosDefender, yPosDefender;
+    let direction = 1;
     if (playerAttack) {
       attacker = this.playerPokemonObject;
       defender = this.enemyPokemonObject;
@@ -909,6 +913,8 @@ export class PokemonBattle {
       yPosDefender = c.BATTLE_ARENA_HEIGHT - c.POKEMON_SIZE;
       xPosAttacker = c.GAME_WIDTH - (c.BATTLE_SCENE_WIDTH + c.POKEMON_SIZE) / 2;
       yPosAttacker = 48 - c.POKEMON_SIZE / 2;
+
+      direction = -1;
     }
 
     // Draw the correct animation
@@ -918,29 +924,33 @@ export class PokemonBattle {
     let backwardFinished2 = false;
 
     if (!this.attackHalfWay) {
-      forwardFinished = attacker.animate(delta, speed, 1, 0, xPosAttacker + 20, yPosAttacker, true);
+      forwardFinished = attacker.animate(delta, speed, direction, 0, xPosAttacker + direction * 20, yPosAttacker, true);
     }
 
-    if (forwardFinished || this.attackHalfWay) {
+    if (this.attackHalfWay) {
+      backwardFinished = attacker.animate(delta, speed, -direction, 0, xPosAttacker, yPosAttacker, true);
+    }
+
+    if (forwardFinished) {
       this.attackHalfWay = true;
-      backwardFinished = attacker.animate(delta, speed, -1, 0, xPosAttacker, yPosAttacker, true);
     }
 
-    // Reset variable for next attack
     if (backwardFinished) {
       this.attackHalfWay = false;
     }
 
     if (this.attackHalfWay && !this.defenseHalfWay) {
-      forwardFinished2 = defender.animate(delta, speed, 1, 0, xPosDefender + 10, yPosDefender, true)
+      forwardFinished2 = defender.animate(delta, speed, direction, 0, xPosDefender + direction * 10, yPosDefender, true)
+    }
+    
+    if (this.defenseHalfWay) {
+      backwardFinished2 = defender.animate(delta, speed, -direction, 0, xPosDefender, yPosDefender, true)
     }
 
-    if (forwardFinished2 || this.defenseHalfWay) {
+    if (forwardFinished2) {
       this.defenseHalfWay = true;
-      backwardFinished2 = defender.animate(delta, speed, -1, 0, xPosDefender, yPosDefender, true)
     }
 
-    // Reset variable for next attack
     if (backwardFinished2) {
       this.defenseHalfWay = false;
     }
@@ -952,7 +962,11 @@ export class PokemonBattle {
     const speedHealth = 224;
 
     // Draw player health box
-    this.playerPokemonHealthBox.animate(delta, speedHealth, -1, 0, 127, 75, true);
+    if (slideIn) {
+      this.playerPokemonHealthBox.animate(delta, speedHealth, -1, 0, 127, 75, true);
+    } else {
+      this.playerPokemonHealthBox.render();
+    }
 
     // Calculate variables for drawing the health bar
     const healthFrac = this.playerPokemon.health / this.playerPokemon.stats.hp;
@@ -971,8 +985,9 @@ export class PokemonBattle {
     if (this.playerHealthTextCtx) {
       // Draw the pokemon name, gender, and level
       const nameText = this.playerPokemon.pokemonName.toUpperCase() + ((this.playerPokemon.gender) ? '#' : '^');
-      const healthText = this.playerPokemon.health.toString().padStart(3, '_') + '/' + this.playerPokemon.stats.hp.toString().padStart(3, '_');
+      const healthText = (this.playerPokemon.health << 0).toString().padStart(3, '_') + '/' + this.playerPokemon.stats.hp.toString().padStart(3, '_');
 
+      this.playerHealthTextCtx.clearRect(0, 0, c.ASSETS_PLAYER_HEALTH_WIDTH, c.ASSETS_PLAYER_HEALTH_HEIGHT);
       drawText(this.playerHealthTextCtx, this.font, nameText, 1, 0, 14, 6);
       drawText(this.playerHealthTextCtx, this.font, this.playerPokemon.level.toString(), 1, 0, 84, 6);
       drawText(this.playerHealthTextCtx, this.font, healthText, 1, 0, 59, 22);
@@ -1087,7 +1102,7 @@ export class PokemonBattle {
   }
 
   private writeTextToBattleBox(delta: number, delayAfter: number, text: string, fontsize: number, fontColor: number, textLine: number) {
-    const speed = 16;
+    const speed = 48;
     const yText = 121 + 16 * textLine;
 
     const i = (this.X_writeTextToBattleBox + delta * speed) << 0;
@@ -1096,7 +1111,7 @@ export class PokemonBattle {
     // Draw the text
     drawText(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
 
-    if (i < text.length + delayAfter * delta * 1792) {
+    if (i < text.length + delayAfter * delta * speed * 96) {
       this.X_writeTextToBattleBox += delta * speed;
     } else {
       this.X_writeTextToBattleBox = 0;
