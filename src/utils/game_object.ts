@@ -60,6 +60,11 @@ export class GameObject {
     this.width = width;
   }
 
+  setHeight(height: number) {
+    this.heightSource = height;
+    this.height = height;
+  }
+
   setScale(scaleFactor: number) {
     this.scaleFactor = scaleFactor;
 

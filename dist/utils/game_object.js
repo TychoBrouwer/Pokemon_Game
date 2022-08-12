@@ -45,6 +45,10 @@ class GameObject {
         this.widthSource = width;
         this.width = width;
     }
+    setHeight(height) {
+        this.heightSource = height;
+        this.height = height;
+    }
     setScale(scaleFactor) {
         this.scaleFactor = scaleFactor;
         const newWidth = this.scaleFactor * this.widthSource;
