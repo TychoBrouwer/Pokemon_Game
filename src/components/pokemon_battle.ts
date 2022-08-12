@@ -18,10 +18,10 @@ const enum BattleStatus {
   WriteGoText,
   ThrowPokemon,
   PlayerActionSelect,
-  PlayerSelectMove,
   PlayerBag,
   PlayerChoosePokemon,
   PlayerRun,
+  PlayerSelectMove,
   PlayerMoveText,
   PlayerMove,
   EnemyTakesDamage,
@@ -52,6 +52,7 @@ export class PokemonBattle {
   private playerPokemon: PokemonDataType;
 
   private battleAction = 0;
+  private escapeAttempts = 0;
   private battleMove = 0;
   private battleMoveName = '';
   private battleResultWin = false;
@@ -526,7 +527,24 @@ export class PokemonBattle {
   
       // Draw the action selector
       this.drawActionSelector(c.GAME_WIDTH - c.ACTION_BOX_WIDTH + 8 + xOffset, c.GAME_WIDTH - c.ACTION_BOX_WIDTH + 8 + 42 + xOffset, yColumn);
-    
+    } else if (this.battleStatus === BattleStatus.PlayerRun) {
+      this.escapeAttempts++;
+
+      const escapeGuaranteed = this.playerPokemon.stats.speed >= this.enemyPokemon.stats.speed;
+      const escapeOdds = (Math.floor(this.playerPokemon.stats.speed * 128 / this.enemyPokemon.stats.speed) + 30 * this.escapeAttempts) < 256;
+
+      console.log(escapeGuaranteed || escapeOdds);
+
+      if (escapeGuaranteed || escapeOdds) {
+        console.log('Escape successfully');
+        this.battleResultWin = false;
+
+        this.nextBattlePhase(BattleStatus.Finished);
+      } else {
+        console.log('escaped failed');
+
+        this.nextBattlePhase(BattleStatus.EnemyMoveText);
+      }
     } else if (this.battleStatus === BattleStatus.PlayerSelectMove) {
       // Draw the move selection box
       this.moveSelectorBox.render();
@@ -679,8 +697,6 @@ export class PokemonBattle {
         } else {
           this.newHealth = this.enemyPokemon.health - (this.calculateMoveDamage(true, moveData) ?? 0);
           this.moveStatus = 1;
-
-          console.log(this.newHealth)
         }
       } else if (this.moveStatus === 1) {
         if (this.enemyPokemon.health > this.newHealth) {
@@ -690,6 +706,9 @@ export class PokemonBattle {
           this.moveStatus = 0;
 
           if (this.enemyPokemon.health <= 0) {
+            console.log('Battle is won');
+            this.battleResultWin = true;
+
             this.nextBattlePhase(BattleStatus.Finished);
           } else {
             this.nextBattlePhase();
@@ -773,6 +792,9 @@ export class PokemonBattle {
           this.moveStatus = 0;
 
           if (this.playerPokemon.health <= 0) {
+            console.log('Battle is lost');
+            this.battleResultWin = false;
+
             this.nextBattlePhase(BattleStatus.Finished);
           } else {
             this.nextBattlePhase(BattleStatus.PlayerActionSelect);
@@ -1111,7 +1133,7 @@ export class PokemonBattle {
     // Draw the text
     drawText(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
 
-    if (i < text.length + delayAfter * delta * speed * 96) {
+    if (i < text.length + delayAfter * speed / 3) {
       this.X_writeTextToBattleBox += delta * speed;
     } else {
       this.X_writeTextToBattleBox = 0;

@@ -39,6 +39,7 @@ const keyboard_1 = require("../utils/keyboard");
 class PokemonBattle {
     constructor(context, loader, player, route, encounterMethod) {
         this.battleAction = 0;
+        this.escapeAttempts = 0;
         this.battleMove = 0;
         this.battleMoveName = '';
         this.battleResultWin = false;
@@ -266,16 +267,16 @@ class PokemonBattle {
                 else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
                     // On enter go to next battle phase
                     if (this.battleAction === 0) {
-                        this.nextBattlePhase(5 /* PlayerSelectMove */);
+                        this.nextBattlePhase(8 /* PlayerSelectMove */);
                     }
                     else if (this.battleAction === 1) {
-                        this.nextBattlePhase(6 /* PlayerBag */);
+                        this.nextBattlePhase(5 /* PlayerBag */);
                     }
                     else if (this.battleAction === 2) {
-                        this.nextBattlePhase(7 /* PlayerChoosePokemon */);
+                        this.nextBattlePhase(6 /* PlayerChoosePokemon */);
                     }
                     else if (this.battleAction === 3) {
-                        this.nextBattlePhase(8 /* PlayerRun */);
+                        this.nextBattlePhase(7 /* PlayerRun */);
                     }
                     this.keyDown = true;
                 }
@@ -290,7 +291,22 @@ class PokemonBattle {
             // Draw the action selector
             this.drawActionSelector(constants_1.c.GAME_WIDTH - constants_1.c.ACTION_BOX_WIDTH + 8 + xOffset, constants_1.c.GAME_WIDTH - constants_1.c.ACTION_BOX_WIDTH + 8 + 42 + xOffset, yColumn);
         }
-        else if (this.battleStatus === 5 /* PlayerSelectMove */) {
+        else if (this.battleStatus === 7 /* PlayerRun */) {
+            this.escapeAttempts++;
+            const escapeGuaranteed = this.playerPokemon.stats.speed >= this.enemyPokemon.stats.speed;
+            const escapeOdds = (Math.floor(this.playerPokemon.stats.speed * 128 / this.enemyPokemon.stats.speed) + 30 * this.escapeAttempts) < 256;
+            console.log(escapeGuaranteed || escapeOdds);
+            if (escapeGuaranteed || escapeOdds) {
+                console.log('Escape successfully');
+                this.battleResultWin = false;
+                this.nextBattlePhase(15 /* Finished */);
+            }
+            else {
+                console.log('escaped failed');
+                this.nextBattlePhase(12 /* EnemyMoveText */);
+            }
+        }
+        else if (this.battleStatus === 8 /* PlayerSelectMove */) {
             // Draw the move selection box
             this.moveSelectorBox.render();
             // For every move option
@@ -424,7 +440,6 @@ class PokemonBattle {
                 else {
                     this.newHealth = this.enemyPokemon.health - ((_a = this.calculateMoveDamage(true, moveData)) !== null && _a !== void 0 ? _a : 0);
                     this.moveStatus = 1;
-                    console.log(this.newHealth);
                 }
             }
             else if (this.moveStatus === 1) {
@@ -435,6 +450,8 @@ class PokemonBattle {
                     this.enemyPokemon.health = this.newHealth;
                     this.moveStatus = 0;
                     if (this.enemyPokemon.health <= 0) {
+                        console.log('Battle is won');
+                        this.battleResultWin = true;
                         this.nextBattlePhase(15 /* Finished */);
                     }
                     else {
@@ -514,6 +531,8 @@ class PokemonBattle {
                     this.playerPokemon.health = this.newHealth;
                     this.moveStatus = 0;
                     if (this.playerPokemon.health <= 0) {
+                        console.log('Battle is lost');
+                        this.battleResultWin = false;
                         this.nextBattlePhase(15 /* Finished */);
                     }
                     else {
@@ -794,7 +813,7 @@ class PokemonBattle {
         const textToDisplay = text.slice(0, i);
         // Draw the text
         (0, helper_1.drawText)(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
-        if (i < text.length + delayAfter * delta * speed * 96) {
+        if (i < text.length + delayAfter * speed / 3) {
             this.X_writeTextToBattleBox += delta * speed;
         }
         else {
