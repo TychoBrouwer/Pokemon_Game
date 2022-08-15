@@ -591,6 +591,8 @@ const LEVELS = {
         91: 1160499.3, 92: 1214753.3, 93: 1254796.9, 94: 1312322.7, 95: 1354652.5, 96: 1415577.6, 97: 1460276.8, 98: 1524731.0, 99: 1571884.4, 100: 1640000.0
     }
 };
+const NORMAL_STAGES = [2 / 8, 2 / 7, 2 / 6, 2 / 5, 2 / 4, 2 / 3, 2 / 2, 3 / 2, 4 / 2, 5 / 2, 6 / 2, 7 / 2, 8 / 2];
+const SPECIAL_STAGES = [33 / 100, 36 / 100, 43 / 100, 50 / 100, 60 / 100, 75 / 100, 100 / 100, 133 / 100, 166 / 100, 200 / 100, 250 / 100, 266 / 100, 300 / 100];
 exports.c = {
     GAME_HEIGHT,
     GAME_WIDTH,
@@ -647,5 +649,7 @@ exports.c = {
     TYPES,
     TYPES_EFFECTIVENESS,
     LEVELS,
+    NORMAL_STAGES,
+    SPECIAL_STAGES,
 };
 //# sourceMappingURL=constants.js.map

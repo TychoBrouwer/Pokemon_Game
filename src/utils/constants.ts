@@ -619,6 +619,8 @@ const LEVELS: LevelsType = {
   }
 }
 
+const NORMAL_STAGES = [ 2/8, 2/7, 2/6, 2/5, 2/4, 2/3, 2/2, 3/2, 4/2, 5/2, 6/2, 7/2, 8/2 ];
+const SPECIAL_STAGES = [ 33/100, 36/100, 43/100, 50/100, 60/100, 75/100, 100/100, 133/100, 166/100, 200/100, 250/100, 266/100, 300/100 ];
 
 export const c = {
   GAME_HEIGHT,
@@ -696,4 +698,6 @@ export const c = {
   TYPES,
   TYPES_EFFECTIVENESS,
   LEVELS,
+  NORMAL_STAGES,
+  SPECIAL_STAGES,
 }
