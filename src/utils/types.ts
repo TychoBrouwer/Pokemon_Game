@@ -12,6 +12,10 @@ export interface PokemonDataType {
   pokemonId: number;
   generation: number;
   pokemonName: string;
+  xp: number;
+  xpCurLevel: number;
+  xpNextLevel: number;
+  xpBase: number;
   level: number;
   health: number;
   gender: number;
@@ -123,6 +127,10 @@ export interface PokemonInfoType {
   height: number;
   base_experience: number;
   is_default: boolean;
+  growth_rate: string;
+  color: string;
+  capture_rate: number;
+  base_happiness: number;
   forms: string[];
   stats: {
     base_stat: number;
@@ -212,4 +220,10 @@ export interface MoveType {
 
 export interface MoveIndexType {
   [moveName: string]: MoveType;
+}
+
+export interface LevelsType {
+  [name: string]: {
+    [level: number]: number;
+  }
 }

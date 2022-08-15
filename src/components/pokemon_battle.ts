@@ -30,6 +30,7 @@ const enum BattleStatus {
   PlayerTakesDamage,
   EnemyFainted,
   GainXp,
+  FadeOut,
   Finished,
 }
 
@@ -59,9 +60,19 @@ export class PokemonBattle {
   private battleMoveName = '';
   private battleResultWin = false;
 
-  private _previousElapsed = 0;
+  private previousElapsed = 0;
+  private delayStart = -1;
   private battleStatus = 0;
   private keyDown = false;
+
+  private moveStatus = 0;
+  private newHealth = 0;
+  private xpGained = 0;
+  private attackHalfWay = false;
+  private defenseHalfWay = false;
+  private drawAvatarFinished = false;
+  private writeSecondLine = false;
+  private animationCounter = 0;
 
   private battleBackground!: GameObject;
   private moveSelectorBox!: GameObject;
@@ -83,14 +94,6 @@ export class PokemonBattle {
   private enemyPokemonHealthBox!: GameObject;
   private enemyPokemonHealthBar!: GameObject;
   private enemyPokemonHealthText!: GameObject;
-
-  private moveStatus = 0;
-  private newHealth = 0;
-  private attackHalfWay = false;
-  private defenseHalfWay = false;
-  private drawAvatarFinished = false;
-  private writeSecondLine= false;
-  private X_writeTextToBattleBox = 0;
 
   private playerHealthTextCanvas: HTMLCanvasElement;
   private playerHealthTextCtx: CanvasRenderingContext2D | null;
@@ -401,20 +404,30 @@ export class PokemonBattle {
     })
   }
 
-  private nextBattlePhase(battleStatus: number | undefined = undefined) {
+  private nextBattlePhase(battleStatus: number) {
     // Increment battleStatus;
-    if (battleStatus) {
-      this.battleStatus = battleStatus;
-    } else {
-      this.battleStatus++;
+    this.battleStatus = battleStatus;    
+  }
+
+  private renderDelay(duration: number): boolean {
+    if (this.delayStart === -1) {
+      this.delayStart = this.previousElapsed;
+    } else if (this.delayStart + duration <= this.previousElapsed) {
+      return true;
     }
+
+    return false;
+  }
+
+  private resetDelay() {
+    this.delayStart = -1;
   }
 
   private tick(elapsed: number) {
     // Calculate the delta between the ticks
-    let delta = (elapsed - this._previousElapsed) / 1000.0;
+    let delta = (elapsed - this.previousElapsed) / 1000.0;
     delta = Math.min(delta, 0.25); // maximum delta of 250 ms
-    this._previousElapsed = elapsed;
+    this.previousElapsed = elapsed;
 
     if (this.battleStatus === BattleStatus.SlidePokemonIn) {
       this.battleBackground.render();
@@ -694,7 +707,6 @@ export class PokemonBattle {
           this.moveStatus = 0;
 
           if (this.enemyPokemon.health <= 0) {
-            console.log('Battle is won');
             this.battleResultWin = true;
 
             this.nextBattlePhase(BattleStatus.EnemyFainted);
@@ -767,7 +779,6 @@ export class PokemonBattle {
           this.moveStatus = 0;
 
           if (this.playerPokemon.health <= 0) {
-            console.log('Battle is lost');
             this.battleResultWin = false;
 
             this.nextBattlePhase(BattleStatus.Finished);
@@ -794,7 +805,6 @@ export class PokemonBattle {
       if (!isFinished) {
         this.drawEnemyHealth(delta, false);
       } else {
-        console.log('text');
         const text1 = 'Wild ' + this.enemyPokemon.pokemonName.toUpperCase();
         const text2 = 'fainted!|'
 
@@ -806,6 +816,41 @@ export class PokemonBattle {
       }
       // Draw player health without slide
       this.drawPlayerHealth(delta, false);
+    } else if (this.battleStatus === BattleStatus.GainXp) {
+      if (this.xpGained === 0) {
+        this.xpGained = this.calculateXpGained();
+      } else {
+        // Draw action box without player action selector
+        this.drawActionBox(false);
+
+        const text1 = this.playerPokemon.pokemonName.toUpperCase() + ' gained';
+        const text2 = this.xpGained + ' EXP. Points!|'
+
+        const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
+
+        if (isFinished) {
+          this.nextBattlePhase(BattleStatus.FadeOut);
+        }
+      }
+    } else if (this.battleStatus === BattleStatus.FadeOut) {
+      const delayFinished = this.renderDelay(1000);
+
+      if (delayFinished) {
+        const speed = 2;
+        
+        this.ctx.globalAlpha = this.animationCounter;
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fillRect(0, 0, c.GAME_WIDTH, c.GAME_HEIGHT);
+        this.ctx.globalAlpha = 1;
+
+        if (this.animationCounter >= 1) {
+          this.animationCounter = 0;
+
+          this.nextBattlePhase(BattleStatus.Finished);
+        } else {
+          this.animationCounter += delta * speed;
+        }
+      }
     }
 
     // Reset keyDown variable if not down anymore
@@ -858,6 +903,18 @@ export class PokemonBattle {
       
       return (damage / 100) << 0;
     }
+  }
+
+  private calculateXpGained() {
+    const xpShare = 1; // if no xp-share then number of not fainted pokemon used by player
+    const luckyEgg = 1; // 1 is no lucky egg, 1.5 if lucky egg
+    const pokemonOrigin = 1 // 1 if wild, 1.5 if trainer
+    const tradedPokemon = 1 // 1.5 if pokemon was gained in domestic trade
+    const affection = 1 // 1.2 if affection of two hearts or more
+
+    const xp = (this.enemyPokemon.xpBase * this.enemyPokemon.level) / (7 * xpShare) * luckyEgg * pokemonOrigin * tradedPokemon * affection;
+    
+    return xp;
   }
 
   private getTypeEffectiveness(defenderType: string, moveType: string) {
@@ -1144,7 +1201,7 @@ export class PokemonBattle {
     fontColor: number
   ) {
     const speed = 48;
-    const i = (this.X_writeTextToBattleBox + delta * speed) << 0;
+    const i = (this.animationCounter + delta * speed) << 0;
 
     if (!this.writeSecondLine) {
       const yText = 121;
@@ -1154,9 +1211,9 @@ export class PokemonBattle {
       drawText(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
 
       if (i < textCol1.length) {
-        this.X_writeTextToBattleBox += delta * speed;
+        this.animationCounter += delta * speed;
       } else {
-        this.X_writeTextToBattleBox = 0;
+        this.animationCounter = 0;
         this.writeSecondLine = true;
       }
     } else {
@@ -1168,9 +1225,9 @@ export class PokemonBattle {
       drawText(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
 
       if (i < textCol2.length + delayAfter * speed / 3) {
-        this.X_writeTextToBattleBox += delta * speed;
+        this.animationCounter += delta * speed;
       } else {
-        this.X_writeTextToBattleBox = 0;
+        this.animationCounter = 0;
         this.writeSecondLine = false;
 
         return true;

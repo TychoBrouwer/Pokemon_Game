@@ -64,7 +64,7 @@ function drawText(ctx, font, text, fontsize, fontColor, posX, posY) {
             width = 3;
         }
         // characters that are four pixels wide
-        if (text[i] === 'i') {
+        if (text[i] === 'i' || text[i] === '!') {
             width = 4;
         }
         // Get the positions of the letter to draw
@@ -77,7 +77,7 @@ function drawText(ctx, font, text, fontsize, fontColor, posX, posY) {
         // Draw the letter
         ctx.drawImage(font, positions.posX, positions.posY + yOffset, width, constants_1.c.FONT_HEIGHT[fontsize], posX + constants_1.c.FONT_WIDTH[fontsize] * i
             - 3 * (text.substring(0, i).match(/ |l|\./g) || []).length
-            - 2 * (text.substring(0, i).match(/i/g) || []).length, posY, width, constants_1.c.FONT_HEIGHT[fontsize]);
+            - 2 * (text.substring(0, i).match(/i|!/g) || []).length, posY, width, constants_1.c.FONT_HEIGHT[fontsize]);
     }
 }
 exports.drawText = drawText;
@@ -165,6 +165,10 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
         pokemonId: pokemonId,
         generation: generation,
         pokemonName: pokedexEntry.name,
+        xp: constants_1.c.LEVELS[pokedexEntry.growth_rate][level],
+        xpCurLevel: constants_1.c.LEVELS[pokedexEntry.growth_rate][level],
+        xpNextLevel: constants_1.c.LEVELS[pokedexEntry.growth_rate][level + 1],
+        xpBase: pokedexEntry.base_experience,
         level: level,
         health: health,
         gender: randomFromMinMax(0, 1),

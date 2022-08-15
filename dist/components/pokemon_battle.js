@@ -43,16 +43,18 @@ class PokemonBattle {
         this.battleMove = 0;
         this.battleMoveName = '';
         this.battleResultWin = false;
-        this._previousElapsed = 0;
+        this.previousElapsed = 0;
+        this.delayStart = -1;
         this.battleStatus = 0;
         this.keyDown = false;
         this.moveStatus = 0;
         this.newHealth = 0;
+        this.xpGained = 0;
         this.attackHalfWay = false;
         this.defenseHalfWay = false;
         this.drawAvatarFinished = false;
         this.writeSecondLine = false;
-        this.X_writeTextToBattleBox = 0;
+        this.animationCounter = 0;
         // Set the loader to the supplied
         this.loader = loader;
         // Get the pokedex and encounterTable
@@ -151,7 +153,7 @@ class PokemonBattle {
     battleFinished() {
         return new Promise((resolve) => {
             // resolve if battle is finished
-            if (this.battleStatus === 17 /* Finished */) {
+            if (this.battleStatus === 18 /* Finished */) {
                 resolve();
             }
             else {
@@ -163,21 +165,28 @@ class PokemonBattle {
             }
         });
     }
-    nextBattlePhase(battleStatus = undefined) {
+    nextBattlePhase(battleStatus) {
         // Increment battleStatus;
-        if (battleStatus) {
-            this.battleStatus = battleStatus;
+        this.battleStatus = battleStatus;
+    }
+    renderDelay(duration) {
+        if (this.delayStart === -1) {
+            this.delayStart = this.previousElapsed;
         }
-        else {
-            this.battleStatus++;
+        else if (this.delayStart + duration <= this.previousElapsed) {
+            return true;
         }
+        return false;
+    }
+    resetDelay() {
+        this.delayStart = -1;
     }
     tick(elapsed) {
         var _a, _b;
         // Calculate the delta between the ticks
-        let delta = (elapsed - this._previousElapsed) / 1000.0;
+        let delta = (elapsed - this.previousElapsed) / 1000.0;
         delta = Math.min(delta, 0.25); // maximum delta of 250 ms
-        this._previousElapsed = elapsed;
+        this.previousElapsed = elapsed;
         if (this.battleStatus === 0 /* SlidePokemonIn */) {
             this.battleBackground.render();
             // Draw enemy pokemon with slide, with avatar, with next phase
@@ -299,7 +308,7 @@ class PokemonBattle {
             if (escapeGuaranteed || escape) {
                 console.log('Escape successfully');
                 this.battleResultWin = false;
-                this.nextBattlePhase(17 /* Finished */);
+                this.nextBattlePhase(18 /* Finished */);
             }
             else {
                 console.log('escaped failed');
@@ -440,7 +449,6 @@ class PokemonBattle {
                     this.enemyPokemon.health = this.newHealth;
                     this.moveStatus = 0;
                     if (this.enemyPokemon.health <= 0) {
-                        console.log('Battle is won');
                         this.battleResultWin = true;
                         this.nextBattlePhase(15 /* EnemyFainted */);
                     }
@@ -510,9 +518,8 @@ class PokemonBattle {
                     // this.playerPokemon.health = this.newHealth;
                     this.moveStatus = 0;
                     if (this.playerPokemon.health <= 0) {
-                        console.log('Battle is lost');
                         this.battleResultWin = false;
-                        this.nextBattlePhase(17 /* Finished */);
+                        this.nextBattlePhase(18 /* Finished */);
                     }
                     else {
                         this.nextBattlePhase(4 /* PlayerActionSelect */);
@@ -539,7 +546,6 @@ class PokemonBattle {
                 this.drawEnemyHealth(delta, false);
             }
             else {
-                console.log('text');
                 const text1 = 'Wild ' + this.enemyPokemon.pokemonName.toUpperCase();
                 const text2 = 'fainted!|';
                 const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
@@ -550,13 +556,45 @@ class PokemonBattle {
             // Draw player health without slide
             this.drawPlayerHealth(delta, false);
         }
+        else if (this.battleStatus === 16 /* GainXp */) {
+            if (this.xpGained === 0) {
+                this.xpGained = this.calculateXpGained();
+            }
+            else {
+                // Draw action box without player action selector
+                this.drawActionBox(false);
+                const text1 = this.playerPokemon.pokemonName.toUpperCase() + ' gained';
+                const text2 = this.xpGained + ' EXP. Points!|';
+                const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
+                if (isFinished) {
+                    this.nextBattlePhase(17 /* FadeOut */);
+                }
+            }
+        }
+        else if (this.battleStatus === 17 /* FadeOut */) {
+            const delayFinished = this.renderDelay(1000);
+            if (delayFinished) {
+                const speed = 2;
+                this.ctx.globalAlpha = this.animationCounter;
+                this.ctx.fillStyle = '#000000';
+                this.ctx.fillRect(0, 0, constants_1.c.GAME_WIDTH, constants_1.c.GAME_HEIGHT);
+                this.ctx.globalAlpha = 1;
+                if (this.animationCounter >= 1) {
+                    this.animationCounter = 0;
+                    this.nextBattlePhase(18 /* Finished */);
+                }
+                else {
+                    this.animationCounter += delta * speed;
+                }
+            }
+        }
         // Reset keyDown variable if not down anymore
         if (!keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT) && !keyboard_1.keyboard.isDown(keyboard_1.keyboard.RIGHT) &&
             !keyboard_1.keyboard.isDown(keyboard_1.keyboard.UP) && !keyboard_1.keyboard.isDown(keyboard_1.keyboard.DOWN) &&
             !keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
             this.keyDown = false;
         }
-        if (this.battleStatus !== 17 /* Finished */) {
+        if (this.battleStatus !== 18 /* Finished */) {
             // If battle is not finished request new animation frame
             window.requestAnimationFrame(this.tick.bind(this));
         }
@@ -593,6 +631,15 @@ class PokemonBattle {
             const damage = (((((2 * level) / 5 + 2) * power * (attackStat / defenseStat)) / 50) * burn * screen * targets * weather * ff + 2) * crit * wbr * charge * hh * stab * type * random;
             return (damage / 100) << 0;
         }
+    }
+    calculateXpGained() {
+        const xpShare = 1; // if no xp-share then number of not fainted pokemon used by player
+        const luckyEgg = 1; // 1 is no lucky egg, 1.5 if lucky egg
+        const pokemonOrigin = 1; // 1 if wild, 1.5 if trainer
+        const tradedPokemon = 1; // 1.5 if pokemon was gained in domestic trade
+        const affection = 1; // 1.2 if affection of two hearts or more
+        const xp = (this.enemyPokemon.xpBase * this.enemyPokemon.level) / (7 * xpShare) * luckyEgg * pokemonOrigin * tradedPokemon * affection;
+        return xp;
     }
     getTypeEffectiveness(defenderType, moveType) {
         return constants_1.c.TYPES_EFFECTIVENESS[18 * ((constants_1.c.TYPES.indexOf(moveType) / 18) << 0) + constants_1.c.TYPES.indexOf(defenderType)];
@@ -827,17 +874,17 @@ class PokemonBattle {
     }
     writeToDialogueBox(delta, delayAfter, textCol1, textCol2, fontsize, fontColor) {
         const speed = 48;
-        const i = (this.X_writeTextToBattleBox + delta * speed) << 0;
+        const i = (this.animationCounter + delta * speed) << 0;
         if (!this.writeSecondLine) {
             const yText = 121;
             const textToDisplay = textCol1.slice(0, i);
             // Draw the text
             (0, helper_1.drawText)(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
             if (i < textCol1.length) {
-                this.X_writeTextToBattleBox += delta * speed;
+                this.animationCounter += delta * speed;
             }
             else {
-                this.X_writeTextToBattleBox = 0;
+                this.animationCounter = 0;
                 this.writeSecondLine = true;
             }
         }
@@ -848,10 +895,10 @@ class PokemonBattle {
             (0, helper_1.drawText)(this.ctx, this.font, textCol1, 0, 1, 16, 121);
             (0, helper_1.drawText)(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
             if (i < textCol2.length + delayAfter * speed / 3) {
-                this.X_writeTextToBattleBox += delta * speed;
+                this.animationCounter += delta * speed;
             }
             else {
-                this.X_writeTextToBattleBox = 0;
+                this.animationCounter = 0;
                 this.writeSecondLine = false;
                 return true;
             }

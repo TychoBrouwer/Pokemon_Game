@@ -48,7 +48,7 @@ export function drawText(ctx: CanvasRenderingContext2D, font: HTMLCanvasElement,
       width = 3;
     }
     // characters that are four pixels wide
-    if (text[i] === 'i') { 
+    if (text[i] === 'i' || text[i] === '!') {
       width = 4;
     }
 
@@ -69,7 +69,7 @@ export function drawText(ctx: CanvasRenderingContext2D, font: HTMLCanvasElement,
       c.FONT_HEIGHT[fontsize],
       posX + c.FONT_WIDTH[fontsize] * i
         - 3 * (text.substring(0, i).match(/ |l|\./g)||[]).length
-        - 2 * (text.substring(0, i).match(/i/g)||[]).length,
+        - 2 * (text.substring(0, i).match(/i|!/g)||[]).length,
       posY,
       width,
       c.FONT_HEIGHT[fontsize]
@@ -168,6 +168,10 @@ export function generatePokemon(pokedexEntry: PokemonInfoType, levelRange: numbe
     pokemonId: pokemonId,
     generation: generation,
     pokemonName: pokedexEntry.name,
+    xp: c.LEVELS[pokedexEntry.growth_rate][level],
+    xpCurLevel: c.LEVELS[pokedexEntry.growth_rate][level],
+    xpNextLevel: c.LEVELS[pokedexEntry.growth_rate][level + 1],
+    xpBase: pokedexEntry.base_experience,
     level: level,
     health: health,
     gender: randomFromMinMax(0, 1),

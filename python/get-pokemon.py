@@ -22,12 +22,9 @@ for j in generations:
       pokemonName = 'deoxys-normal'
     pokemonUrl = 'https://pokeapi.co/api/v2/pokemon/' + pokemonName + '/'
 
-    print(pokemonName)
-
     resp = requests.get(url=pokemonUrl)
     status = resp.status_code 
 
-    print(status)
     if status != 404:
       pokemonData = resp.json()
 
@@ -98,6 +95,25 @@ for j in generations:
 
       if pokemonData['name'] == 'deoxys-normal':
         pokemonData['name'] = 'deoxys'
+
+      speciesUrl = 'https://pokeapi.co/api/v2/pokemon-species/' + pokemonData['species'] + '/'
+      resp2 = requests.get(url=speciesUrl)
+      status2 = resp2.status_code
+
+      if status2 != 404:
+        speciesData = resp2.json()
+        
+        if speciesData['growth_rate']['name'] == 'medium':
+          pokemonData['growth_rate'] = 'medium-fast'
+        elif speciesData['growth_rate']['name'] == 'slow-then-very-fast':
+          pokemonData['growth_rate'] = 'erratic'
+        elif speciesData['growth_rate']['name'] == 'fast-then-very-slow':
+          pokemonData['growth_rate'] = 'fluctuating'
+        else:
+          pokemonData['growth_rate'] = speciesData['growth_rate']['name']
+        pokemonData['color'] = speciesData['color']['name']
+        pokemonData['capture_rate'] = speciesData['capture_rate']
+        pokemonData['base_happiness'] = speciesData['base_happiness']
 
       pokemonObj[pokemonData['id']] = pokemonData
 
