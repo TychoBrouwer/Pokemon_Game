@@ -138,7 +138,7 @@ export class Game {
     this.buildingAtlas = this.loader.loadImageToCanvas('buildingAtlas', c.ASSETS_BUILDING_TILES_HEIGHT, c.ASSETS_BUILDING_TILES_WIDTH);
   }
 
-  async tick(elapsed: number) {
+  private async tick(elapsed: number) {
     // Calculate the delta between the ticks
     let delta = (elapsed - this._previousElapsed) / 1000.0;
     delta = Math.min(delta, 0.25); // maximum delta of 250 ms

@@ -221,6 +221,10 @@ export interface MoveType {
   priority: number;
   super_contest_effect: number;
   target: string;
+  stat_changes: {
+    change: number;
+    stat: string;
+  }[];
   type: string;
 }
 

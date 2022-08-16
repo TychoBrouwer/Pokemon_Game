@@ -5,6 +5,7 @@ class GameObject {
     constructor(ctx, gameObject, xSource, ySource, width, height, x, y) {
         this.scaleFactor = 1;
         this.opacity = 1;
+        this.currentColor = [-1, -1, -1];
         this.animationCounter = 0;
         this.animation = false;
         this.animationXOffset = 0;
@@ -23,6 +24,16 @@ class GameObject {
         this.height = height;
         this.x = x;
         this.y = y;
+        if (gameObject) {
+            this.spriteCtx = gameObject.getContext('2d');
+            if (this.spriteCtx) {
+                const original = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource).data;
+                this.originalImageData = new Uint8ClampedArray(original.length);
+                for (let i = 0; i < original.length; i += 1) {
+                    this.originalImageData[i] = original[i];
+                }
+            }
+        }
     }
     update(gameObject) {
         this.gameObject = gameObject;
@@ -60,6 +71,48 @@ class GameObject {
     }
     setOpacity(opacity) {
         this.opacity = opacity;
+    }
+    setColor(r, g, b) {
+        if (this.spriteCtx && this.currentColor !== [r, g, b]) {
+            const imgData = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource);
+            for (let i = 0; i < imgData.data.length; i += 4) {
+                if (r !== -1) {
+                    imgData.data[i] = r;
+                }
+                if (g !== -1) {
+                    imgData.data[i + 1] = g;
+                }
+                if (b !== -1) {
+                    imgData.data[i + 2] = b;
+                }
+            }
+            this.currentColor = [r, g, b];
+            this.spriteCtx.putImageData(imgData, this.xSource, this.ySource);
+        }
+    }
+    darkenColor(darkenMultiplier) {
+        if (this.spriteCtx) {
+            const imgData = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource);
+            if (this.currentColor[0] === -1) {
+                for (let i = 0; i < imgData.data.length; i += 4) {
+                    imgData.data[i] = imgData.data[i] * darkenMultiplier;
+                    imgData.data[i + 1] = imgData.data[i + 1] * darkenMultiplier;
+                    imgData.data[i + 2] = imgData.data[i + 2] * darkenMultiplier;
+                }
+                this.currentColor = [1, 1, 1];
+                this.spriteCtx.putImageData(imgData, this.xSource, this.ySource);
+            }
+        }
+    }
+    resetColor() {
+        if (this.spriteCtx && this.currentColor !== [-1, -1, -1]) {
+            const imgData = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource);
+            for (let i = 0; i < imgData.data.length; i += 1) {
+                imgData.data[i] = this.originalImageData[i];
+            }
+            this.currentColor = [-1, -1, -1];
+            this.spriteCtx.putImageData(imgData, this.xSource, this.ySource);
+        }
     }
     setAnimation(onTrigger, delay, xSourceOffset, ySourceOffset, animationNOfFrames) {
         this.animationOnTrigger = onTrigger;
@@ -119,6 +172,8 @@ class GameObject {
         }
         else {
             if (drawWhenFinished) {
+                this.x = endx;
+                this.y = endy;
                 this.render();
             }
             return true;
@@ -147,7 +202,7 @@ class GameObject {
             ySource = this.ySource + frame * this.animationYOffset;
         }
         this.ctx.globalAlpha = this.opacity;
-        this.ctx.drawImage(this.gameObject, xSource, ySource, this.widthSource, this.heightSource, this.x << 0, this.y << 0, this.width, this.height);
+        this.ctx.drawImage(this.gameObject, xSource, ySource, this.widthSource, this.heightSource, this.x, (0.5 + this.y) << 0, this.width, this.height);
         this.ctx.globalAlpha = 1;
         this.animationCounter += delta * 1000;
     }
