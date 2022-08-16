@@ -169,6 +169,7 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
         xpCurLevel: constants_1.c.LEVELS[pokedexEntry.growth_rate][level],
         xpNextLevel: constants_1.c.LEVELS[pokedexEntry.growth_rate][level + 1],
         xpBase: pokedexEntry.base_experience,
+        growth_rate: pokedexEntry.growth_rate,
         level: level,
         health: health,
         gender: randomFromMinMax(0, 1),
@@ -182,6 +183,7 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
         nature: nature,
         EV: EV,
         IV: IV,
+        baseStats: pokedexEntry.stats,
         stats: {
             hp: health,
             attack: Math.floor((Math.floor((2 * pokedexEntry.stats[1].base_stat + IV.attack + Math.floor(EV.attack / 4)) * level / 100) + 5) * nature.hp),

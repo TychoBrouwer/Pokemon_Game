@@ -16,6 +16,7 @@ export interface PokemonDataType {
   xpCurLevel: number;
   xpNextLevel: number;
   xpBase: number;
+  growth_rate: string;
   level: number;
   health: number;
   gender: number;
@@ -38,6 +39,11 @@ export interface PokemonDataType {
   nature: PokemonStatsType;
   EV: PokemonStatsType;
   IV: PokemonStatsType;
+  baseStats: {
+    base_stat: number;
+    effort: number;
+    stat: string;
+  }[];
   stats: PokemonStatsType;
   types: {
     slot: number;

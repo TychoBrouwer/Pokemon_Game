@@ -33,7 +33,10 @@ const enum BattleStatus {
   EnemyPhysicalMove,
   PlayerTakesDamage,
   EnemyFainted,
+  GainXpText,
   GainXp,
+  LevelGained,
+  LevelGainedText,
   FadeOut,
   FadeIn,
   Finished,
@@ -91,11 +94,13 @@ export class PokemonBattle {
   private keyDown = false;
 
   private newHealth = -1;
-  private xpGained = 0;
+  private newXp = -1;
   private attackHalfWay = false;
   private defenseHalfWay = false;
   private enemyMoveDecided = false;
+  private moveEffectApplied = false;
   private drawAvatarFinished = false;
+  private levelGained = false;
   private writeSecondLine = false;
   private animationCounter = 0;
 
@@ -113,6 +118,7 @@ export class PokemonBattle {
   private playerPokemonHealthBox!: GameObject;
   private playerPokemonHealthBar!: GameObject;
   private playerPokemonHealthText!: GameObject;
+  private playerPokemonXpBox!: GameObject;
   
   private enemyBattleGrounds!: GameObject;
   private enemyPokemonObject!: GameObject;
@@ -311,6 +317,17 @@ export class PokemonBattle {
       c.ASSETS_PLAYER_HEALTH_HEIGHT,
       c.GAME_WIDTH,
       75,
+    );
+
+    this.playerPokemonXpBox = new GameObject(
+      this.ctx,
+      this.battleAssets,
+      c.ASSETS_ENEMY_HEALTH_WIDTH + c.ASSETS_PLAYER_HEALTH_WIDTH,
+      c.ASSETS_HEALTH_OFFSET + 3 * 2,
+      64,
+      2,
+      c.GAME_WIDTH + 31,
+      75 + 33,
     );
 
     this.enemyBattleGrounds = new GameObject(
@@ -611,6 +628,32 @@ export class PokemonBattle {
         drawText(this.ctx, this.font, moveText.toUpperCase(), 0, 0, xText, yText)
       }
 
+      // Current selected move details
+      const moveDetails = this.playerPokemon.moves[this.battleMove];
+
+      // Variables for printing move pp text
+      const xText = 184;
+      const yPpText = 121;
+      // Draw move pp text
+      const text = 'PP_' + moveDetails.pp.toString().padStart(2, '_') + '/' + moveDetails.ppMax.toString().padStart(2, '_');
+      drawText(this.ctx, this.font, text, 0, 0, xText, yPpText)
+      
+      // Variable for printing move type text
+      const yTypeText = 121 + 16;
+      // Draw move type text
+      drawText(this.ctx, this.font, moveDetails.type.toUpperCase(), 0, 0, xText, yTypeText)
+
+      // Set the offset and column for the battle action selector
+      let xOffset = this.battleMove * 80;
+      let yColumn = 0;
+      if (this.battleMove === 2 || this.battleMove === 3)  {
+        xOffset = (this.battleMove - 2) * 80;
+        yColumn = 1;
+      }
+  
+      // Draw the action selector
+      this.drawActionSelector(8 + xOffset, 8 + 74 + xOffset, yColumn);
+
       // Detect keyboard press and increment/ decrement battleMove accordingly
       if (!this.keyDown) {
         if (keyboard.isDown(keyboard.LEFT)) {
@@ -641,47 +684,36 @@ export class PokemonBattle {
           this.keyDown = true;
 
           this.battleMoveName = this.playerPokemon.moves[this.battleMove].move;
-          console.log(this.playerPokemon.pokemonName + ' used ' + this.battleMoveName)
+          this.playerPokemon.moves[this.battleMove].pp--;
+          console.log(this.playerPokemon.pokemonName + ' used ' + this.battleMoveName);
 
           this.nextBattlePhase(BattleStatus.PlayerMove);
         }
       }
-
-      // Current selected move details
-      const moveDetails = this.playerPokemon.moves[this.battleMove];
-
-      // Variables for printing move pp text
-      const xText = 184;
-      const yPpText = 121;
-      // Draw move pp text
-      const text = 'PP_' + moveDetails.pp.toString().padStart(2, '_') + '/' + moveDetails.ppMax.toString().padStart(2, '_');
-      drawText(this.ctx, this.font, text, 0, 0, xText, yPpText)
-      
-      // Variable for printing move type text
-      const yTypeText = 121 + 16;
-      // Draw move type text
-      drawText(this.ctx, this.font, moveDetails.type.toUpperCase(), 0, 0, xText, yTypeText)
-
-      // Set the offset and column for the battle action selector
-      let xOffset = this.battleMove * 80;
-      let yColumn = 0;
-      if (this.battleMove === 2 || this.battleMove === 3)  {
-        xOffset = (this.battleMove - 2) * 80;
-        yColumn = 1;
-      }
-  
-      // Draw the action selector
-      this.drawActionSelector(8 + xOffset, 8 + 74 + xOffset, yColumn);
-
     } else if (this.battleStatus === BattleStatus.PlayerMove) {
       const moveData = this.moveIndex[this.battleMoveName];
       const isFinished = this.writeMoveText(delta, moveData, true);
 
       if (isFinished) {
-        if (moveData.damage_class === 'status') {
-          this.nextBattlePhase(BattleStatus.PlayerStatusMove);
+        const accuracyBase = moveData.accuracy;
+  
+        let isHit = true;
+        if (accuracyBase) {
+          const stageAdjust = c.SPECIAL_STAGES[this.playerPokemonStages.accuracy - this.enemyPokemonStages.accuracy + 6];
+          const modifier = 1;
+          const accuracy = accuracyBase * stageAdjust * modifier;
+  
+          isHit = randomFromMinMax(1, 100) <= accuracy;
+        }
+  
+        if (isHit) {
+          if (moveData.damage_class === 'status') {
+            this.nextBattlePhase(BattleStatus.PlayerStatusMove);
+          } else {
+            this.nextBattlePhase(BattleStatus.PlayerPhysicalMove);
+          }  
         } else {
-          this.nextBattlePhase(BattleStatus.PlayerPhysicalMove);
+          // Move missed
         }
       }
     } else if (this.battleStatus === BattleStatus.PlayerStatusMove) {
@@ -722,8 +754,7 @@ export class PokemonBattle {
         this.nextBattlePhase(BattleStatus.EnemyTakesDamage);
       }
     } else if (this.battleStatus === BattleStatus.EnemyTakesDamage) {
-      const moveData = this.moveIndex[this.battleMoveName];
-      const isFinished = this.animateHealthBar(delta, moveData, true);
+      const isFinished = this.animateHealthBar(delta, true);
 
       this.drawEnemyHealth(delta, false);
 
@@ -738,6 +769,8 @@ export class PokemonBattle {
     } else if (this.battleStatus === BattleStatus.EnemyMove) {
       if (!this.enemyMoveDecided) {
         this.battleMoveName = randomFromArray(this.enemyPokemon.moves).move;
+        console.log('Foo ' + this.enemyPokemon.pokemonName + ' used ' + this.battleMoveName);
+
         this.enemyMoveDecided = true;
       }
 
@@ -791,8 +824,7 @@ export class PokemonBattle {
         this.nextBattlePhase(BattleStatus.PlayerTakesDamage);
       }
     } else if (this.battleStatus === BattleStatus.PlayerTakesDamage) {
-      const moveData = this.moveIndex[this.battleMoveName];
-      const isFinished = this.animateHealthBar(delta, moveData, false);
+      const isFinished = this.animateHealthBar(delta, false);
 
       this.drawPlayerHealth(delta, false);
 
@@ -824,29 +856,58 @@ export class PokemonBattle {
         const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
 
         if (isFinished) {
-          this.nextBattlePhase(BattleStatus.GainXp);
+          this.nextBattlePhase(BattleStatus.GainXpText);
         }
       }
       // Draw player health without slide
       this.drawPlayerHealth(delta, false);
-    } else if (this.battleStatus === BattleStatus.GainXp) {
-      if (this.xpGained === 0) {
-        this.xpGained = this.calculateXpGained();
+    } else if (this.battleStatus === BattleStatus.GainXpText) {
+      if (this.newXp === -1) {
+        this.newXp = this.calculateXpGained() + this.playerPokemon.xp;
       } else {
         // Draw action box without player action selector
         this.drawActionBox(false);
 
         const text1 = this.playerPokemon.pokemonName.toUpperCase() + ' gained';
-        const text2 = this.xpGained + ' EXP. Points!|'
+        const text2 = this.newXp - this.playerPokemon.xp + ' EXP. Points!|'
 
         const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
 
         if (isFinished) {
+          this.nextBattlePhase(BattleStatus.GainXp);
+        }
+      }
+    } else if (this.battleStatus === BattleStatus.GainXp) {
+      // Draw action box without player action selector
+      this.drawActionBox(false);
+
+      const isFinished = this.animateXpBar(delta);
+      this.drawPlayerHealth(delta, false);
+
+      if (isFinished) {
+        if (this.levelGained) {
+          this.recalculatePlayerStats();
+
+          this.nextBattlePhase(BattleStatus.LevelGained);
+        } else {
           this.nextBattlePhase(BattleStatus.FadeOut);
         }
       }
+    } else if (this.battleStatus === BattleStatus.LevelGained) {
+      // level gained animation to do!!!
+      this.nextBattlePhase(BattleStatus.LevelGainedText);
+    } else if (this.battleStatus === BattleStatus.LevelGainedText) {
+      const text1 = this.playerPokemon.pokemonName.toUpperCase() + ' grew to';
+      const text2 = 'LV. ' + this.playerPokemon.level + '!';
+
+      this.drawPlayerHealth(delta, false);
+      const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
+
+      if (isFinished) {
+        this.nextBattlePhase(BattleStatus.FadeOut);
+      }
     } else if (this.battleStatus === BattleStatus.FadeOut) {
-      const delayFinished = this.renderDelay(800);
+      const delayFinished = this.renderDelay(100);
 
       if (delayFinished) {
         const speed = 3;
@@ -960,7 +1021,7 @@ export class PokemonBattle {
     // Calculate the damage
     if (power) {
       const damage = (((((2 * level) / 5 + 2) * power * ((attackStat * attackerStMp) / (defenseStat * defenderStMp))) / 50) * burn * screen * targets * weather * ff + 2) * crit * wbr * charge * hh * stab * type * random;
-      
+
       return (damage / 100) << 0;
     }
 
@@ -976,6 +1037,25 @@ export class PokemonBattle {
     const xp = (this.enemyPokemon.xpBase * this.enemyPokemon.level) / (7 * xpShare) * luckyEgg * pokemonOrigin * tradedPokemon;
     
     return xp;
+  }
+
+  private recalculatePlayerStats() {
+    const baseStats = this.playerPokemon.baseStats;
+    const IV = this.playerPokemon.IV;
+    const EV = this.playerPokemon.EV;
+    const level = this.playerPokemon.level;
+    const nature = this.playerPokemon.nature;
+    const health = Math.floor((2 * baseStats[0].base_stat + IV.hp + Math.floor(EV.hp / 4)) * level / 100) + level + 10;
+
+    this.playerPokemon.health += health - this.playerPokemon.stats.hp; 
+    this.playerPokemon.stats = {
+      hp: health,
+      attack: Math.floor((Math.floor((2 * baseStats[1].base_stat + IV.attack + Math.floor(EV.attack / 4)) * level / 100) + 5) * nature.hp),
+      defense: Math.floor((Math.floor((2 * baseStats[2].base_stat + IV.defense + Math.floor(EV.defense / 4)) * level / 100) + 5) * nature.defense),
+      specialAttack: Math.floor((Math.floor((2 * baseStats[3].base_stat + IV.specialAttack + Math.floor(EV.specialAttack / 4)) * level / 100) + 5) * nature.specialAttack),
+      specialDefense: Math.floor((Math.floor((2 * baseStats[4].base_stat + IV.specialDefense + Math.floor(EV.specialDefense / 4)) * level / 100) + 5) * nature.specialDefense),
+      speed: Math.floor((Math.floor((2 * baseStats[5].base_stat + IV.speed + Math.floor(EV.speed / 4)) * level / 100) + 5) * nature.speed),
+    }
   }
 
   private getTypeEffectiveness(defenderType: string, moveType: string) {
@@ -1006,24 +1086,33 @@ export class PokemonBattle {
     let isFinished = false;
     
     if (move === 'growl') {
-      if (playerAttack) {
-        this.enemyPokemonStages.attack--;
-      } else {
-        this.playerPokemonStages.attack--;
+      if (!this.moveEffectApplied) {
+        this.moveEffectApplied = true;
+
+        if (playerAttack) {
+          this.enemyPokemonStages.attack--;
+        } else {
+          this.playerPokemonStages.attack--;
+        }  
       }
   
       isFinished = this.renderDelay(800);
     } else if (move === 'string-shot') {
-      if (playerAttack) {
-        this.enemyPokemonStages.speed--;
-      } else {
-        this.playerPokemonStages.speed--;
+      if (!this.moveEffectApplied) {
+        this.moveEffectApplied = true;
+
+        if (playerAttack) {
+          this.enemyPokemonStages.speed--;
+        } else {
+          this.playerPokemonStages.speed--;
+        }
       }
 
       isFinished = this.renderDelay(800);
     }
 
     if (isFinished) {
+      this.moveEffectApplied = false;
       this.resetDelay();
 
       return true;
@@ -1075,7 +1164,7 @@ export class PokemonBattle {
     }
 
     const text1 = pokemonName.toUpperCase() + ' used';
-    const text2 = this.battleMoveName.toUpperCase() + '!';
+    const text2 = moveData.name.toUpperCase() + '!';
 
     // Draw action box without player action selector
     this.drawActionBox(false);
@@ -1090,7 +1179,7 @@ export class PokemonBattle {
     return false;
   }
 
-  private animateHealthBar(delta: number, moveData: MoveType, playerAttack: boolean) {
+  private animateHealthBar(delta: number, playerAttack: boolean) {
     const currentHealth = playerAttack ? this.enemyPokemon.health : this.playerPokemon.health;
 
     if (currentHealth > this.newHealth) {
@@ -1106,6 +1195,29 @@ export class PokemonBattle {
         this.playerPokemon.health = this.newHealth;
       }
       this.newHealth = -1;
+
+      return true;
+    }
+
+    return false;
+  }
+
+  private animateXpBar(delta: number) {
+    const currentXp = this.playerPokemon.xp;
+
+    if (currentXp < this.newXp) {
+      this.playerPokemon.xp += 48 * delta;
+
+      if (this.playerPokemon.xp > this.playerPokemon.xpNextLevel) {
+        this.playerPokemon.level++;
+        this.playerPokemon.xpCurLevel = c.LEVELS[this.playerPokemon.growth_rate][this.playerPokemon.level];
+        this.playerPokemon.xpNextLevel = c.LEVELS[this.playerPokemon.growth_rate][this.playerPokemon.level + 1];
+        
+        this.levelGained = true;
+      }
+    } else {
+      this.playerPokemon.xp = this.newXp;
+      this.newXp = -1;
 
       return true;
     }
@@ -1239,17 +1351,25 @@ export class PokemonBattle {
       this.playerPokemonHealthBox.render();
     }
 
+    // Calculate variables for drawing the xp bar
+    const xpFrac = (this.playerPokemon.xp - this.playerPokemon.xpCurLevel) / (this.playerPokemon.xpNextLevel - this.playerPokemon.xpCurLevel);
+    const xpBarWidth = (xpFrac * 48) << 0;
+
     // Calculate variables for drawing the health bar
     const healthFrac = this.playerPokemon.health / this.playerPokemon.stats.hp;
     const healthBarOffset = (healthFrac < 0.2) ? 4 : (healthFrac < 0.5) ? 2: 0;
     const healthBarWidth = (healthFrac * 48) << 0;
 
-    // Draw player health bar
+    // Draw player health and xp bar
+    this.playerPokemonXpBox.setWidth(xpBarWidth);
     this.playerPokemonHealthBar.updateSourcePosition(c.ASSETS_ENEMY_HEALTH_WIDTH + c.ASSETS_PLAYER_HEALTH_WIDTH, c.ASSETS_HEALTH_OFFSET + healthBarOffset);
     this.playerPokemonHealthBar.setWidth(healthBarWidth);
+
     if (slideIn) {
+      this.playerPokemonXpBox.animate(delta, speedHealth, -1, 0, 127 + 31, 75 + 33, true);  
       this.playerPokemonHealthBar.animate(delta, speedHealth, -1, 0, 127 + 47, 75 + 17, true);  
     } else {
+      this.playerPokemonXpBox.render();
       this.playerPokemonHealthBar.render();
     }
 

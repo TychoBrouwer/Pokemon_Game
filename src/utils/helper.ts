@@ -172,6 +172,7 @@ export function generatePokemon(pokedexEntry: PokemonInfoType, levelRange: numbe
     xpCurLevel: c.LEVELS[pokedexEntry.growth_rate][level],
     xpNextLevel: c.LEVELS[pokedexEntry.growth_rate][level + 1],
     xpBase: pokedexEntry.base_experience,
+    growth_rate: pokedexEntry.growth_rate,
     level: level,
     health: health,
     gender: randomFromMinMax(0, 1),
@@ -185,6 +186,7 @@ export function generatePokemon(pokedexEntry: PokemonInfoType, levelRange: numbe
     nature: nature,
     EV: EV,
     IV: IV,
+    baseStats: pokedexEntry.stats,
     stats: {
       hp: health,
       attack: Math.floor((Math.floor((2 * pokedexEntry.stats[1].base_stat + IV.attack + Math.floor(EV.attack / 4)) * level / 100) + 5) * nature.hp),
