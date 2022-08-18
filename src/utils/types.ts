@@ -5,6 +5,11 @@ export interface PlayerDataType {
     y: number;
   };
   pokemon: PokemonDataType[];
+  inventory: {
+    [itemCategory: number]: {
+      [itemName: string]: number;
+    };
+  };
   currentPokemon: number;
 }
 
@@ -236,4 +241,9 @@ export interface LevelsType {
   [name: string]: {
     [level: number]: number;
   }
+}
+
+export interface AccountDataType {
+  avatar: string;
+  male: boolean;
 }

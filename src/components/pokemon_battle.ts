@@ -5,12 +5,12 @@ import * as encounterTable from '../encounter_table.json';
 import { GameObject } from '../utils/game_object';
 import { Loader } from '../utils/loader';
 import { Player } from './player';
+import { C } from '../utils/constants';
 
 import { randomFromArray, generatePokemon, drawText, randomFromMinMax } from '../utils/helper';
-import { c } from '../utils/constants';
 import { keyboard } from '../utils/keyboard';
 
-import { PlayerDataType, EncounterTableType, PokedexType, PokemonDataType, MoveIndexType, MoveType } from '../utils/types';
+import { PlayerDataType, EncounterTableType, PokedexType, PokemonDataType, MoveIndexType, MoveType, AccountDataType } from '../utils/types';
 
 const enum BattleStatus {
   SlidePokemonIn,
@@ -19,6 +19,7 @@ const enum BattleStatus {
   ThrowPokemon,
   PlayerActionSelect,
   PlayerBag,
+  BagSwitch,
   PlayerChoosePokemon,
   PlayerRun,
   PlayerRunText,
@@ -47,6 +48,7 @@ const enum BattleStatus {
 }
 
 export class PokemonBattle {
+  private c: C;
   private loader: Loader;
   private pokedex: PokedexType;
   private moveIndex: MoveIndexType;
@@ -59,6 +61,8 @@ export class PokemonBattle {
   private battleAssets: HTMLCanvasElement;
   private font: HTMLCanvasElement;
   private avatarAssets: HTMLCanvasElement;
+
+  private playerData: PlayerDataType;
 
   private enemyPokemonSprite!: HTMLCanvasElement;
   private enemyPokemon: PokemonDataType;
@@ -73,7 +77,6 @@ export class PokemonBattle {
   };
 
   private playerPokemonSprite!: HTMLCanvasElement;
-  private playerData: PlayerDataType;
   private playerPokemon: PokemonDataType;
   private playerPokemonStages = {
     attack: 0,
@@ -85,6 +88,8 @@ export class PokemonBattle {
     evasion: 0,
   };
 
+  private bagSelected = 0;
+  private bagSwitchLeft = false;
 
   private battleAction = 0;
   private escapeAttempts = 0;
@@ -95,6 +100,8 @@ export class PokemonBattle {
   private previousElapsed = 0;
   private delayStart = -1;
   private battleStatus = 0;
+  private statusAfterFadeOut = BattleStatus.FadeIn;
+  private statusAfterFadeIn = BattleStatus.Finished;
   private keyDown = false;
 
   private newHealth = -1;
@@ -130,12 +137,21 @@ export class PokemonBattle {
   private enemyPokemonHealthBar!: GameObject;
   private enemyPokemonHealthText!: GameObject;
 
+  private bagBackground!: GameObject;
+  private bag!: GameObject;
+  private bagText!: GameObject;
+  private bagSelector!: GameObject;
+  private bagSwitchPokeball!: GameObject;
+  
   private playerHealthTextCanvas: HTMLCanvasElement;
   private playerHealthTextCtx: CanvasRenderingContext2D | null;
   private enemyHealthTextCanvas: HTMLCanvasElement;
   private enemyHealthTextCtx: CanvasRenderingContext2D | null;
+  private bagTextCanvas: HTMLCanvasElement;
+  private bagTextCtx: CanvasRenderingContext2D | null;
 
-  constructor(context: CanvasRenderingContext2D, overlayCtx: CanvasRenderingContext2D, loader: Loader, player: Player, route: string, encounterMethod: number) {
+  constructor(c: C, context: CanvasRenderingContext2D, overlayCtx: CanvasRenderingContext2D, loader: Loader, player: Player, route: string, encounterMethod: number) {
+    this.c = c;
     // Set the loader to the supplied
     this.loader = loader;
 
@@ -151,9 +167,9 @@ export class PokemonBattle {
     this.overlayCtx = overlayCtx;
 
     // Set the necessary assets
-    this.battleAssets = this.loader.loadImageToCanvas('battleAssets', c.ASSETS_BATTLE_HEIGHT, c.ASSETS_BATTLE_WIDTH);
-    this.font = this.loader.loadImageToCanvas('font', c.ASSETS_FONT_HEIGHT, c.ASSETS_FONT_WIDTH);
-    this.avatarAssets = this.loader.loadImageToCanvas('avatar', c.ASSETS_AVATAR_HEIGHT, c.ASSETS_AVATAR_WIDTH);
+    this.battleAssets = this.loader.loadImageToCanvas('battleAssets', this.c.ASSETS_BATTLE_HEIGHT, this.c.ASSETS_BATTLE_WIDTH);
+    this.font = this.loader.loadImageToCanvas('font', this.c.ASSETS_FONT_HEIGHT, this.c.ASSETS_FONT_WIDTH);
+    this.avatarAssets = this.loader.loadImageToCanvas('avatar', this.c.ASSETS_AVATAR_HEIGHT, this.c.ASSETS_AVATAR_WIDTH);
 
     // Get the playerData
     this.playerData = player.getPlayerData();
@@ -168,14 +184,19 @@ export class PokemonBattle {
 
     // Create Canvas for the health texts
     this.playerHealthTextCanvas = document.createElement('canvas');
-    this.playerHealthTextCanvas.height= c.ASSETS_PLAYER_HEALTH_HEIGHT;
-    this.playerHealthTextCanvas.width = c.ASSETS_PLAYER_HEALTH_WIDTH;
+    this.playerHealthTextCanvas.height= this.c.ASSETS_PLAYER_HEALTH_HEIGHT;
+    this.playerHealthTextCanvas.width = this.c.ASSETS_PLAYER_HEALTH_WIDTH;
     this.playerHealthTextCtx = this.playerHealthTextCanvas.getContext('2d');
 
     this.enemyHealthTextCanvas = document.createElement('canvas');
-    this.enemyHealthTextCanvas.height= c.ASSETS_PLAYER_HEALTH_HEIGHT;
-    this.enemyHealthTextCanvas.width = c.ASSETS_PLAYER_HEALTH_WIDTH;
+    this.enemyHealthTextCanvas.height = this.c.ASSETS_PLAYER_HEALTH_HEIGHT;
+    this.enemyHealthTextCanvas.width = this.c.ASSETS_PLAYER_HEALTH_WIDTH;
     this.enemyHealthTextCtx = this.enemyHealthTextCanvas.getContext('2d');
+
+    this.bagTextCanvas = document.createElement('canvas');
+    this.bagTextCanvas.height = this.c.FONT_HEIGHT[0];
+    this.bagTextCanvas.width = 64;
+    this.bagTextCtx = this.bagTextCanvas.getContext('2d');
 
     console.log(this.enemyPokemon);
     console.log(this.playerPokemon);
@@ -195,14 +216,14 @@ export class PokemonBattle {
     const pokemonId = randomFromArray(candidateIds);
 
     // Generate enemy pokemon
-    const enemyPokemon = generatePokemon(this.pokedex[pokemonId.toString()], candidates[pokemonId].level, pokemonId, -1);
+    const enemyPokemon = generatePokemon(this.c, this.pokedex[pokemonId.toString()], candidates[pokemonId].level, pokemonId, -1);
 
     // Set the necessary assets
-    this.enemyPokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (enemyPokemon.generation + 1), c.ASSETS_POKEMON_HEIGHT[enemyPokemon.generation], c.ASSETS_POKEMON_WIDTH);
+    this.enemyPokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (enemyPokemon.generation + 1), this.c.ASSETS_POKEMON_HEIGHT[enemyPokemon.generation], this.c.ASSETS_POKEMON_WIDTH);
     if (enemyPokemon.generation === this.playerPokemon.generation) {
       this.playerPokemonSprite = this.enemyPokemonSprite;
     } else {
-      this.playerPokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (this.playerPokemon.generation + 1), c.ASSETS_POKEMON_HEIGHT[this.playerPokemon.generation], c.ASSETS_POKEMON_WIDTH);
+      this.playerPokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (this.playerPokemon.generation + 1), this.c.ASSETS_POKEMON_HEIGHT[this.playerPokemon.generation], this.c.ASSETS_POKEMON_WIDTH);
     }
     
     return enemyPokemon;
@@ -212,10 +233,10 @@ export class PokemonBattle {
     this.battleBackground = new GameObject(
       this.ctx,
       this.battleAssets,
-      this.encounterMethod % 4 * c.GAME_WIDTH,
-      ((0.5 + this.encounterMethod / 4) << 0) * c.BATTLE_ARENA_HEIGHT,
-      c.GAME_WIDTH,
-      c.BATTLE_ARENA_HEIGHT,
+      this.encounterMethod % 4 * this.c.GAME_WIDTH,
+      ((0.5 + this.encounterMethod / 4) << 0) * this.c.BATTLE_ARENA_HEIGHT,
+      this.c.GAME_WIDTH,
+      this.c.BATTLE_ARENA_HEIGHT,
       0,
       0
     );
@@ -224,42 +245,42 @@ export class PokemonBattle {
       this.ctx,
       this.battleAssets,
       0,
-      3 * c.BATTLE_ARENA_HEIGHT + 4 * c.BATTLE_SCENE_HEIGHT + c.ACTION_BOX_HEIGHT + c.ASSETS_PLAYER_HEALTH_HEIGHT,
-      c.GAME_WIDTH,
-      c.ACTION_BOX_HEIGHT,
+      3 * this.c.BATTLE_ARENA_HEIGHT + 4 * this.c.BATTLE_SCENE_HEIGHT + this.c.ACTION_BOX_HEIGHT + this.c.ASSETS_PLAYER_HEALTH_HEIGHT,
+      this.c.GAME_WIDTH,
+      this.c.ACTION_BOX_HEIGHT,
       0,
-      c.BATTLE_ARENA_HEIGHT
+      this.c.BATTLE_ARENA_HEIGHT
     );
 
     this.battleDialogueBox = new GameObject(
       this.ctx,
       this.battleAssets,
       0,
-      3 * c.BATTLE_ARENA_HEIGHT,
-      c.GAME_WIDTH,
-      c.ACTION_BOX_HEIGHT,
+      3 * this.c.BATTLE_ARENA_HEIGHT,
+      this.c.GAME_WIDTH,
+      this.c.ACTION_BOX_HEIGHT,
       0,
-      c.BATTLE_ARENA_HEIGHT
+      this.c.BATTLE_ARENA_HEIGHT
     );
 
     this.actionSelectorBox = new GameObject(
       this.ctx,
       this.battleAssets,
-      c.GAME_WIDTH,
-      3 * c.BATTLE_ARENA_HEIGHT,
-      c.ACTION_BOX_WIDTH,
-      c.ACTION_BOX_HEIGHT,
-      c.GAME_WIDTH - c.ACTION_BOX_WIDTH,
-      c.BATTLE_ARENA_HEIGHT
+      this.c.GAME_WIDTH,
+      3 * this.c.BATTLE_ARENA_HEIGHT,
+      this.c.ACTION_BOX_WIDTH,
+      this.c.ACTION_BOX_HEIGHT,
+      this.c.GAME_WIDTH - this.c.ACTION_BOX_WIDTH,
+      this.c.BATTLE_ARENA_HEIGHT
     );
 
     this.playerBattleGrounds = new GameObject(
       this.ctx,
       this.battleAssets,
-      this.encounterMethod % 3 * c.BATTLE_SCENE_WIDTH,
-      ((0.5 + this.encounterMethod / 3) << 0) * c.BATTLE_SCENE_HEIGHT + 3 * c.BATTLE_ARENA_HEIGHT + c.ACTION_BOX_HEIGHT,
-      c.BATTLE_SCENE_WIDTH,
-      c.BATTLE_SCENE_HEIGHT,
+      this.encounterMethod % 3 * this.c.BATTLE_SCENE_WIDTH,
+      ((0.5 + this.encounterMethod / 3) << 0) * this.c.BATTLE_SCENE_HEIGHT + 3 * this.c.BATTLE_ARENA_HEIGHT + this.c.ACTION_BOX_HEIGHT,
+      this.c.BATTLE_SCENE_WIDTH,
+      this.c.BATTLE_SCENE_HEIGHT,
       240,
       100
     );
@@ -267,12 +288,12 @@ export class PokemonBattle {
     this.playerPokemonObject = new GameObject(
       this.ctx,
       this.playerPokemonSprite,
-      this.playerPokemon.xSource + 2 * c.POKEMON_SIZE,
+      this.playerPokemon.xSource + 2 * this.c.POKEMON_SIZE,
       this.playerPokemon.ySource,
-      c.POKEMON_SIZE,
-      c.POKEMON_SIZE,
-      (c.BATTLE_SCENE_WIDTH - c.POKEMON_SIZE) / 2,
-      c.BATTLE_ARENA_HEIGHT - c.POKEMON_SIZE
+      this.c.POKEMON_SIZE,
+      this.c.POKEMON_SIZE,
+      (this.c.BATTLE_SCENE_WIDTH - this.c.POKEMON_SIZE) / 2,
+      this.c.BATTLE_ARENA_HEIGHT - this.c.POKEMON_SIZE
     );
     this.playerPokemonObject.setScale(0);
 
@@ -280,21 +301,21 @@ export class PokemonBattle {
       this.ctx,
       this.battleAssets,
       0,
-      c.ASSETS_HEALTH_OFFSET,
-      c.ASSETS_PLAYER_HEALTH_WIDTH,
-      c.ASSETS_PLAYER_HEALTH_HEIGHT,
-      c.GAME_WIDTH,
+      this.c.ASSETS_HEALTH_OFFSET,
+      this.c.ASSETS_PLAYER_HEALTH_WIDTH,
+      this.c.ASSETS_PLAYER_HEALTH_HEIGHT,
+      this.c.GAME_WIDTH,
       75,
     );
 
     this.playerPokemonHealthBar = new GameObject(
       this.ctx,
       this.battleAssets,
-      c.ASSETS_ENEMY_HEALTH_WIDTH + c.ASSETS_PLAYER_HEALTH_WIDTH,
-      c.ASSETS_HEALTH_OFFSET,
+      this.c.ASSETS_ENEMY_HEALTH_WIDTH + this.c.ASSETS_PLAYER_HEALTH_WIDTH,
+      this.c.ASSETS_HEALTH_OFFSET,
       48,
       2,
-      c.GAME_WIDTH + 47,
+      this.c.GAME_WIDTH + 47,
       75 + 17,
     );
 
@@ -303,31 +324,31 @@ export class PokemonBattle {
       this.playerHealthTextCanvas,
       0,
       0,
-      c.ASSETS_PLAYER_HEALTH_WIDTH,
-      c.ASSETS_PLAYER_HEALTH_HEIGHT,
-      c.GAME_WIDTH,
+      this.c.ASSETS_PLAYER_HEALTH_WIDTH,
+      this.c.ASSETS_PLAYER_HEALTH_HEIGHT,
+      this.c.GAME_WIDTH,
       75,
     );
 
     this.playerPokemonXpBox = new GameObject(
       this.ctx,
       this.battleAssets,
-      c.ASSETS_ENEMY_HEALTH_WIDTH + c.ASSETS_PLAYER_HEALTH_WIDTH,
-      c.ASSETS_HEALTH_OFFSET + 3 * 2,
+      this.c.ASSETS_ENEMY_HEALTH_WIDTH + this.c.ASSETS_PLAYER_HEALTH_WIDTH,
+      this.c.ASSETS_HEALTH_OFFSET + 3 * 2,
       64,
       2,
-      c.GAME_WIDTH + 31,
+      this.c.GAME_WIDTH + 31,
       75 + 33,
     );
 
     this.enemyBattleGrounds = new GameObject(
       this.ctx,
       this.battleAssets,
-      this.encounterMethod % 3 * c.BATTLE_SCENE_WIDTH,
-      ((0.5 + this.encounterMethod / 3) << 0) * c.BATTLE_SCENE_HEIGHT + 3 * c.BATTLE_ARENA_HEIGHT + c.ACTION_BOX_HEIGHT,
-      c.BATTLE_SCENE_WIDTH,
-      c.BATTLE_SCENE_HEIGHT,
-      -c.BATTLE_SCENE_WIDTH,
+      this.encounterMethod % 3 * this.c.BATTLE_SCENE_WIDTH,
+      ((0.5 + this.encounterMethod / 3) << 0) * this.c.BATTLE_SCENE_HEIGHT + 3 * this.c.BATTLE_ARENA_HEIGHT + this.c.ACTION_BOX_HEIGHT,
+      this.c.BATTLE_SCENE_WIDTH,
+      this.c.BATTLE_SCENE_HEIGHT,
+      -this.c.BATTLE_SCENE_WIDTH,
       48
     );
 
@@ -336,31 +357,31 @@ export class PokemonBattle {
       this.enemyPokemonSprite,
       this.enemyPokemon.xSource,
       this.enemyPokemon.ySource,
-      c.POKEMON_SIZE,
-      c.POKEMON_SIZE,
-      -(c.BATTLE_SCENE_WIDTH + c.POKEMON_SIZE) / 2,
+      this.c.POKEMON_SIZE,
+      this.c.POKEMON_SIZE,
+      -(this.c.BATTLE_SCENE_WIDTH + this.c.POKEMON_SIZE) / 2,
       22
     );
 
     this.enemyPokemonHealthBox = new GameObject(
       this.ctx,
       this.battleAssets,
-      c.ASSETS_PLAYER_HEALTH_WIDTH,
-      c.ASSETS_HEALTH_OFFSET,
-      c.ASSETS_ENEMY_HEALTH_WIDTH,
-      c.ASSETS_ENEMY_HEALTH_HEIGHT,
-      -c.ASSETS_ENEMY_HEALTH_WIDTH,
+      this.c.ASSETS_PLAYER_HEALTH_WIDTH,
+      this.c.ASSETS_HEALTH_OFFSET,
+      this.c.ASSETS_ENEMY_HEALTH_WIDTH,
+      this.c.ASSETS_ENEMY_HEALTH_HEIGHT,
+      -this.c.ASSETS_ENEMY_HEALTH_WIDTH,
       16,
     );
 
     this.enemyPokemonHealthBar = new GameObject(
       this.ctx,
       this.battleAssets,
-      c.ASSETS_ENEMY_HEALTH_WIDTH + c.ASSETS_PLAYER_HEALTH_WIDTH,
-      c.ASSETS_HEALTH_OFFSET,
+      this.c.ASSETS_ENEMY_HEALTH_WIDTH + this.c.ASSETS_PLAYER_HEALTH_WIDTH,
+      this.c.ASSETS_HEALTH_OFFSET,
       48,
       2,
-      -c.ASSETS_ENEMY_HEALTH_WIDTH + 39,
+      -this.c.ASSETS_ENEMY_HEALTH_WIDTH + 39,
       16 + 17,
     );
 
@@ -369,37 +390,91 @@ export class PokemonBattle {
       this.enemyHealthTextCanvas,
       0,
       0,
-      c.ASSETS_ENEMY_HEALTH_WIDTH,
-      c.ASSETS_ENEMY_HEALTH_HEIGHT,
-      -c.ASSETS_ENEMY_HEALTH_WIDTH,
+      this.c.ASSETS_ENEMY_HEALTH_WIDTH,
+      this.c.ASSETS_ENEMY_HEALTH_HEIGHT,
+      -this.c.ASSETS_ENEMY_HEALTH_WIDTH,
       16,
     );
 
     this.playerAvatar = new GameObject(
       this.ctx,
       this.avatarAssets,
-      c.AVATAR_BATTLE_OFFSET,
-      0,
-      c.AVATAR_BATTLE_WIDTH,
-      c.AVATAR_BATTLE_HEIGHT,
-      c.GAME_WIDTH + c.BATTLE_SCENE_WIDTH / 2,
-      c.BATTLE_ARENA_HEIGHT - c.AVATAR_BATTLE_HEIGHT
+      this.c.AVATAR_BATTLE_OFFSET,
+      this.c.AVATAR_GENDER_OFFSET,
+      this.c.AVATAR_BATTLE_WIDTH,
+      this.c.AVATAR_BATTLE_HEIGHT,
+      this.c.GAME_WIDTH + this.c.BATTLE_SCENE_WIDTH / 2,
+      this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT
     );
-
-    this.playerAvatar.setAnimation(true, 0, 0, c.AVATAR_BATTLE_HEIGHT, 4);
+    this.playerAvatar.setAnimation(true, 0, 0, this.c.AVATAR_BATTLE_HEIGHT, 4);
 
     this.pokeball = new GameObject(
       this.ctx,
       this.battleAssets,
-      c.POKEBALL_OFFSET_X,
-      c.POKEBALL_OFFSET_Y + 37,
-      c.POKEBALL_SIZE,
-      c.POKEBALL_SIZE,
+      this.c.POKEBALL_OFFSET_X,
+      this.c.POKEBALL_OFFSET_Y + 37,
+      this.c.POKEBALL_SIZE,
+      this.c.POKEBALL_SIZE,
       25,
       70
     );
+    this.pokeball.setAnimation(false, 32, 0, this.c.POKEBALL_SIZE, 8);
 
-    this.pokeball.setAnimation(false, 32, 0, c.POKEBALL_SIZE, 8);
+    this.bagBackground = new GameObject(
+      this.ctx,
+      this.battleAssets,
+      this.c.ASSETS_BAG_BG_GENDER_OFFSET,
+      this.c.ASSETS_BAG_OFFSET,
+      this.c.GAME_WIDTH,
+      this.c.GAME_HEIGHT,
+      0,
+      0
+    );
+
+    this.bag = new GameObject(
+      this.ctx,
+      this.battleAssets,
+      2 * this.c.GAME_WIDTH,
+      this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_GENDER_OFFSET,
+      this.c.ASSETS_BAG_WIDTH,
+      this.c.ASSETS_BAG_HEIGHT,
+      30,
+      6
+    );
+
+    this.bagText = new GameObject(
+      this.ctx,
+      this.bagTextCanvas,
+      0,
+      0,
+      64,
+      this.c.FONT_HEIGHT[0],
+      32,
+      81
+    );
+
+    this.bagSelector = new GameObject(
+      this.ctx,
+      this.battleAssets,
+      2 * this.c.GAME_WIDTH + 5 * this.c.ASSETS_BAG_WIDTH + this.c.ASSETS_BAG_POK_SIZE,
+      this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_SEL_GENDER_OFFSET,
+      this.c.ASSETS_BAG_SEL_WIDTH,
+      this.c.ASSETS_BAG_SEL_HEIGHT,
+      42,
+      75
+    );
+
+    this.bagSwitchPokeball = new GameObject(
+      this.ctx,
+      this.battleAssets,
+      2 * this.c.GAME_WIDTH + 5 * this.c.ASSETS_BAG_WIDTH,
+      this.c.ASSETS_BAG_OFFSET,
+      this.c.ASSETS_BAG_POK_SIZE,
+      this.c.ASSETS_BAG_POK_SIZE,
+      8,
+      80
+    );
+    this.bagSwitchPokeball.setAnimation(false, 32, 0, this.c.ASSETS_BAG_POK_SIZE, 7);
   }
 
   async battle() {
@@ -416,7 +491,7 @@ export class PokemonBattle {
     };
 
     // Clear battle canvas rendering context
-    this.ctx.clearRect(0, 0, c.GAME_WIDTH, c.GAME_HEIGHT);
+    this.ctx.clearRect(0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
 
     // Return battleData
     return battleData;
@@ -437,9 +512,9 @@ export class PokemonBattle {
     })
   }
 
-  private nextBattlePhase(battleStatus: number) {
+  private nextBattlePhase(battleStatus: BattleStatus) {
     // Increment battleStatus;
-    this.battleStatus = battleStatus;    
+    this.battleStatus = battleStatus;
   }
 
   private renderDelay(duration: number): boolean {
@@ -513,17 +588,18 @@ export class PokemonBattle {
       // Draw action box without player action selector
       this.drawActionBox(false);
       // Draw go text to dialogue box
-      drawText(this.ctx, this.font, 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!', 0, 1, 16, 121);
+      drawText(this.c, this.ctx, this.font, 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!', 0, 1, 16, 121);
 
       if (isFinished) {
         this.nextBattlePhase(BattleStatus.PlayerActionSelect);
       }
     } else if (this.battleStatus === BattleStatus.PlayerActionSelect) {
-      // Draw action box with player action selector
-      this.drawActionBox(true);
-      // Write action select text to dialogue box, without next phase
-      drawText(this.ctx, this.font, 'What should ', 0, 1, 16, 121);
-      drawText(this.ctx, this.font, this.playerPokemon.pokemonName.toUpperCase() + ' do?', 0, 1, 16, 121 + 16);
+      if (this.statusAfterFadeOut === BattleStatus.PlayerActionSelect) {
+        this.nextBattlePhase(BattleStatus.FadeIn);
+        this.statusAfterFadeOut = BattleStatus.FadeIn;
+      } else if (this.statusAfterFadeOut === BattleStatus.FadeIn) {
+        this.statusAfterFadeIn = BattleStatus.Finished;
+      }
 
       // Detect keyboard press and increment/ decrement battleAction accordingly
       if (!this.keyDown) {
@@ -556,7 +632,9 @@ export class PokemonBattle {
           if (this.battleAction === 0) {
             this.nextBattlePhase(BattleStatus.PlayerSelectMove);
           } else if (this.battleAction === 1) {
-            this.nextBattlePhase(BattleStatus.PlayerBag);
+            this.statusAfterFadeOut = BattleStatus.PlayerBag;
+            this.statusAfterFadeIn = BattleStatus.PlayerBag;
+            this.nextBattlePhase(BattleStatus.FadeOut);
           } else if (this.battleAction === 2) {
             this.nextBattlePhase(BattleStatus.PlayerChoosePokemon);
           } else if (this.battleAction === 3) {
@@ -567,6 +645,21 @@ export class PokemonBattle {
         }
       }
 
+      this.battleBackground.render();
+      // Draw enemy pokemon without slide
+      this.drawEnemyPokemon(delta, false, false);
+      // Draw enemy health without slide
+      this.drawEnemyHealth(delta, false);
+      // Draw enemy player without slide
+      this.drawPlayerHealth(delta, false);
+      // Draw player pokemon with slide, with throw
+      this.drawThrowPlayerPokemon(delta);
+      // Draw action box with player action selector
+      this.drawActionBox(true);
+      // Write action select text to dialogue box, without next phase
+      drawText(this.c, this.ctx, this.font, 'What should ', 0, 1, 16, 121);
+      drawText(this.c, this.ctx, this.font, this.playerPokemon.pokemonName.toUpperCase() + ' do?', 0, 1, 16, 121 + 16);
+
       // Set the offset and column for the battle action selector
       let xOffset = this.battleAction * 46;
       let yColumn = 0;
@@ -576,9 +669,131 @@ export class PokemonBattle {
       }
   
       // Draw the action selector
-      this.drawActionSelector(c.GAME_WIDTH - c.ACTION_BOX_WIDTH + 8 + xOffset, c.GAME_WIDTH - c.ACTION_BOX_WIDTH + 8 + 42 + xOffset, yColumn);
-    } else if (this.battleStatus === BattleStatus.PlayerBag) { 
-      //
+      this.drawActionSelector(this.c.GAME_WIDTH - this.c.ACTION_BOX_WIDTH + 8 + xOffset, this.c.GAME_WIDTH - this.c.ACTION_BOX_WIDTH + 8 + 42 + xOffset, yColumn);
+    } else if (this.battleStatus === BattleStatus.PlayerBag) {
+      if (this.statusAfterFadeOut === BattleStatus.PlayerBag) {
+        this.nextBattlePhase(BattleStatus.FadeIn);
+        this.statusAfterFadeOut = BattleStatus.PlayerActionSelect;
+      } else if (this.statusAfterFadeOut === BattleStatus.PlayerActionSelect) {
+        this.statusAfterFadeIn = BattleStatus.PlayerActionSelect;
+      }
+
+      this.bagBackground.render();
+
+      this.ctx.fillStyle = '#F8E0A8';
+      this.ctx.fillRect(112, 16, 120, 128);
+
+      this.bagSwitchPokeball.render();
+
+      this.bag.updateSourcePosition(2 * this.c.GAME_WIDTH + this.bagSelected * this.c.ASSETS_BAG_WIDTH, this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_GENDER_OFFSET);
+      this.bag.render();
+
+      this.bagSelector.updateSourcePosition(2 * this.c.GAME_WIDTH + 5 * this.c.ASSETS_BAG_WIDTH + 16, this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_SEL_GENDER_OFFSET + this.bagSelected * this.c.ASSETS_BAG_SEL_HEIGHT);
+      this.bagSelector.render();
+
+      const text = this.c.BAG_POCKETS[this.bagSelected];
+      drawText(this.c, this.ctx, this.font, text, 0, 2, 32, 81);
+
+      // Detect keyboard press and increment/ decrement battleAction accordingly
+      if (!this.keyDown) {
+        if (keyboard.isDown(keyboard.LEFT)) {
+          if (this.bagSelected > 0) {
+            this.bagSelected--;
+            this.bagSwitchLeft = true;
+
+            this.nextBattlePhase(BattleStatus.BagSwitch);
+          }
+
+          this.keyDown = true;
+        } else if (keyboard.isDown(keyboard.RIGHT)) { 
+          if (this.bagSelected < 4) {
+            this.bagSelected++;
+            this.bagSwitchLeft = false;
+
+            this.nextBattlePhase(BattleStatus.BagSwitch);
+          }
+
+          this.keyDown = true;
+        // } else if (keyboard.isDown(keyboard.UP)) { 
+
+        //   this.keyDown = true;
+        // } else if (keyboard.isDown(keyboard.DOWN)) { 
+
+        //   this.keyDown = true;
+        } else if (keyboard.isDown(keyboard.ENTER)) {
+          // On enter go to next battle phase
+
+          this.keyDown = true;
+        }
+      }
+    } else if (this.battleStatus === BattleStatus.BagSwitch) {
+      const previousSelected = this.bagSwitchLeft ? this.bagSelected + 1 : this.bagSelected - 1;
+
+      const limit = 64, speed = 196;
+      let text = '', direction = 1;
+      if (this.bagSwitchLeft) {
+        text = this.c.BAG_POCKETS[this.bagSelected] + this.c.BAG_POCKETS[previousSelected];
+      } else {
+        text = this.c.BAG_POCKETS[previousSelected] + this.c.BAG_POCKETS[this.bagSelected];
+        direction = -1;
+      }
+
+      this.bagBackground.render();
+
+      this.ctx.fillStyle = '#F8E0A8';
+      this.ctx.fillRect(112, 16, 120, Math.abs(this.animationCounter) / limit * 128);
+
+      if (this.animationCounter > -20 && this.animationCounter < 20) {
+        this.bag.updateSourcePosition(2 * this.c.GAME_WIDTH + previousSelected * this.c.ASSETS_BAG_WIDTH, this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_GENDER_OFFSET);
+        this.bag.animate(delta, 128, 0, 1, 30, 6 - direction * this.animationCounter / 6, true);
+      } else {
+        this.bag.updateSourcePosition(2 * this.c.GAME_WIDTH + this.bagSelected * this.c.ASSETS_BAG_WIDTH, this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_GENDER_OFFSET);
+        this.bag.animate(delta, 128, 0, 1, 30, 6, true);
+      }
+      this.bag.render();
+
+      this.bagSelector.updateSourcePosition(2 * this.c.GAME_WIDTH + 5 * this.c.ASSETS_BAG_WIDTH + 16, this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_SEL_GENDER_OFFSET + this.bagSelected * this.c.ASSETS_BAG_SEL_HEIGHT);
+      this.bagSelector.render();
+
+      this.bagSwitchPokeball.render(delta);
+
+      if (this.bagTextCtx) {
+        this.bagTextCtx.clearRect(0, 0, 64, this.c.FONT_HEIGHT[0]);
+        const x = (!this.bagSwitchLeft) ? this.animationCounter : this.animationCounter - direction * limit;
+        drawText(this.c, this.bagTextCtx, this.font, text, 0, 2, (0.5 + x) << 0, 0);
+      }
+
+      this.bagText.update(this.bagTextCanvas);
+      this.bagText.render();
+
+      const items = this.playerData.inventory[this.bagSelected];
+      const currentLine = (Math.abs(this.animationCounter) / limit * 128) / 16 << 0;
+      const itemsToDisplay = Math.min(Object.keys(items).length + 1, currentLine);
+      console.log(Object.keys(items));
+      console.log(Object.values(items));
+
+      for (let i = 0; i < itemsToDisplay; i++) {
+        const x = i * 16;
+        if (i === itemsToDisplay - 1) {
+          drawText(this.c, this.ctx, this.font, 'CLOSE BAG', 0, 2, 112, 17 + x);
+        } else {
+          drawText(this.c, this.ctx, this.font, Object.keys(items)[i].toString().toUpperCase(), 0, 0, 112, 17 + x);
+          drawText(this.c, this.ctx, this.font, 'x' + Object.values(items)[i].toString().padStart(2, '_'), 0, 0, 213, 17 + x);
+        }
+      }
+
+      if (this.animationCounter > -limit && this.animationCounter < limit) {
+        this.animationCounter += delta * direction * speed;
+
+        if (this.animationCounter < -limit || this.animationCounter > limit) {
+          this.animationCounter = direction * limit;
+        }
+      } else {
+        this.animationCounter = 0;
+        this.bagSwitchPokeball.resetAnimation();
+
+        this.nextBattlePhase(BattleStatus.PlayerBag);
+      }
     } else if (this.battleStatus === BattleStatus.PlayerRun) {
       this.escapeAttempts++;
 
@@ -626,7 +841,7 @@ export class PokemonBattle {
         const yText = (moveNumber === 2 || moveNumber === 3) ? 121 + 16 : 121;
 
         // Draw text to action selection box
-        drawText(this.ctx, this.font, moveText.toUpperCase(), 0, 0, xText, yText)
+        drawText(this.c, this.ctx, this.font, moveText.toUpperCase(), 0, 0, xText, yText)
       }
 
       // Current selected move details
@@ -637,12 +852,12 @@ export class PokemonBattle {
       const yPpText = 121;
       // Draw move pp text
       const text = 'PP_' + moveDetails.pp.toString().padStart(2, '_') + '/' + moveDetails.ppMax.toString().padStart(2, '_');
-      drawText(this.ctx, this.font, text, 0, 0, xText, yPpText)
+      drawText(this.c, this.ctx, this.font, text, 0, 0, xText, yPpText)
       
       // Variable for printing move type text
       const yTypeText = 121 + 16;
       // Draw move type text
-      drawText(this.ctx, this.font, moveDetails.type.toUpperCase(), 0, 0, xText, yTypeText)
+      drawText(this.c, this.ctx, this.font, moveDetails.type.toUpperCase(), 0, 0, xText, yTypeText)
 
       // Set the offset and column for the battle action selector
       let xOffset = this.battleMove * 80;
@@ -700,7 +915,7 @@ export class PokemonBattle {
   
         let isHit = true;
         if (accuracyBase) {
-          const stageAdjust = c.SPECIAL_STAGES[this.playerPokemonStages.accuracy - this.enemyPokemonStages.accuracy + 6];
+          const stageAdjust = this.c.SPECIAL_STAGES[this.playerPokemonStages.accuracy - this.enemyPokemonStages.accuracy + 6];
           const modifier = 1;
           const accuracy = accuracyBase * stageAdjust * modifier;
   
@@ -757,8 +972,8 @@ export class PokemonBattle {
       // Draw action box without player action selector
       this.drawActionBox(false);
       // Draw text to dialogue box
-      drawText(this.ctx, this.font, text1, 0, 1, 16, 121);
-      drawText(this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
+      drawText(this.c, this.ctx, this.font, text1, 0, 1, 16, 121);
+      drawText(this.c, this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
       
       if (isFinished) {
         this.nextBattlePhase(BattleStatus.EnemyTakesDamage);
@@ -842,8 +1057,8 @@ export class PokemonBattle {
       // Draw action box without player action selector
       this.drawActionBox(false);
       // Draw text to dialogue box
-      drawText(this.ctx, this.font, text1, 0, 1, 16, 121);
-      drawText(this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
+      drawText(this.c, this.ctx, this.font, text1, 0, 1, 16, 121);
+      drawText(this.c, this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
       
       if (isFinished) {
         this.nextBattlePhase(BattleStatus.PlayerTakesDamage);
@@ -962,12 +1177,12 @@ export class PokemonBattle {
           this.animationCounter = 0;
 
           this.resetDelay();
-          this.nextBattlePhase(BattleStatus.FadeIn);
+          this.nextBattlePhase(this.statusAfterFadeOut);
         } else {
           this.overlayCtx.globalAlpha = this.animationCounter;
           this.overlayCtx.fillStyle = '#000000';
-          this.overlayCtx.clearRect(0, 0, c.GAME_WIDTH, c.GAME_HEIGHT);
-          this.overlayCtx.fillRect(0, 0, c.GAME_WIDTH, c.GAME_HEIGHT);
+          this.overlayCtx.clearRect(0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
+          this.overlayCtx.fillRect(0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
           this.overlayCtx.globalAlpha = 1;
   
           this.animationCounter += delta * speed;
@@ -983,13 +1198,17 @@ export class PokemonBattle {
           this.animationCounter = 0;
 
           this.resetDelay();
-          this.nextBattlePhase(BattleStatus.Finished);
+
+          this.nextBattlePhase(this.statusAfterFadeIn);
         } else {
           this.overlayCtx.globalAlpha = 1 - this.animationCounter;
           this.overlayCtx.fillStyle = '#000000';
-          this.ctx.clearRect(0, 0, c.GAME_WIDTH, c.GAME_HEIGHT);
-          this.overlayCtx.clearRect(0, 0, c.GAME_WIDTH, c.GAME_HEIGHT);
-          this.overlayCtx.fillRect(0, 0, c.GAME_WIDTH, c.GAME_HEIGHT);
+          if (this.statusAfterFadeIn === BattleStatus.Finished) {
+            this.ctx.clearRect(0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
+          }
+          this.overlayCtx.clearRect(0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
+          this.overlayCtx.fillRect(0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
+
           this.overlayCtx.globalAlpha = 1;
   
           this.animationCounter += delta * speed;
@@ -1020,22 +1239,22 @@ export class PokemonBattle {
       defenseStat = defender.stats.defense;
       
       if (playerAttack) {
-        attackerStMp = c.NORMAL_STAGES[this.playerPokemonStages.attack + 6];
-        defenderStMp = c.NORMAL_STAGES[this.enemyPokemonStages.defense + 6];
+        attackerStMp = this.c.NORMAL_STAGES[this.playerPokemonStages.attack + 6];
+        defenderStMp = this.c.NORMAL_STAGES[this.enemyPokemonStages.defense + 6];
       } else {
-        attackerStMp = c.NORMAL_STAGES[this.enemyPokemonStages.defense + 6];
-        defenderStMp = c.NORMAL_STAGES[this.playerPokemonStages.attack + 6];
+        attackerStMp = this.c.NORMAL_STAGES[this.enemyPokemonStages.defense + 6];
+        defenderStMp = this.c.NORMAL_STAGES[this.playerPokemonStages.attack + 6];
       }
     } else {
       attackStat = attacker.stats.specialAttack;
       defenseStat = defender.stats.specialDefense;
 
       if (playerAttack) {
-        attackerStMp = c.NORMAL_STAGES[this.playerPokemonStages.specialAttack + 6];
-        defenderStMp = c.NORMAL_STAGES[this.enemyPokemonStages.specialDefense + 6];
+        attackerStMp = this.c.NORMAL_STAGES[this.playerPokemonStages.specialAttack + 6];
+        defenderStMp = this.c.NORMAL_STAGES[this.enemyPokemonStages.specialDefense + 6];
       } else {
-        attackerStMp = c.NORMAL_STAGES[this.enemyPokemonStages.specialDefense + 6];
-        defenderStMp = c.NORMAL_STAGES[this.playerPokemonStages.specialAttack + 6];
+        attackerStMp = this.c.NORMAL_STAGES[this.enemyPokemonStages.specialDefense + 6];
+        defenderStMp = this.c.NORMAL_STAGES[this.playerPokemonStages.specialAttack + 6];
       }
     }
 
@@ -1138,7 +1357,7 @@ export class PokemonBattle {
   }
 
   private getTypeEffectiveness(defenderType: string, moveType: string) {
-    return c.TYPES_EFFECTIVENESS[18 * ((c.TYPES.indexOf(moveType) / 18) << 0) + c.TYPES.indexOf(defenderType)]
+    return this.c.TYPES_EFFECTIVENESS[18 * ((this.c.TYPES.indexOf(moveType) / 18) << 0) + this.c.TYPES.indexOf(defenderType)]
   }
 
   private damageMove(delta: number, moveData: MoveType, playerAttack: boolean) {
@@ -1318,8 +1537,8 @@ export class PokemonBattle {
 
       if (this.playerPokemon.xp > this.playerPokemon.xpNextLevel) {
         this.playerPokemon.level++;
-        this.playerPokemon.xpCurLevel = c.LEVELS[this.playerPokemon.growth_rate][this.playerPokemon.level];
-        this.playerPokemon.xpNextLevel = c.LEVELS[this.playerPokemon.growth_rate][this.playerPokemon.level + 1];
+        this.playerPokemon.xpCurLevel = this.c.LEVELS[this.playerPokemon.growth_rate][this.playerPokemon.level];
+        this.playerPokemon.xpNextLevel = this.c.LEVELS[this.playerPokemon.growth_rate][this.playerPokemon.level + 1];
         
         this.levelGained = true;
       }
@@ -1350,7 +1569,7 @@ export class PokemonBattle {
       const yPixelPokeball = 0.1 * xPixelPokeball ** 2 - 7.5 * xPixelPokeball + 195;
 
       // Draw the pokeball
-      this.pokeball.updateSourcePosition(c.POKEBALL_OFFSET_X + this.playerPokemon.pokeball * c.POKEBALL_SIZE, c.POKEBALL_OFFSET_Y + 37);
+      this.pokeball.updateSourcePosition(this.c.POKEBALL_OFFSET_X + this.playerPokemon.pokeball * this.c.POKEBALL_SIZE, this.c.POKEBALL_OFFSET_Y + 37);
       this.pokeball.setPosition(xPixelPokeball, yPixelPokeball);
       this.pokeball.render(delta);
 
@@ -1362,8 +1581,10 @@ export class PokemonBattle {
     // Pokemon appear animation
     if (pokeballThrown) {
       // Draw pink appearing pokemon
-      this.playerPokemonObject.setColor(254, 191, 246);
       pokemonAltFinished = this.playerPokemonObject.scaleTo(delta, 2, 1);
+      if (!pokemonAltFinished) {
+        this.playerPokemonObject.setColor(254, 191, 246);
+      }
     }
 
     if (pokemonAltFinished) {
@@ -1395,17 +1616,17 @@ export class PokemonBattle {
       attacker = this.playerPokemonObject;
       defender = this.enemyPokemonObject;
   
-      xPosAttacker = (c.BATTLE_SCENE_WIDTH - c.POKEMON_SIZE) / 2;
-      yPosAttacker = c.BATTLE_ARENA_HEIGHT - c.POKEMON_SIZE;
-      xPosDefender = c.GAME_WIDTH - (c.BATTLE_SCENE_WIDTH + c.POKEMON_SIZE) / 2;
+      xPosAttacker = (this.c.BATTLE_SCENE_WIDTH - this.c.POKEMON_SIZE) / 2;
+      yPosAttacker = this.c.BATTLE_ARENA_HEIGHT - this.c.POKEMON_SIZE;
+      xPosDefender = this.c.GAME_WIDTH - (this.c.BATTLE_SCENE_WIDTH + this.c.POKEMON_SIZE) / 2;
       yPosDefender = 22;
     } else {
       attacker = this.enemyPokemonObject;
       defender = this.playerPokemonObject;
   
-      xPosDefender = (c.BATTLE_SCENE_WIDTH - c.POKEMON_SIZE) / 2;
-      yPosDefender = c.BATTLE_ARENA_HEIGHT - c.POKEMON_SIZE;
-      xPosAttacker = c.GAME_WIDTH - (c.BATTLE_SCENE_WIDTH + c.POKEMON_SIZE) / 2;
+      xPosDefender = (this.c.BATTLE_SCENE_WIDTH - this.c.POKEMON_SIZE) / 2;
+      yPosDefender = this.c.BATTLE_ARENA_HEIGHT - this.c.POKEMON_SIZE;
+      xPosAttacker = this.c.GAME_WIDTH - (this.c.BATTLE_SCENE_WIDTH + this.c.POKEMON_SIZE) / 2;
       yPosAttacker = 22;
 
       direction = -1;
@@ -1471,7 +1692,7 @@ export class PokemonBattle {
 
     // Draw player health and xp bar
     this.playerPokemonXpBox.setWidth(xpBarWidth);
-    this.playerPokemonHealthBar.updateSourcePosition(c.ASSETS_ENEMY_HEALTH_WIDTH + c.ASSETS_PLAYER_HEALTH_WIDTH, c.ASSETS_HEALTH_OFFSET + healthBarOffset);
+    this.playerPokemonHealthBar.updateSourcePosition(this.c.ASSETS_ENEMY_HEALTH_WIDTH + this.c.ASSETS_PLAYER_HEALTH_WIDTH, this.c.ASSETS_HEALTH_OFFSET + healthBarOffset);
     this.playerPokemonHealthBar.setWidth(healthBarWidth);
 
     if (slideIn) {
@@ -1487,10 +1708,10 @@ export class PokemonBattle {
       const nameText = this.playerPokemon.pokemonName.toUpperCase() + ((this.playerPokemon.gender) ? '#' : '^');
       const healthText = (this.playerPokemon.health << 0).toString().padStart(3, '_') + '/' + this.playerPokemon.stats.hp.toString().padStart(3, '_');
 
-      this.playerHealthTextCtx.clearRect(0, 0, c.ASSETS_PLAYER_HEALTH_WIDTH, c.ASSETS_PLAYER_HEALTH_HEIGHT);
-      drawText(this.playerHealthTextCtx, this.font, nameText, 1, 0, 14, 6);
-      drawText(this.playerHealthTextCtx, this.font, this.playerPokemon.level.toString(), 1, 0, 84, 6);
-      drawText(this.playerHealthTextCtx, this.font, healthText, 1, 0, 59, 22);
+      this.playerHealthTextCtx.clearRect(0, 0, this.c.ASSETS_PLAYER_HEALTH_WIDTH, this.c.ASSETS_PLAYER_HEALTH_HEIGHT);
+      drawText(this.c, this.playerHealthTextCtx, this.font, nameText, 1, 0, 14, 6);
+      drawText(this.c, this.playerHealthTextCtx, this.font, this.playerPokemon.level.toString(), 1, 0, 84, 6);
+      drawText(this.c, this.playerHealthTextCtx, this.font, healthText, 1, 0, 59, 22);
 
       this.playerPokemonHealthText.update(this.playerHealthTextCanvas);
       if (slideIn) {
@@ -1517,7 +1738,7 @@ export class PokemonBattle {
     const healthBarWidth = (healthFrac * 48) << 0;
 
     // Draw enemy health bar
-    this.playerPokemonHealthBar.updateSourcePosition(c.ASSETS_ENEMY_HEALTH_WIDTH + c.ASSETS_PLAYER_HEALTH_WIDTH, c.ASSETS_HEALTH_OFFSET + healthBarOffset);
+    this.playerPokemonHealthBar.updateSourcePosition(this.c.ASSETS_ENEMY_HEALTH_WIDTH + this.c.ASSETS_PLAYER_HEALTH_WIDTH, this.c.ASSETS_HEALTH_OFFSET + healthBarOffset);
     this.enemyPokemonHealthBar.setWidth(healthBarWidth);
     if (slideIn) {
       this.enemyPokemonHealthBar.animate(delta, speedHealth, 1, 0, 13 + 39, 16 + 17, true);
@@ -1529,8 +1750,8 @@ export class PokemonBattle {
     if (this.enemyHealthTextCtx) {
       const nameText = this.enemyPokemon.pokemonName.toUpperCase() + ((this.enemyPokemon.gender) ? '#' : '^');
 
-      drawText(this.enemyHealthTextCtx, this.font, nameText, 1, 0, 6, 6);
-      drawText(this.enemyHealthTextCtx, this.font, this.enemyPokemon.level.toString(), 1, 0, 76, 6);
+      drawText(this.c, this.enemyHealthTextCtx, this.font, nameText, 1, 0, 6, 6);
+      drawText(this.c, this.enemyHealthTextCtx, this.font, this.enemyPokemon.level.toString(), 1, 0, 76, 6);
 
       this.enemyPokemonHealthText.update(this.enemyHealthTextCanvas);
       if (slideIn) {
@@ -1550,22 +1771,22 @@ export class PokemonBattle {
       this.playerBattleGrounds.animate(delta, speed, -1, 0, 0, 100, true);
 
       // Draw the player avatar
-      isFinished = this.playerAvatar.animate(delta, speed, -1, 0, c.BATTLE_SCENE_WIDTH / 2, c.BATTLE_ARENA_HEIGHT - c.AVATAR_BATTLE_HEIGHT, true);
+      isFinished = this.playerAvatar.animate(delta, speed, -1, 0, this.c.BATTLE_SCENE_WIDTH / 2, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, true);
     } else if (slideOut) {
       // Next animation frame and animate
       this.playerAvatar.animationTrigger(1);
-      const isFinishedFirstSprite = this.playerAvatar.animate(delta, speed, -1, 0, -16, c.BATTLE_ARENA_HEIGHT - c.AVATAR_BATTLE_HEIGHT, false);
+      const isFinishedFirstSprite = this.playerAvatar.animate(delta, speed, -1, 0, -16, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, false);
 
       // Next animation frame and animate
       if (isFinishedFirstSprite) {
         this.playerAvatar.animationTrigger(2);
-        isFinished = this.playerAvatar.animate(delta, speed, -1, 0, -36, c.BATTLE_ARENA_HEIGHT - c.AVATAR_BATTLE_HEIGHT, false);  
+        isFinished = this.playerAvatar.animate(delta, speed, -1, 0, -36, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, false);  
       }
 
       // Next animation frame and animate
       if (isFinished) {
         this.playerAvatar.animationTrigger(3);
-        this.playerAvatar.animate(delta, speed, -1, 0, -c.AVATAR_BATTLE_WIDTH, c.BATTLE_ARENA_HEIGHT - c.AVATAR_BATTLE_HEIGHT, false);  
+        this.playerAvatar.animate(delta, speed, -1, 0, -this.c.AVATAR_BATTLE_WIDTH, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, false);  
       }
     } else {
       // Draw battle grounds player pokemon
@@ -1581,12 +1802,12 @@ export class PokemonBattle {
   private drawEnemyPokemon(delta: number, slideIn: boolean, slideOut: boolean) {
     const speed = 176;
 
-    const x = c.GAME_WIDTH - (c.BATTLE_SCENE_WIDTH + c.POKEMON_SIZE) / 2;
+    const x = this.c.GAME_WIDTH - (this.c.BATTLE_SCENE_WIDTH + this.c.POKEMON_SIZE) / 2;
     const y = 22;
 
     if (slideIn) {
       // Draw battle grounds enemy pokemon
-      this.enemyBattleGrounds.animate(delta, speed, 1, 0, c.GAME_WIDTH - c.BATTLE_SCENE_WIDTH, 48, true);
+      this.enemyBattleGrounds.animate(delta, speed, 1, 0, this.c.GAME_WIDTH - this.c.BATTLE_SCENE_WIDTH, 48, true);
 
       // Darken enemy pokemon when sliding in
       this.enemyPokemonObject.darkenColor(0.9);
@@ -1630,7 +1851,7 @@ export class PokemonBattle {
       const textToDisplay = textCol1.slice(0, i);
 
       // Draw the text
-      drawText(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
+      drawText(this.c, this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
 
       if (i < textCol1.length) {
         this.animationCounter += delta * speed;
@@ -1643,8 +1864,8 @@ export class PokemonBattle {
       const textToDisplay = textCol2.slice(0, i);
 
       // Draw the text
-      drawText(this.ctx, this.font, textCol1, 0, 1, 16, 121);
-      drawText(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
+      drawText(this.c, this.ctx, this.font, textCol1, 0, 1, 16, 121);
+      drawText(this.c, this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
 
       if (i < textCol2.length + delayAfter * speed * 0.8) {
         this.animationCounter += delta * speed;

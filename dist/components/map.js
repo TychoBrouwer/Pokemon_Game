@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Map = void 0;
-const constants_1 = require("../utils/constants");
 class Map {
-    constructor(map) {
+    constructor(c, map) {
         this.prevMapCols = 0;
         this.prevMapRows = 0;
+        this.c = c;
         // Set the currentMap
         this.currentMap = map;
         // Set the adjacent loaded maps object
@@ -27,7 +27,7 @@ class Map {
         this.prevMapCols = this.currentMap.COLS;
         this.prevMapRows = this.currentMap.ROWS;
         // Update the currentMap
-        this.currentMap = constants_1.c.MAPS[mapName];
+        this.currentMap = this.c.MAPS[mapName];
         // Reset the adjacent loaded maps object
         this.adjacentMaps = {};
         // Reset the location of the currentMap on the whole map
@@ -83,29 +83,29 @@ class Map {
             const colHalfTile = col + 0.5;
             const rowHalfTile = row + 0.5;
             // compute solid in one way or partly solid tiles
-            const partlySolid = (tile === 3 && rowHalfTile * constants_1.c.MAP_TSIZE < y && (dirY === -1 || dirX !== 0)) ||
-                (tile === 4 && rowHalfTile * constants_1.c.MAP_TSIZE < y && (dirY === -1 || dirX === -1)) ||
-                (tile === 7 && rowHalfTile * constants_1.c.MAP_TSIZE < y && (dirY === -1 || dirX === 1)) ||
-                (tile === 5 && rowHalfTile * constants_1.c.MAP_TSIZE < y && colHalfTile * constants_1.c.MAP_TSIZE < x) ||
-                (tile === 8 && rowHalfTile * constants_1.c.MAP_TSIZE < y && colHalfTile * constants_1.c.MAP_TSIZE > x) ||
+            const partlySolid = (tile === 3 && rowHalfTile * this.c.MAP_TSIZE < y && (dirY === -1 || dirX !== 0)) ||
+                (tile === 4 && rowHalfTile * this.c.MAP_TSIZE < y && (dirY === -1 || dirX === -1)) ||
+                (tile === 7 && rowHalfTile * this.c.MAP_TSIZE < y && (dirY === -1 || dirX === 1)) ||
+                (tile === 5 && rowHalfTile * this.c.MAP_TSIZE < y && colHalfTile * this.c.MAP_TSIZE < x) ||
+                (tile === 8 && rowHalfTile * this.c.MAP_TSIZE < y && colHalfTile * this.c.MAP_TSIZE > x) ||
                 (tile === 6 &&
-                    (rowHalfTile * constants_1.c.MAP_TSIZE < y || colHalfTile * constants_1.c.MAP_TSIZE < x) &&
+                    (rowHalfTile * this.c.MAP_TSIZE < y || colHalfTile * this.c.MAP_TSIZE < x) &&
                     (dirX === -1 || dirY === -1)) ||
-                (tile === 9 && (rowHalfTile * constants_1.c.MAP_TSIZE < y || colHalfTile * constants_1.c.MAP_TSIZE < x &&
+                (tile === 9 && (rowHalfTile * this.c.MAP_TSIZE < y || colHalfTile * this.c.MAP_TSIZE < x &&
                     (dirX === 1 || dirY === -1))) ||
-                (tile === 30 && (row + 0.3) * constants_1.c.MAP_TSIZE < y) ||
-                (tile === 33 && colHalfTile * constants_1.c.MAP_TSIZE < x && (dirX === -1 || dirY !== 0)) ||
-                (tile === 34 && colHalfTile * constants_1.c.MAP_TSIZE < x && (dirX === -1 || dirY === 1));
+                (tile === 30 && (row + 0.3) * this.c.MAP_TSIZE < y) ||
+                (tile === 33 && colHalfTile * this.c.MAP_TSIZE < x && (dirX === -1 || dirY !== 0)) ||
+                (tile === 34 && colHalfTile * this.c.MAP_TSIZE < x && (dirX === -1 || dirY === 1));
             (tile === 35 &&
-                (rowHalfTile * constants_1.c.MAP_TSIZE < y ||
-                    colHalfTile * constants_1.c.MAP_TSIZE < x) && (dirX === -1 || dirY !== 0));
+                (rowHalfTile * this.c.MAP_TSIZE < y ||
+                    colHalfTile * this.c.MAP_TSIZE < x) && (dirX === -1 || dirY !== 0));
             // Return and compute the result of the solidity determination
             return res || isSolid || partlySolid;
         }, false);
     }
     addMap(mapName, location, tileOffset) {
         // Get the map to add
-        const mapToAdd = Object.assign({}, constants_1.c.MAPS[mapName]);
+        const mapToAdd = Object.assign({}, this.c.MAPS[mapName]);
         // Initialize the final layers array to be returned
         const finalLayers = [];
         // Initialize the variables for the final size of the complete map
@@ -227,19 +227,19 @@ class Map {
     }
     getCol(x) {
         // Get the column of an x coordinate
-        return Math.floor(x / constants_1.c.MAP_TSIZE);
+        return Math.floor(x / this.c.MAP_TSIZE);
     }
     getRow(y) {
         // Get the row of a y coordinate
-        return Math.floor(y / constants_1.c.MAP_TSIZE);
+        return Math.floor(y / this.c.MAP_TSIZE);
     }
     getX(col) {
         // Get x of a column of the map
-        return col * constants_1.c.MAP_TSIZE;
+        return col * this.c.MAP_TSIZE;
     }
     getY(row) {
         // Get y of a row of the map
-        return row * constants_1.c.MAP_TSIZE;
+        return row * this.c.MAP_TSIZE;
     }
 }
 exports.Map = Map;

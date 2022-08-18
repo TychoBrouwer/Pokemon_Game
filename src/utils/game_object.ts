@@ -98,7 +98,7 @@ export class GameObject {
   }
 
   setColor(r: number, g: number, b: number) {
-    if (this.spriteCtx && this.currentColor !== [r, g, b]) {
+    if (this.spriteCtx && (this.currentColor[0] !== r  || this.currentColor[1] !== g || this.currentColor[2] !== b)) {
       const imgData = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource);
 
       for (let i = 0; i < imgData.data.length; i += 4) {
@@ -136,7 +136,7 @@ export class GameObject {
   }
 
   resetColor() {
-    if (this.spriteCtx && this.currentColor !== [-1, -1, -1]) {
+    if (this.spriteCtx && (this.currentColor[0] !== -1  || this.currentColor[1] !== -1 || this.currentColor[2] !== -1)) {
       const imgData = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource);
 
       for (let i = 0; i < imgData.data.length; i += 1) {
@@ -156,6 +156,10 @@ export class GameObject {
     this.animationNOfFrames = animationNOfFrames;
 
     this.animation = true;
+  }
+
+  resetAnimation() {
+    this.animationCounter = 0;
   }
 
   animationTrigger(frame: number) {

@@ -1,10 +1,12 @@
 import { Avatar } from './avatar';
+import { C } from '../utils/constants';
 
 import { MapType } from '../utils/types';
 
-import { c } from '../utils/constants';
 
 export class Camera {
+  private c: C;
+
   public x = 0;
   public y = 0;
   public width: number;
@@ -13,20 +15,22 @@ export class Camera {
   private maxY: number;
   private following?: Avatar;
 
-  constructor(map: MapType, width: number, height: number) {
+  constructor(c: C, map: MapType) {
+    this.c = c;
+
     // Set camera properties to supplied values
-    this.width = width;
-    this.height = height;
+    this.width = this.c.GAME_WIDTH;
+    this.height = this.c.GAME_HEIGHT;
 
     // Set the max x and y for the camera
-    this.maxX = map.COLS * c.MAP_TSIZE - width;
-    this.maxY = map.ROWS * c.MAP_TSIZE - height;
+    this.maxX = map.COLS * this.c.MAP_TSIZE - this.width;
+    this.maxY = map.ROWS * this.c.MAP_TSIZE - this.height;
   }
 
   updateMap(currentMap: MapType) {
     // Update the max x and y for the camera to the new map
-    this.maxX = currentMap.COLS * c.MAP_TSIZE - this.width;
-    this.maxY = currentMap.ROWS * c.MAP_TSIZE - this.height;
+    this.maxX = currentMap.COLS * this.c.MAP_TSIZE - this.width;
+    this.maxY = currentMap.ROWS * this.c.MAP_TSIZE - this.height;
   }
 
   follow(sprite: Avatar): void {

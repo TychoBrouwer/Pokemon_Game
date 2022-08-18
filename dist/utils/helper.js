@@ -21,7 +21,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generatePokemon = exports.drawText = exports.getLocalStorage = exports.setLocalStorage = exports.randomFromMinMax = exports.randomFromArray = void 0;
 const moveIndex = __importStar(require("../move_index.json"));
-const constants_1 = require("../utils/constants");
 function randomFromArray(propbabilityArray) {
     // Get random from array
     return propbabilityArray[Math.floor(Math.random() * propbabilityArray.length)];
@@ -50,38 +49,53 @@ function getLocalStorage(key) {
     return JSON.parse(data);
 }
 exports.getLocalStorage = getLocalStorage;
-function drawText(ctx, font, text, fontsize, fontColor, posX, posY) {
+function drawText(c, ctx, font, text, fontsize, fontColor, posX, posY) {
     // Loop through the text to Draw
     for (let i = 0; i < text.length; i++) {
         // Set default width
-        let width = constants_1.c.FONT_WIDTH[fontsize];
-        // characters that are seven pixels wide
-        if (text[i] === '|') {
-            width = 7;
-        }
-        // characters that are three pixels wide
-        if (text[i] === ' ' || text[i] === 'l' || text[i] === '.') {
-            width = 3;
-        }
-        // characters that are four pixels wide
-        if (text[i] === 'i' || text[i] === '!') {
-            width = 4;
+        let width = c.FONT_WIDTH[fontsize];
+        if (fontsize === 0) {
+            // characters that are seven pixels wide
+            if (text[i] === '|') {
+                width = 7;
+            }
+            // characters that are three pixels wide
+            if (text[i] === ' ' || text[i] === 'l' || text[i] === '.') {
+                width = 3;
+            }
+            // characters that are four pixels wide
+            if (text[i] === 'i' || text[i] === '!') {
+                width = 5;
+            }
+            // characters that are five pixels wide
+            if (text[i] === 'r') {
+                width = 5;
+            }
+            // characters that are one pixels wide
+            if (text[i] === '*') {
+                width = 1;
+            }
         }
         // Get the positions of the letter to draw
         const positions = {
-            posX: constants_1.c.CHAR_IN_FONT.indexOf(text[i]) % 40 * constants_1.c.FONT_WIDTH[fontsize],
-            posY: ((constants_1.c.CHAR_IN_FONT.indexOf(text[i]) / 40) << 0) * constants_1.c.FONT_HEIGHT[fontsize],
+            posX: c.CHAR_IN_FONT.indexOf(text[i]) % 40 * c.FONT_WIDTH[fontsize],
+            posY: ((c.CHAR_IN_FONT.indexOf(text[i]) / 40) << 0) * c.FONT_HEIGHT[fontsize],
         };
         // Get the yOffset for the font type (fontSize and fontColor)
-        const yOffset = (fontsize === 0) ? fontColor * 2 * constants_1.c.FONT_HEIGHT[fontsize] : 56 + fontColor * 2 * constants_1.c.FONT_HEIGHT[fontsize];
+        const yOffset = (fontsize === 0) ? fontColor * 2 * c.FONT_HEIGHT[fontsize] : 3 * 2 * c.FONT_HEIGHT[0] + fontColor * 2 * c.FONT_HEIGHT[fontsize];
+        if (text[i] === '_' || text[i] === '*') {
+            positions.posX = -10;
+        }
         // Draw the letter
-        ctx.drawImage(font, positions.posX, positions.posY + yOffset, width, constants_1.c.FONT_HEIGHT[fontsize], posX + constants_1.c.FONT_WIDTH[fontsize] * i
+        ctx.drawImage(font, positions.posX, positions.posY + yOffset, width, c.FONT_HEIGHT[fontsize], posX + c.FONT_WIDTH[fontsize] * i
             - 3 * (text.substring(0, i).match(/ |l|\./g) || []).length
-            - 2 * (text.substring(0, i).match(/i|!/g) || []).length, posY, width, constants_1.c.FONT_HEIGHT[fontsize]);
+            - 2 * (text.substring(0, i).match(/i|!/g) || []).length
+            - 1 * (text.substring(0, i).match(/r/g) || []).length
+            - 5 * (text.substring(0, i).match(/\*/g) || []).length, posY, width, c.FONT_HEIGHT[fontsize]);
     }
 }
 exports.drawText = drawText;
-function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
+function generatePokemon(c, pokedexEntry, levelRange, pokemonId, pokeball) {
     // Get random level from the supplied range
     const level = randomFromMinMax(levelRange[0], levelRange[1]);
     // Get the moves the pokemon starts with
@@ -112,20 +126,20 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
     // Set nature for every category
     const nature = {
         hp: 1,
-        attack: (constants_1.c.POKEMON_PERSONALITIES.increase.attack.includes(personality)) ? 1.1 :
-            (constants_1.c.POKEMON_PERSONALITIES.decrease.attack.includes(personality)) ? 0.9 :
+        attack: (c.POKEMON_PERSONALITIES.increase.attack.includes(personality)) ? 1.1 :
+            (c.POKEMON_PERSONALITIES.decrease.attack.includes(personality)) ? 0.9 :
                 1,
-        defense: (constants_1.c.POKEMON_PERSONALITIES.increase.defense.includes(personality)) ? 1.1 :
-            (constants_1.c.POKEMON_PERSONALITIES.decrease.defense.includes(personality)) ? 0.9 :
+        defense: (c.POKEMON_PERSONALITIES.increase.defense.includes(personality)) ? 1.1 :
+            (c.POKEMON_PERSONALITIES.decrease.defense.includes(personality)) ? 0.9 :
                 1,
-        specialDefense: (constants_1.c.POKEMON_PERSONALITIES.increase.specialDefense.includes(personality)) ? 1.1 :
-            (constants_1.c.POKEMON_PERSONALITIES.decrease.specialDefense.includes(personality)) ? 0.9 :
+        specialDefense: (c.POKEMON_PERSONALITIES.increase.specialDefense.includes(personality)) ? 1.1 :
+            (c.POKEMON_PERSONALITIES.decrease.specialDefense.includes(personality)) ? 0.9 :
                 1,
-        specialAttack: (constants_1.c.POKEMON_PERSONALITIES.increase.specialAttack.includes(personality)) ? 1.1 :
-            (constants_1.c.POKEMON_PERSONALITIES.decrease.specialAttack.includes(personality)) ? 0.9 :
+        specialAttack: (c.POKEMON_PERSONALITIES.increase.specialAttack.includes(personality)) ? 1.1 :
+            (c.POKEMON_PERSONALITIES.decrease.specialAttack.includes(personality)) ? 0.9 :
                 1,
-        speed: (constants_1.c.POKEMON_PERSONALITIES.increase.speed.includes(personality)) ? 1.1 :
-            (constants_1.c.POKEMON_PERSONALITIES.decrease.speed.includes(personality)) ? 0.9 :
+        speed: (c.POKEMON_PERSONALITIES.increase.speed.includes(personality)) ? 1.1 :
+            (c.POKEMON_PERSONALITIES.decrease.speed.includes(personality)) ? 0.9 :
                 1,
     };
     // Get random individual value (0-31 inclusive)
@@ -154,7 +168,7 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
     const size = randomFromMinMax(0, 65535);
     // Compute height from size
     let height = 0;
-    for (const [maxSize, values] of Object.entries(constants_1.c.SIZE_TABLE)) {
+    for (const [maxSize, values] of Object.entries(c.SIZE_TABLE)) {
         if (size <= parseInt(maxSize)) {
             height = Math.floor(pokedexEntry.height * Math.floor((size - values.z) / values.y + values.x) / 10);
             break;
@@ -165,9 +179,9 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
         pokemonId: pokemonId,
         generation: generation,
         pokemonName: pokedexEntry.name,
-        xp: constants_1.c.LEVELS[pokedexEntry.growth_rate][level],
-        xpCurLevel: constants_1.c.LEVELS[pokedexEntry.growth_rate][level],
-        xpNextLevel: constants_1.c.LEVELS[pokedexEntry.growth_rate][level + 1],
+        xp: c.LEVELS[pokedexEntry.growth_rate][level],
+        xpCurLevel: c.LEVELS[pokedexEntry.growth_rate][level],
+        xpNextLevel: c.LEVELS[pokedexEntry.growth_rate][level + 1],
         xpBase: pokedexEntry.base_experience,
         growth_rate: pokedexEntry.growth_rate,
         level: level,
@@ -193,8 +207,8 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
             speed: Math.floor((Math.floor((2 * pokedexEntry.stats[5].base_stat + IV.speed + Math.floor(EV.speed / 4)) * level / 100) + 5) * nature.speed),
         },
         types: pokedexEntry.types,
-        xSource: (pokemonId - constants_1.c.ASSETS_GENERATION_OFFSET[generation] - 1) % 3 * constants_1.c.POKEMON_SPRITE_WIDTH,
-        ySource: (((pokemonId - constants_1.c.ASSETS_GENERATION_OFFSET[generation] - 1) / 3) << 0) * constants_1.c.POKEMON_SIZE,
+        xSource: (pokemonId - c.ASSETS_GENERATION_OFFSET[generation] - 1) % 3 * c.POKEMON_SPRITE_WIDTH,
+        ySource: (((pokemonId - c.ASSETS_GENERATION_OFFSET[generation] - 1) / 3) << 0) * c.POKEMON_SIZE,
     };
     // Return pokemonData object
     return pokemonData;

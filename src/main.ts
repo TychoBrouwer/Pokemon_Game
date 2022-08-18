@@ -11,13 +11,13 @@ window.onload = function () {
   const overlayContext = overlayCanvas.getContext('2d');
 
   if (gameContext && battleContext && overlayContext) {
-    new Game(gameContext, battleContext, overlayContext);
+    const game = new Game(gameContext, battleContext, overlayContext);
 
-    gameCanvas.height = Game.GAME_HEIGHT;
-    gameCanvas.width = Game.GAME_WIDTH;
-    battleCanvas.height = Game.GAME_HEIGHT;
-    battleCanvas.width = Game.GAME_WIDTH;
-    overlayCanvas.height = Game.GAME_HEIGHT;
-    overlayCanvas.width = Game.GAME_WIDTH;
+    gameCanvas.height = game.c.GAME_HEIGHT;
+    gameCanvas.width = game.c.GAME_WIDTH;
+    battleCanvas.height = game.c.GAME_HEIGHT;
+    battleCanvas.width = game.c.GAME_WIDTH;
+    overlayCanvas.height = game.c.GAME_HEIGHT;
+    overlayCanvas.width = game.c.GAME_WIDTH;
   }
 };

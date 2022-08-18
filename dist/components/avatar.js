@@ -1,16 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Avatar = void 0;
-const constants_1 = require("../utils/constants");
 class Avatar {
-    constructor(loader, map) {
+    constructor(c, loader, map) {
         this.x = 0;
         this.y = 0;
         this.screenX = 0;
         this.screenY = 0;
+        this.c = c;
         // Get avatar assets from supplied loader
         this.loader = loader;
-        this.avatarAsset = this.loader.loadImageToCanvas('avatar', constants_1.c.ASSETS_AVATAR_HEIGHT, constants_1.c.ASSETS_AVATAR_WIDTH);
+        this.avatarAsset = this.loader.loadImageToCanvas('avatar', this.c.ASSETS_AVATAR_HEIGHT, this.c.ASSETS_AVATAR_WIDTH);
         // Set the map to the map supplied
         this.map = map;
     }
@@ -24,8 +24,8 @@ class Avatar {
         // Update the class variables
         this.map = map;
         // Update the avatar position with the offset supplied
-        this.x = this.x + addedTiles[0] * constants_1.c.MAP_TSIZE;
-        this.y = this.y + addedTiles[1] * constants_1.c.MAP_TSIZE;
+        this.x = this.x + addedTiles[0] * this.c.MAP_TSIZE;
+        this.y = this.y + addedTiles[1] * this.c.MAP_TSIZE;
     }
     move(delta, dirx, diry) {
         if (this.map) {
@@ -33,13 +33,13 @@ class Avatar {
             const x = this.x;
             const y = this.y;
             // Update x and y with delta and direction
-            this.x += dirx * constants_1.c.AVATAR_SPEED_WALK * delta;
-            this.y += diry * constants_1.c.AVATAR_SPEED_WALK * delta;
+            this.x += dirx * this.c.AVATAR_SPEED_WALK * delta;
+            this.y += diry * this.c.AVATAR_SPEED_WALK * delta;
             // Check for collision
             this.collide(dirx, diry, x, y);
             // Compute max allowable values of x and y
-            const maxX = this.map.currentMap.COLS * constants_1.c.MAP_TSIZE;
-            const maxY = this.map.currentMap.ROWS * constants_1.c.MAP_TSIZE;
+            const maxX = this.map.currentMap.COLS * this.c.MAP_TSIZE;
+            const maxY = this.map.currentMap.ROWS * this.c.MAP_TSIZE;
             // Limit x and y to between 0 and max values
             this.x = Math.max(0, Math.min(this.x, maxX));
             this.y = Math.max(0, Math.min(this.y, maxY));
@@ -48,9 +48,9 @@ class Avatar {
     collide(dirx, diry, x, y) {
         if (this.map) {
             // Coordinates of different points on hitbox
-            const left = this.x - constants_1.c.AVATAR_WIDTH / 2;
-            const right = this.x + constants_1.c.AVATAR_WIDTH / 2 - 1;
-            const bottom = this.y + constants_1.c.AVATAR_HEIGHT / 2 - 1;
+            const left = this.x - this.c.AVATAR_WIDTH / 2;
+            const right = this.x + this.c.AVATAR_WIDTH / 2 - 1;
+            const bottom = this.y + this.c.AVATAR_HEIGHT / 2 - 1;
             const middleY = (this.y + bottom) / 2;
             // Check for collision
             const collision = this.map.isSolidTileAtXY(left, this.y, dirx, diry) ||

@@ -1,22 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Camera = void 0;
-const constants_1 = require("../utils/constants");
 class Camera {
-    constructor(map, width, height) {
+    constructor(c, map) {
         this.x = 0;
         this.y = 0;
+        this.c = c;
         // Set camera properties to supplied values
-        this.width = width;
-        this.height = height;
+        this.width = this.c.GAME_WIDTH;
+        this.height = this.c.GAME_HEIGHT;
         // Set the max x and y for the camera
-        this.maxX = map.COLS * constants_1.c.MAP_TSIZE - width;
-        this.maxY = map.ROWS * constants_1.c.MAP_TSIZE - height;
+        this.maxX = map.COLS * this.c.MAP_TSIZE - this.width;
+        this.maxY = map.ROWS * this.c.MAP_TSIZE - this.height;
     }
     updateMap(currentMap) {
         // Update the max x and y for the camera to the new map
-        this.maxX = currentMap.COLS * constants_1.c.MAP_TSIZE - this.width;
-        this.maxY = currentMap.ROWS * constants_1.c.MAP_TSIZE - this.height;
+        this.maxX = currentMap.COLS * this.c.MAP_TSIZE - this.width;
+        this.maxY = currentMap.ROWS * this.c.MAP_TSIZE - this.height;
     }
     follow(sprite) {
         // Set the avatar to be followed

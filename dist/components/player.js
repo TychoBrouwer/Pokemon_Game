@@ -23,14 +23,20 @@ exports.Player = void 0;
 const pokedex = __importStar(require("../pokedex.json"));
 const helper_1 = require("../utils/helper");
 class Player {
-    constructor() {
+    constructor(c) {
+        this.c = c;
         // Get playerData from localStorage
         this.playerData = (0, helper_1.getLocalStorage)('playerData');
+        this.accountData = (0, helper_1.getLocalStorage)('accountData');
         this.pokedex = pokedex;
     }
     getPlayerData() {
         // Return playerData
         return this.playerData;
+    }
+    getAccountData() {
+        // Return playerData
+        return this.accountData;
     }
     getStoredPlayerData(key) {
         // Get key from localStorage
@@ -44,7 +50,7 @@ class Player {
     }
     addPokemon(pokemonId, levelRange) {
         // Generate new pokemon from supplied 
-        const pokemon = (0, helper_1.generatePokemon)(this.pokedex[pokemonId.toString()], levelRange, pokemonId, 2);
+        const pokemon = (0, helper_1.generatePokemon)(this.c, this.pokedex[pokemonId.toString()], levelRange, pokemonId, 2);
         // Push new pokemon to playerData
         this.playerData.pokemon.push(pokemon);
         console.log(this.playerData.pokemon);
@@ -60,15 +66,25 @@ class Player {
             },
             location: 'littleroot town',
             pokemon: [],
+            inventory: {
+                0: {},
+                1: {
+                    'Poké Ball': 10,
+                },
+                2: {},
+                3: {},
+                4: {},
+            },
             currentPokemon: 0,
         };
         // Create the accountData object
-        const accountData = {
+        this.accountData = {
             avatar: avatar,
+            male: male,
         };
         // Set the playerData and accountData objects in localStorage
         (0, helper_1.setLocalStorage)('playerData', this.playerData);
-        (0, helper_1.setLocalStorage)('accountData', accountData);
+        (0, helper_1.setLocalStorage)('accountData', this.accountData);
         // Return playerData
         return this.playerData;
     }

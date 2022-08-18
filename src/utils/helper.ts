@@ -1,6 +1,6 @@
 import * as moveIndex from '../move_index.json';
 
-import { c } from '../utils/constants';
+import { C } from '../utils/constants';
 
 import { PokemonDataType, PokemonInfoType } from '../utils/types';
 
@@ -34,22 +34,32 @@ export function getLocalStorage(key: string) {
   return JSON.parse(data);
 }
 
-export function drawText(ctx: CanvasRenderingContext2D, font: HTMLCanvasElement, text: string, fontsize: number, fontColor: number, posX: number, posY: number) {
+export function drawText(c: C, ctx: CanvasRenderingContext2D, font: HTMLCanvasElement, text: string, fontsize: number, fontColor: number, posX: number, posY: number) {
   // Loop through the text to Draw
   for (let i = 0; i < text.length; i++) {
     // Set default width
     let width = c.FONT_WIDTH[fontsize];
-    // characters that are seven pixels wide
-    if (text[i] === '|') { 
-      width = 7;
-    }
-    // characters that are three pixels wide
-    if (text[i] === ' ' || text[i] === 'l' || text[i] === '.') {
-      width = 3;
-    }
-    // characters that are four pixels wide
-    if (text[i] === 'i' || text[i] === '!') {
-      width = 4;
+    if (fontsize === 0) {
+      // characters that are seven pixels wide
+      if (text[i] === '|') {
+        width = 7;
+      }
+      // characters that are three pixels wide
+      if (text[i] === ' ' || text[i] === 'l' || text[i] === '.') {
+        width = 3;
+      }
+      // characters that are four pixels wide
+      if (text[i] === 'i' || text[i] === '!') {
+        width = 5;
+      }
+      // characters that are five pixels wide
+      if (text[i] === 'r') {
+        width = 5;
+      }
+      // characters that are one pixels wide
+      if (text[i] === '*') {
+        width = 1;
+      }
     }
 
     // Get the positions of the letter to draw
@@ -58,7 +68,11 @@ export function drawText(ctx: CanvasRenderingContext2D, font: HTMLCanvasElement,
       posY: ((c.CHAR_IN_FONT.indexOf(text[i]) / 40) << 0) * c.FONT_HEIGHT[fontsize],
     }
     // Get the yOffset for the font type (fontSize and fontColor)
-    const yOffset = (fontsize === 0) ? fontColor * 2 * c.FONT_HEIGHT[fontsize] : 56 + fontColor * 2 * c.FONT_HEIGHT[fontsize];
+    const yOffset = (fontsize === 0) ? fontColor * 2 * c.FONT_HEIGHT[fontsize] : 3 * 2 * c.FONT_HEIGHT[0] + fontColor * 2 * c.FONT_HEIGHT[fontsize];
+
+    if (text[i] === '_' || text[i] === '*') {
+      positions.posX = -10;
+    }
 
     // Draw the letter
     ctx.drawImage(
@@ -69,7 +83,9 @@ export function drawText(ctx: CanvasRenderingContext2D, font: HTMLCanvasElement,
       c.FONT_HEIGHT[fontsize],
       posX + c.FONT_WIDTH[fontsize] * i
         - 3 * (text.substring(0, i).match(/ |l|\./g)||[]).length
-        - 2 * (text.substring(0, i).match(/i|!/g)||[]).length,
+        - 2 * (text.substring(0, i).match(/i|!/g)||[]).length
+        - 1 * (text.substring(0, i).match(/r/g)||[]).length
+        - 5 * (text.substring(0, i).match(/\*/g)||[]).length,
       posY,
       width,
       c.FONT_HEIGHT[fontsize]
@@ -77,7 +93,7 @@ export function drawText(ctx: CanvasRenderingContext2D, font: HTMLCanvasElement,
   }
 }
 
-export function generatePokemon(pokedexEntry: PokemonInfoType, levelRange: number[], pokemonId: number, pokeball: number): PokemonDataType {
+export function generatePokemon(c: C, pokedexEntry: PokemonInfoType, levelRange: number[], pokemonId: number, pokeball: number): PokemonDataType {
   // Get random level from the supplied range
   const level = randomFromMinMax(levelRange[0], levelRange[1]);
 

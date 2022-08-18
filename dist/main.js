@@ -9,13 +9,13 @@ window.onload = function () {
     const overlayCanvas = document.getElementById('overlayCanvas');
     const overlayContext = overlayCanvas.getContext('2d');
     if (gameContext && battleContext && overlayContext) {
-        new game_1.Game(gameContext, battleContext, overlayContext);
-        gameCanvas.height = game_1.Game.GAME_HEIGHT;
-        gameCanvas.width = game_1.Game.GAME_WIDTH;
-        battleCanvas.height = game_1.Game.GAME_HEIGHT;
-        battleCanvas.width = game_1.Game.GAME_WIDTH;
-        overlayCanvas.height = game_1.Game.GAME_HEIGHT;
-        overlayCanvas.width = game_1.Game.GAME_WIDTH;
+        const game = new game_1.Game(gameContext, battleContext, overlayContext);
+        gameCanvas.height = game.c.GAME_HEIGHT;
+        gameCanvas.width = game.c.GAME_WIDTH;
+        battleCanvas.height = game.c.GAME_HEIGHT;
+        battleCanvas.width = game.c.GAME_WIDTH;
+        overlayCanvas.height = game.c.GAME_HEIGHT;
+        overlayCanvas.width = game.c.GAME_WIDTH;
     }
 };
 //# sourceMappingURL=main.js.map
