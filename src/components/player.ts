@@ -67,13 +67,24 @@ export class Player {
       location: 'littleroot town',
       pokemon: [],
       inventory: {
-        0: {},
-        1: {
-          'Poké Ball': 10,
-        },
-        2: {},
-        3: {},
-        4: {},
+        0: [],
+        1: [
+          {
+            itemName: 'Poké Ball',
+            amount: 10,
+          },
+          {
+            itemName: 'Poké Ball',
+            amount: 10,
+          },
+          {
+            itemName: 'Poké Ball',
+            amount: 10,
+          },
+        ],
+        2: [],
+        3: [],
+        4: [],
       },
       currentPokemon: 0,
     }

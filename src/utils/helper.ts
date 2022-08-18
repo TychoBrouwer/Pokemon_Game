@@ -35,6 +35,8 @@ export function getLocalStorage(key: string) {
 }
 
 export function drawText(c: C, ctx: CanvasRenderingContext2D, font: HTMLCanvasElement, text: string, fontsize: number, fontColor: number, posX: number, posY: number) {
+  text = text.replace('É', 'é');
+  
   // Loop through the text to Draw
   for (let i = 0; i < text.length; i++) {
     // Set default width

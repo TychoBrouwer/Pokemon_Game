@@ -57,6 +57,8 @@ class PokemonBattle {
         };
         this.bagSelected = 0;
         this.bagSwitchLeft = false;
+        this.bagSelectedItem = 0;
+        this.bagSelectedOffset = 0;
         this.battleAction = 0;
         this.escapeAttempts = 0;
         this.battleMove = 0;
@@ -349,7 +351,7 @@ class PokemonBattle {
                 yColumn = 1;
             }
             // Draw the action selector
-            this.drawActionSelector(this.c.GAME_WIDTH - this.c.ACTION_BOX_WIDTH + 8 + xOffset, this.c.GAME_WIDTH - this.c.ACTION_BOX_WIDTH + 8 + 42 + xOffset, yColumn);
+            this.drawActionSelector(this.c.GAME_WIDTH - this.c.ACTION_BOX_WIDTH + 8 + xOffset, this.c.GAME_WIDTH - this.c.ACTION_BOX_WIDTH + 8 + 42 + xOffset, 121, yColumn);
         }
         else if (this.battleStatus === 5 /* PlayerBag */) {
             if (this.statusAfterFadeOut === 5 /* PlayerBag */) {
@@ -369,12 +371,29 @@ class PokemonBattle {
             this.bagSelector.render();
             const text = this.c.BAG_POCKETS[this.bagSelected];
             (0, helper_1.drawText)(this.c, this.ctx, this.font, text, 0, 2, 32, 81);
+            const items = this.playerData.inventory[this.bagSelected];
+            const itemsToDisplay = Math.min(items.length + 1, 8);
+            for (let i = this.bagSelectedOffset; i < itemsToDisplay + this.bagSelectedOffset; i++) {
+                const x = (i - this.bagSelectedOffset) * 16;
+                if (i === items.length) {
+                    (0, helper_1.drawText)(this.c, this.ctx, this.font, 'CLOSE BAG', 0, 0, 112, 17 + x);
+                }
+                else {
+                    (0, helper_1.drawText)(this.c, this.ctx, this.font, items[i].itemName.toUpperCase(), 0, 0, 112, 17 + x);
+                    if (items[i].amount !== -1) {
+                        (0, helper_1.drawText)(this.c, this.ctx, this.font, 'x' + items[i].amount.toString().padStart(2, '_'), 0, 0, 214, 17 + x);
+                    }
+                }
+            }
+            this.drawActionSelector(112, 233, 17, this.bagSelectedItem);
             // Detect keyboard press and increment/ decrement battleAction accordingly
             if (!this.keyDown) {
                 if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT)) {
                     if (this.bagSelected > 0) {
                         this.bagSelected--;
                         this.bagSwitchLeft = true;
+                        this.bagSelectedItem = 0;
+                        this.bagSelectedOffset = 0;
                         this.nextBattlePhase(6 /* BagSwitch */);
                     }
                     this.keyDown = true;
@@ -383,16 +402,32 @@ class PokemonBattle {
                     if (this.bagSelected < 4) {
                         this.bagSelected++;
                         this.bagSwitchLeft = false;
+                        this.bagSelectedItem = 0;
+                        this.bagSelectedOffset = 0;
                         this.nextBattlePhase(6 /* BagSwitch */);
                     }
                     this.keyDown = true;
-                    // } else if (keyboard.isDown(keyboard.UP)) { 
-                    //   this.keyDown = true;
-                    // } else if (keyboard.isDown(keyboard.DOWN)) { 
-                    //   this.keyDown = true;
+                }
+                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.UP)) {
+                    if (this.bagSelectedItem > 0) {
+                        this.bagSelectedItem--;
+                    }
+                    else if (this.bagSelectedOffset > 0) {
+                        this.bagSelectedOffset--;
+                    }
+                    this.keyDown = true;
+                }
+                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.DOWN)) {
+                    if (this.bagSelectedItem < itemsToDisplay - 1) {
+                        this.bagSelectedItem++;
+                    }
+                    else if (this.bagSelectedOffset + this.bagSelectedItem < items.length) {
+                        this.bagSelectedOffset++;
+                    }
+                    this.keyDown = true;
                 }
                 else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
-                    // On enter go to next battle phase
+                    // On enter use item
                     this.keyDown = true;
                 }
             }
@@ -432,18 +467,22 @@ class PokemonBattle {
             this.bagText.render();
             const items = this.playerData.inventory[this.bagSelected];
             const currentLine = (Math.abs(this.animationCounter) / limit * 128) / 16 << 0;
-            const itemsToDisplay = Math.min(Object.keys(items).length + 1, currentLine);
-            console.log(Object.keys(items));
-            console.log(Object.values(items));
+            const itemsToDisplay = Math.min(items.length + 1, currentLine);
             for (let i = 0; i < itemsToDisplay; i++) {
                 const x = i * 16;
-                if (i === itemsToDisplay - 1) {
-                    (0, helper_1.drawText)(this.c, this.ctx, this.font, 'CLOSE BAG', 0, 2, 112, 17 + x);
+                if (i === items.length) {
+                    (0, helper_1.drawText)(this.c, this.ctx, this.font, 'CLOSE BAG', 0, 0, 112, 17 + x);
                 }
                 else {
-                    (0, helper_1.drawText)(this.c, this.ctx, this.font, Object.keys(items)[i].toString().toUpperCase(), 0, 0, 112, 17 + x);
-                    (0, helper_1.drawText)(this.c, this.ctx, this.font, 'x' + Object.values(items)[i].toString().padStart(2, '_'), 0, 0, 213, 17 + x);
+                    (0, helper_1.drawText)(this.c, this.ctx, this.font, items[i].itemName.toUpperCase(), 0, 0, 112, 17 + x);
+                    if (items[i].amount !== -1) {
+                        (0, helper_1.drawText)(this.c, this.ctx, this.font, 'x' + items[i].amount.toString().padStart(2, '_'), 0, 0, 214, 17 + x);
+                    }
                 }
+            }
+            if (itemsToDisplay >= 1) {
+                this.bagSelectedItem = 0;
+                this.drawActionSelector(112, 233, 17, this.bagSelectedItem);
             }
             if (this.animationCounter > -limit && this.animationCounter < limit) {
                 this.animationCounter += delta * direction * speed;
@@ -521,7 +560,7 @@ class PokemonBattle {
                 yColumn = 1;
             }
             // Draw the action selector
-            this.drawActionSelector(8 + xOffset, 8 + 74 + xOffset, yColumn);
+            this.drawActionSelector(8 + xOffset, 8 + 74 + xOffset, 121, yColumn);
             // Detect keyboard press and increment/ decrement battleMove accordingly
             if (!this.keyDown) {
                 if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT)) {
@@ -1414,17 +1453,17 @@ class PokemonBattle {
             this.actionSelectorBox.render();
         }
     }
-    drawActionSelector(xStart, xEnd, column) {
+    drawActionSelector(xStart, xEnd, yStart, column) {
         // Draw rectangular action selector
         this.ctx.beginPath();
-        this.ctx.moveTo(xStart, 121 + column * 16 - 0.5);
-        this.ctx.lineTo(xEnd - 1, 121 + column * 16 - 0.5);
-        this.ctx.moveTo(xEnd - 0.5, 121 + column * 16);
-        this.ctx.lineTo(xEnd - 0.5, 121 + 14 + column * 16);
-        this.ctx.moveTo(xEnd - 1, 121 + 14 + column * 16 + 0.5);
-        this.ctx.lineTo(xStart, 121 + 14 + column * 16 + 0.5);
-        this.ctx.moveTo(xStart - 0.5, 121 + 14 + column * 16);
-        this.ctx.lineTo(xStart - 0.5, 121 + column * 16);
+        this.ctx.moveTo(xStart, yStart + column * 16 - 0.5);
+        this.ctx.lineTo(xEnd - 1, yStart + column * 16 - 0.5);
+        this.ctx.moveTo(xEnd - 0.5, yStart + column * 16);
+        this.ctx.lineTo(xEnd - 0.5, yStart + 14 + column * 16);
+        this.ctx.moveTo(xEnd - 1, yStart + 14 + column * 16 + 0.5);
+        this.ctx.lineTo(xStart, yStart + 14 + column * 16 + 0.5);
+        this.ctx.moveTo(xStart - 0.5, yStart + 14 + column * 16);
+        this.ctx.lineTo(xStart - 0.5, yStart + column * 16);
         this.ctx.lineWidth = 1;
         this.ctx.strokeStyle = '#f86058';
         this.ctx.stroke();

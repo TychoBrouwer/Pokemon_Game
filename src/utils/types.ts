@@ -7,8 +7,9 @@ export interface PlayerDataType {
   pokemon: PokemonDataType[];
   inventory: {
     [itemCategory: number]: {
-      [itemName: string]: number;
-    };
+      itemName: string;
+      amount: number;
+    }[];
   };
   currentPokemon: number;
 }

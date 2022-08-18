@@ -50,6 +50,7 @@ function getLocalStorage(key) {
 }
 exports.getLocalStorage = getLocalStorage;
 function drawText(c, ctx, font, text, fontsize, fontColor, posX, posY) {
+    text = text.replace('É', 'é');
     // Loop through the text to Draw
     for (let i = 0; i < text.length; i++) {
         // Set default width
