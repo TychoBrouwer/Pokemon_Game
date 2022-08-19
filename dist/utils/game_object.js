@@ -24,6 +24,8 @@ class GameObject {
         this.height = height;
         this.x = x;
         this.y = y;
+        this.xBegin = x;
+        this.yBegin = y;
         if (gameObject) {
             this.spriteCtx = gameObject.getContext('2d');
             if (this.spriteCtx) {
@@ -45,6 +47,8 @@ class GameObject {
     setPosition(x, y) {
         this.x = x;
         this.y = y;
+        this.xBegin = x;
+        this.yBegin = y;
     }
     getPosition() {
         return {
@@ -128,9 +132,15 @@ class GameObject {
     animationTrigger(frame) {
         this.animationFrame = frame;
     }
-    scaleTo(delta, speed, toFactor) {
-        const newScaleFactor = this.scaleFactor + delta * speed;
-        this.scaleFactor = newScaleFactor > toFactor ? toFactor : newScaleFactor;
+    scaleTo(delta, speed, toFactor, bigger) {
+        if (bigger) {
+            const newScaleFactor = this.scaleFactor + delta * speed;
+            this.scaleFactor = newScaleFactor > toFactor ? toFactor : newScaleFactor;
+        }
+        else {
+            const newScaleFactor = this.scaleFactor - delta * speed;
+            this.scaleFactor = newScaleFactor < toFactor ? toFactor : newScaleFactor;
+        }
         const newWidth = this.scaleFactor * this.widthSource;
         const newHeight = this.scaleFactor * this.heightSource;
         this.x += (this.width - newWidth) / 2;
@@ -138,7 +148,7 @@ class GameObject {
         this.width = newWidth;
         this.height = newHeight;
         this.render(delta);
-        if (this.scaleFactor < toFactor) {
+        if ((bigger && this.scaleFactor < toFactor) || (!bigger && this.scaleFactor > toFactor)) {
             return false;
         }
         else {
@@ -163,7 +173,21 @@ class GameObject {
             return true;
         }
     }
-    animate(delta, speed, dirx, diry, endx, endy, drawWhenFinished) {
+    animate(delta, speed, dirx, diry, endx, endy, modifier, drawWhenFinished) {
+        const percentage = dirx !== 0 ? (this.x - this.xBegin) / (endx - this.xBegin) : (this.y - this.yBegin) / (endy - this.yBegin);
+        let speedMod = 1;
+        if (modifier === 'quadratic-up') {
+            // const sigma = 0.15;
+            // const mean = Math.abs(dirx !== 0 ? (endx - this.xBegin) / 2 : (endy - this.yBegin) / 2);
+            // const coordinate = dirx !== 0 ? this.x : this.y;
+            // speed = 1 / (1 + 2.71828 ** (- c1 * (coordinate - c2))) * speed;
+            // const speedMod = Math.sin(percentage * 2 * Math.PI - 0.5 * Math.PI) / 2.5 + 0.6
+            speedMod = (Math.pow((0.77 * percentage), 2) + 0.4) * speed;
+        }
+        else if (modifier === 'quadratic-down') {
+            speedMod = (1 - Math.pow((0.77 * percentage), 2)) * speed;
+        }
+        speed = speedMod * speed;
         const newx = this.x + delta * speed * dirx;
         const newy = this.y + delta * speed * diry;
         if ((dirx === -1 && newx > endx) || (dirx === 1 && newx < endx) ||
@@ -177,6 +201,8 @@ class GameObject {
             if (drawWhenFinished) {
                 this.x = endx;
                 this.y = endy;
+                this.xBegin = endx;
+                this.yBegin = endy;
                 this.render();
             }
             return true;

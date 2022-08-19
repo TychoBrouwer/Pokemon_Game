@@ -4,7 +4,7 @@ import { C } from '../utils/constants';
 
 import { getLocalStorage, setLocalStorage, generatePokemon } from '../utils/helper';
 
-import { PokedexType, PlayerDataType, AccountDataType } from '../utils/types';
+import { PokedexType, PlayerDataType, AccountDataType, PokemonDataType } from '../utils/types';
 
 
 export class Player {
@@ -45,13 +45,17 @@ export class Player {
     this.playerData.position.y = y;
   }
 
-  addPokemon(pokemonId: number, levelRange: number[]) {
+  generatePokemon(pokemonId: number, levelRange: number[]) {
     // Generate new pokemon from supplied 
     const pokemon = generatePokemon(this.c, this.pokedex[pokemonId.toString()], levelRange, pokemonId, 2);
     // Push new pokemon to playerData
     this.playerData.pokemon.push(pokemon);
 
     console.log(this.playerData.pokemon);
+  }
+
+  addPokemon(pokemonData: PokemonDataType) {
+    this.playerData.pokemon.push(pokemonData);
   }
 
   createNewPlayer(male: boolean): PlayerDataType {
@@ -67,18 +71,27 @@ export class Player {
       location: 'littleroot town',
       pokemon: [],
       inventory: {
-        0: [],
+        0: [
+          {
+            itemId: 'potion',
+            amount: 5,
+          },
+          {
+            itemId: 'soda-pop',
+            amount: 10,
+          },
+        ],
         1: [
           {
-            itemName: 'Poké Ball',
-            amount: 10,
+            itemId: 'poke-ball',
+            amount: 99,
           },
           {
-            itemName: 'Poké Ball',
-            amount: 10,
+            itemId: 'poke-ball',
+            amount: 99,
           },
           {
-            itemName: 'Poké Ball',
+            itemId: 'poke-ball',
             amount: 10,
           },
         ],
@@ -91,6 +104,7 @@ export class Player {
 
     // Create the accountData object
     this.accountData = {
+      playerName: 'playerName',
       avatar: avatar,
       male: male,
     }

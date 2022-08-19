@@ -11,6 +11,8 @@ export class GameObject {
   height: number;
   x: number;
   y: number;
+  xBegin: number;
+  yBegin: number;
   scaleFactor = 1;
   opacity = 1;
   currentColor = [-1, -1, -1];
@@ -35,6 +37,8 @@ export class GameObject {
     this.height = height;
     this.x = x;
     this.y = y;
+    this.xBegin = x;
+    this.yBegin = y;
 
     if (gameObject) {
       this.spriteCtx = gameObject.getContext('2d');
@@ -61,6 +65,9 @@ export class GameObject {
   setPosition(x: number, y: number) {
     this.x = x;
     this.y = y;
+    this.xBegin = x;
+    this.yBegin = y;
+
   }
 
   getPosition() {
@@ -166,9 +173,14 @@ export class GameObject {
     this.animationFrame = frame;
   }
 
-  scaleTo(delta: number, speed: number, toFactor: number) {
-    const newScaleFactor = this.scaleFactor + delta * speed;
-    this.scaleFactor = newScaleFactor > toFactor ? toFactor : newScaleFactor;
+  scaleTo(delta: number, speed: number, toFactor: number, bigger: boolean) {
+    if (bigger) {
+      const newScaleFactor = this.scaleFactor + delta * speed;
+      this.scaleFactor = newScaleFactor > toFactor ? toFactor : newScaleFactor;
+    } else {
+      const newScaleFactor = this.scaleFactor - delta * speed;
+      this.scaleFactor = newScaleFactor < toFactor ? toFactor : newScaleFactor;
+    }
 
     const newWidth = this.scaleFactor * this.widthSource;
     const newHeight = this.scaleFactor * this.heightSource;
@@ -181,7 +193,7 @@ export class GameObject {
 
     this.render(delta);
 
-    if (this.scaleFactor < toFactor) {
+    if ((bigger && this.scaleFactor < toFactor) || (!bigger && this.scaleFactor > toFactor)) {
       return false;
     } else {
       return true;
@@ -208,7 +220,17 @@ export class GameObject {
     }
   }
 
-  animate(delta: number, speed: number, dirx: number, diry: number, endx: number, endy: number, drawWhenFinished: boolean) {
+  animate(delta: number, speed: number, dirx: number, diry: number, endx: number, endy: number, modifier: boolean | string, drawWhenFinished: boolean) {
+    const percentage = dirx !== 0 ? (this.x - this.xBegin) / (endx - this.xBegin) : (this.y - this.yBegin) / (endy - this.yBegin);
+    
+    let speedMod = 1;
+    if (modifier === 'quadratic-up') {
+      speedMod = ((0.77 * percentage) ** 2 + 0.4) * speed;
+    } else if (modifier === 'quadratic-down') {
+      speedMod = (1 - (0.77 * percentage) ** 2) * speed;
+    }
+    speed = speedMod * speed;
+
     const newx = this.x + delta * speed * dirx;
     const newy = this.y + delta * speed * diry;
 
@@ -225,6 +247,9 @@ export class GameObject {
         this.x = endx;
         this.y = endy;
 
+        this.xBegin = endx;
+        this.yBegin = endy;
+    
         this.render();
       }
 

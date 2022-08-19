@@ -7,7 +7,7 @@ export interface PlayerDataType {
   pokemon: PokemonDataType[];
   inventory: {
     [itemCategory: number]: {
-      itemName: string;
+      itemId: string;
       amount: number;
     }[];
   };
@@ -23,6 +23,8 @@ export interface PokemonDataType {
   xpNextLevel: number;
   xpBase: number;
   growth_rate: string;
+  capture_rate: number;
+  base_happiness: number;
   level: number;
   health: number;
   gender: number;
@@ -238,6 +240,29 @@ export interface MoveIndexType {
   [moveName: string]: MoveType;
 }
 
+export interface ItemType {
+  attributes: string[];
+  baby_trigger_for: string | null;
+  category: string;
+  cost: number;
+  fling_effect: string | null;
+  fling_power: number | null;
+  held_by_pokemon: {
+    pokemon: string;
+    rarity: number;
+  }[];
+  id: number;
+  name: string;
+  game_index: number;
+  flavour_text_entry: string;
+  effect: string;
+  short_effect: string;
+}
+
+export interface ItemIndexType {
+  [itemId: string]: ItemType;
+}
+
 export interface LevelsType {
   [name: string]: {
     [level: number]: number;
@@ -245,6 +270,7 @@ export interface LevelsType {
 }
 
 export interface AccountDataType {
+  playerName: string;
   avatar: string;
   male: boolean;
 }

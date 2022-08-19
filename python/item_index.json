@@ -97,7 +97,7 @@
     "game_index": 5,
     "flavour_text_entry": "A special BALL that\nis used only in the\nSAFARI ZONE.",
     "effect": "Used in battle\n:   Attempts to catch a wild Pok\u00e9mon, using a catch rate of 1.5\u00d7.\n\nThis item can only be used in the great marsh or kanto safari zone.",
-    "short_effect": "Tries to catch a wild Pok\u00e9mon in the Great Marsh or Safari Zone.  Success rate is 1.5\u00d7."
+    "short_effect": "Tries to catch a wild Pok\u00e9mon in the Safari Zone.  Success rate is 1.5\u00d7."
   },
   "net-ball": {
     "attributes": [
@@ -197,7 +197,7 @@
     "game_index": 10,
     "flavour_text_entry": "More effective as\nmore turns are\ntaken in battle.",
     "effect": "Used in battle\n:   Attempts to catch a wild Pok\u00e9mon.  Has a catch rate of 1.1\u00d7 on the first turn of the battle and increases by 0.1\u00d7 every turn, to a maximum of 4\u00d7 on turn 30.\n\n    If used in a trainer battle, nothing happens and the ball is lost.",
-    "short_effect": "Tries to catch a wild Pok\u00e9mon. Success rate increases by 0.1\u00d7 (Gen V: 0.3\u00d7) every turn, to a max of 4\u00d7."
+    "short_effect": "Tries to catch a wild Pok\u00e9mon. Success rate increases by 0.1\u00d7 every turn, to a max of 4\u00d7."
   },
   "luxury-ball": {
     "attributes": [
@@ -1870,6 +1870,7 @@
     "id": 101,
     "name": "Helix Fossil",
     "game_index": 357,
+    "flavour_text_entry": "A piece of an\nancient marine\nPOK\u00e9MON\u2019s seashell.",
     "effect": "Give to a scientist in the mining museum in oreburgh city or the Museum of Science in pewter city to receive a omanyte.",
     "short_effect": "Can be revived into an Omanyte."
   },
@@ -1886,6 +1887,7 @@
     "id": 102,
     "name": "Dome Fossil",
     "game_index": 358,
+    "flavour_text_entry": "A piece of an\nancient marine\nPOK\u00e9MON\u2019s shell.",
     "effect": "Give to a scientist in the mining museum in oreburgh city or the Museum of Science in pewter city to receive a kabuto.",
     "short_effect": "Can be revived into a Kabuto."
   },
@@ -1902,6 +1904,7 @@
     "id": 103,
     "name": "Old Amber",
     "game_index": 354,
+    "flavour_text_entry": "A stone containing\nthe genes of an\nancient POK\u00e9MON.",
     "effect": "Give to a scientist in the mining museum in oreburgh city or the Museum of Science in pewter city to receive a aerodactyl.",
     "short_effect": "Can be revived into an Aerodactyl."
   },
@@ -1912,10 +1915,7 @@
     "baby_trigger_for": null,
     "category": "medicine",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 126,
@@ -1932,10 +1932,7 @@
     "baby_trigger_for": null,
     "category": "medicine",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [
       {
@@ -1969,10 +1966,7 @@
     "baby_trigger_for": null,
     "category": "medicine",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [
       {
@@ -1998,10 +1992,7 @@
     "baby_trigger_for": null,
     "category": "medicine",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [
       {
@@ -2051,10 +2042,7 @@
     "baby_trigger_for": null,
     "category": "medicine",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [
       {
@@ -2080,10 +2068,7 @@
     "baby_trigger_for": null,
     "category": "medicine",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [
       {
@@ -2125,10 +2110,7 @@
     "baby_trigger_for": null,
     "category": "medicine",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [
       {
@@ -2178,10 +2160,7 @@
     "baby_trigger_for": null,
     "category": "medicine",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [
       {
@@ -2207,10 +2186,7 @@
     "baby_trigger_for": null,
     "category": "medicine",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [
       {
@@ -2236,10 +2212,7 @@
     "baby_trigger_for": null,
     "category": "medicine",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [
       {
@@ -2265,10 +2238,7 @@
     "baby_trigger_for": null,
     "category": "picky-healing",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 136,
@@ -2285,10 +2255,7 @@
     "baby_trigger_for": null,
     "category": "picky-healing",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 137,
@@ -2305,10 +2272,7 @@
     "baby_trigger_for": null,
     "category": "picky-healing",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 138,
@@ -2325,10 +2289,7 @@
     "baby_trigger_for": null,
     "category": "picky-healing",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 139,
@@ -2345,10 +2306,7 @@
     "baby_trigger_for": null,
     "category": "picky-healing",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 140,
@@ -2665,10 +2623,7 @@
     "baby_trigger_for": null,
     "category": "in-a-pinch",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 178,
@@ -2685,10 +2640,7 @@
     "baby_trigger_for": null,
     "category": "in-a-pinch",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 179,
@@ -2705,10 +2657,7 @@
     "baby_trigger_for": null,
     "category": "in-a-pinch",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 180,
@@ -2725,10 +2674,7 @@
     "baby_trigger_for": null,
     "category": "in-a-pinch",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 181,
@@ -2745,10 +2691,7 @@
     "baby_trigger_for": null,
     "category": "in-a-pinch",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 182,
@@ -2765,10 +2708,7 @@
     "baby_trigger_for": null,
     "category": "in-a-pinch",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 183,
@@ -2785,10 +2725,7 @@
     "baby_trigger_for": null,
     "category": "in-a-pinch",
     "cost": 80,
-    "fling_effect": {
-      "name": "berry-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/3/"
-    },
+    "fling_effect": "berry-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 184,
@@ -2841,10 +2778,7 @@
     "baby_trigger_for": null,
     "category": "held-items",
     "cost": 4000,
-    "fling_effect": {
-      "name": "herb-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/4/"
-    },
+    "fling_effect": "herb-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 191,
@@ -2947,10 +2881,7 @@
     "baby_trigger_for": null,
     "category": "held-items",
     "cost": 4000,
-    "fling_effect": {
-      "name": "herb-effect",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/4/"
-    },
+    "fling_effect": "herb-effect",
     "fling_power": 10,
     "held_by_pokemon": [],
     "id": 196,
@@ -2986,10 +2917,7 @@
     "baby_trigger_for": null,
     "category": "held-items",
     "cost": 5000,
-    "fling_effect": {
-      "name": "flinch",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/7/"
-    },
+    "fling_effect": "flinch",
     "fling_power": 30,
     "held_by_pokemon": [
       {
@@ -3396,10 +3324,7 @@
     "baby_trigger_for": null,
     "category": "species-specific",
     "cost": 1000,
-    "fling_effect": {
-      "name": "paralyze",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/5/"
-    },
+    "fling_effect": "paralyze",
     "fling_power": 30,
     "held_by_pokemon": [
       {
@@ -3615,10 +3540,7 @@
     "baby_trigger_for": null,
     "category": "type-enhancement",
     "cost": 1000,
-    "fling_effect": {
-      "name": "poison",
-      "url": "https://pokeapi.co/api/v2/item-fling-effect/6/"
-    },
+    "fling_effect": "poison",
     "fling_power": 70,
     "held_by_pokemon": [
       {
@@ -3830,9 +3752,7 @@
       "holdable",
       "holdable-active"
     ],
-    "baby_trigger_for": {
-      "url": "https://pokeapi.co/api/v2/evolution-chain/90/"
-    },
+    "baby_trigger_for": "azurill",
     "category": "type-enhancement",
     "cost": 2000,
     "fling_effect": null,
@@ -3850,9 +3770,7 @@
       "holdable",
       "holdable-active"
     ],
-    "baby_trigger_for": {
-      "url": "https://pokeapi.co/api/v2/evolution-chain/100/"
-    },
+    "baby_trigger_for": "wynaut",
     "category": "held-items",
     "cost": 5000,
     "fling_effect": null,
@@ -4918,6 +4836,7 @@
     "id": 419,
     "name": "Town Map",
     "game_index": 361,
+    "flavour_text_entry": "Can be viewed\nanytime. Shows your\npresent location.",
     "effect": "Displays a map of the region including the trainer's position, location names, visited towns, gym locations, and where the trainer has been walking recently.",
     "short_effect": "Use to see the overworld map."
   },
@@ -4932,6 +4851,7 @@
     "id": 420,
     "name": "Vs. Seeker",
     "game_index": 362,
+    "flavour_text_entry": "A rechargeable unit\nthat flags battle-\nready TRAINERS.",
     "effect": "Reveals trainers who want a rematch, by showing !! over their heads.  Each use drains the battery; requires 100 steps to charge.",
     "short_effect": "Allows rebattling of on-screen trainers. 100 steps to recharge."
   },
@@ -5006,6 +4926,7 @@
     "id": 427,
     "name": "Bicycle",
     "game_index": 360,
+    "flavour_text_entry": "A folding bicycle\nthat is faster than\nthe RUNNING SHOES.",
     "effect": "Increases movement speed outside or in caves.  In high gear, allows the trainer to hop over some rocks and ascend muddy slopes.",
     "short_effect": "Use for fast transit."
   },
@@ -5065,6 +4986,7 @@
     "id": 445,
     "name": "Secret Key",
     "game_index": 351,
+    "flavour_text_entry": "The key to the\nCINNABAR ISLAND\nGYM\u2019s entrance.",
     "effect": "Used by trainer in the Galactic Eterna Building, on the ground floor, to the left of the TV\n:   Unlocks the secret rotom room, in which there are five appliances which can change Rotom's form.",
     "short_effect": "Gen IV: The key to Rotom's appliance room. Gen III: The key to Cinnabar Gym."
   },
@@ -5124,6 +5046,7 @@
     "id": 475,
     "name": "Card Key",
     "game_index": 355,
+    "flavour_text_entry": "A card-type door\nkey used in SILPH\nCO\u2019s office.",
     "effect": "Used by trainer outside of battle\n:   Opens doors in the goldenrod city Radio Tower.",
     "short_effect": "HS: Opens doors in the Radio Tower. Gen III: Unlocks Silph Co Doors."
   },
@@ -5573,6 +5496,7 @@
     "id": 543,
     "name": "Oak's Parcel",
     "game_index": 349,
+    "flavour_text_entry": "A parcel for PROF.\nOAK from a POK\u00e9MON\nMART\u2019s clerk.",
     "effect": "A parcel to be delivered to Professor Oak for a Pok\u00e9dex.",
     "short_effect": "Trade to Prof. Oak for a Pok\u00e9dex."
   },
@@ -5587,6 +5511,7 @@
     "id": 544,
     "name": "Pok\u00e9 Flute",
     "game_index": 350,
+    "flavour_text_entry": "A sweet-sounding\nflute that awakens\nPOK\u00e9MON.",
     "effect": "Wakes up sleeping Pok\u00e9mon.  Required to wake up sleeping snorlax on the overworld.",
     "short_effect": "Use to awaken sleeping Pok\u00e9mon, including Snorlax on roads."
   },
@@ -5601,6 +5526,7 @@
     "id": 545,
     "name": "Bike Voucher",
     "game_index": 352,
+    "flavour_text_entry": "A voucher for\nobtaining a bicycle\nfrom the BIKE SHOP.",
     "effect": "May be traded for a bicycle.",
     "short_effect": "Trade in Cerulean bike shop for a Bicycle."
   },
@@ -5615,6 +5541,7 @@
     "id": 546,
     "name": "Gold Teeth",
     "game_index": 353,
+    "flavour_text_entry": "Gold dentures lost\nby the SAFARI\nZONE\u2019s WARDEN.",
     "effect": "The Safari Zone warden's teeth, to be returned to him for hm04.",
     "short_effect": "The Safari Zone Warden's dentures. Trade for HM04 (Strength)."
   },
@@ -5629,6 +5556,7 @@
     "id": 547,
     "name": "Lift Key",
     "game_index": 356,
+    "flavour_text_entry": "An elevator key\nused in TEAM\nROCKET\u2019s HIDEOUT.",
     "effect": "Operates the elevator in the Celadon Rocket Hideout.",
     "short_effect": "Operates the elevator in Team Rocket's Celadon Hideout."
   },
@@ -5643,6 +5571,7 @@
     "id": 548,
     "name": "Silph Scope",
     "game_index": 359,
+    "flavour_text_entry": "SILPH CO\u2019s scope\nmakes unseeable\nPOK\u00e9MON visible.",
     "effect": "Identifies ghosts in pokemon tower.",
     "short_effect": "Used to identify the true forms of ghosts in Pok\u00e9mon Tower."
   },
@@ -5657,6 +5586,7 @@
     "id": 549,
     "name": "Fame Checker",
     "game_index": 363,
+    "flavour_text_entry": "Stores information\non famous people\nfor instant recall.",
     "effect": "Records information on various famous people.",
     "short_effect": "Records information about NPCs."
   },
@@ -5671,6 +5601,7 @@
     "id": 550,
     "name": "TM Case",
     "game_index": 364,
+    "flavour_text_entry": "A convenient case \nthat holds TMs and\nHMs.",
     "effect": "Stores TMs and HMs.",
     "short_effect": "Holds TMs."
   },
@@ -5685,6 +5616,7 @@
     "id": 551,
     "name": "Berry Pouch",
     "game_index": 365,
+    "flavour_text_entry": "A convenient\ncontainer that\nholds BERRIES.",
     "effect": "Stores Berries.",
     "short_effect": "Holds berries."
   },
@@ -5699,6 +5631,7 @@
     "id": 552,
     "name": "Teachy TV",
     "game_index": 366,
+    "flavour_text_entry": "A TV set tuned to\nan advice program\nfor TRAINERS.",
     "effect": "Teaches beginning trainers basic information.",
     "short_effect": "Teachers basic trainer advice."
   },
@@ -5713,6 +5646,7 @@
     "id": 553,
     "name": "Tri-Pass",
     "game_index": 367,
+    "flavour_text_entry": "A pass for ferries\nbetween ONE, TWO,\nand THREE ISLAND.",
     "effect": "Provides access to the first three Sevii Islands.",
     "short_effect": "Grants access to the first three Sevii Islands."
   },
@@ -5727,6 +5661,7 @@
     "id": 554,
     "name": "Rainbow Pass",
     "game_index": 368,
+    "flavour_text_entry": "For ferries serving\nVERMILION and the\nSEVII ISLANDS.",
     "effect": "Provides access to the Sevii Islands.",
     "short_effect": "Grants access to all of the Sevii Islands."
   },
@@ -5741,6 +5676,7 @@
     "id": 555,
     "name": "Tea",
     "game_index": 369,
+    "flavour_text_entry": "A thirst-quenching\ntea prepared by an\nold lady.",
     "effect": "Used to bribe the saffron city guards for entry to the city.",
     "short_effect": "Grants access to Saffron City."
   },
@@ -5755,6 +5691,7 @@
     "id": 556,
     "name": "MysticTicket",
     "game_index": 370,
+    "flavour_text_entry": "A ticket required\nto board the ship\nto NAVEL ROCK.",
     "effect": "Provides access to Navel Rock, ho oh, and lugia.",
     "short_effect": "Allows access to Navel Rock and Lugia or Ho-oh."
   },
@@ -5769,6 +5706,7 @@
     "id": 557,
     "name": "AuroraTicket",
     "game_index": 371,
+    "flavour_text_entry": "A ticket required\nto board the ship\nto BIRTH ISLAND.",
     "effect": "Provides access to Birth Island and deoxys.",
     "short_effect": "Allows access to Birth Island and Deoxys."
   },
@@ -5783,6 +5721,7 @@
     "id": 558,
     "name": "Powder Jar",
     "game_index": 372,
+    "flavour_text_entry": "Stores BERRY\nPOWDER made using\na BERRY CRUSHER.",
     "effect": "Holds Berry Powder from Berry Crushing.",
     "short_effect": "Stores Berry Powder made using a Berry Crusher."
   },
@@ -5797,6 +5736,7 @@
     "id": 559,
     "name": "Ruby",
     "game_index": 373,
+    "flavour_text_entry": "An exquisite, red-\nglowing gem that\nsymbolizes passion.",
     "effect": "Deliver to Celio for use in the Network Machine.",
     "short_effect": "Give to Celio with Sapphire to activate Network Machine and get Rainbow Pass."
   },
@@ -5811,6 +5751,7 @@
     "id": 560,
     "name": "Sapphire",
     "game_index": 374,
+    "flavour_text_entry": "A brilliant blue gem\nthat symbolizes\nhonesty.",
     "effect": "Deliver to Celio for use in the Network Machine.",
     "short_effect": "Give to Celio with Ruby to activate Network Machine and get Rainbow Pass."
   },
@@ -5825,6 +5766,7 @@
     "id": 561,
     "name": "Magma Emblem",
     "game_index": 375,
+    "flavour_text_entry": "A medal-like item in\nthe same shape as\nTEAM MAGMA\u2019s mark.",
     "effect": "Provides access to the magma hideout in the jagged pass.",
     "short_effect": "Provides access to the Team Magma Hideout in the Jagged Pass."
   },
@@ -5839,6 +5781,7 @@
     "id": 562,
     "name": "Old Sea Map",
     "game_index": 376,
+    "flavour_text_entry": "A faded sea chart\nthat shows the way\nto a certain island.",
     "effect": "Provides access to Faraway Island and mew.",
     "short_effect": "Allows access to Faraway Island and Mew. Unreleased outside of Japan."
   }

@@ -29,6 +29,12 @@ for i in range(1, 570):
         if data['flavor_text_entries'][k]['language']['name'] == 'en' and data['flavor_text_entries'][k]['version_group']['name'] == 'ruby-sapphire':
           data['flavour_text_entry'] = data['flavor_text_entries'][k]['text']
 
+      if 'flavour_text_entry' not in data:
+        for k in range(len(data['flavor_text_entries'])):
+          if data['flavor_text_entries'][k]['language']['name'] == 'en' and data['flavor_text_entries'][k]['version_group']['name'] == 'emerald':
+            data['flavour_text_entry'] = data['flavor_text_entries'][k]['text']
+
+
       del data['flavor_text_entries']
 
       for k in range(len(data['attributes'])):
@@ -66,11 +72,27 @@ for i in range(1, 570):
           if resp2.status_code != 404:
             data2 = resp2.json()
 
-            move = data2['move']['name'].replace('-', ' ');
+            move = data2['move']['name'].replace('-', ' ')
             
             data['effect'] = 'Teaches ' + move.title() + ' to a compatible Pok\u00e9mon.'
             data['short_effect'] = 'Teaches ' + move.title() + ' to a compatible Pok\u00e9mon.'
 
+      if data['baby_trigger_for'] is not None:
+          evo_chain = int(re.search('chain/[0-9]*/', data['baby_trigger_for']['url']).group()[6:-1])
+
+          urlMachine = 'https://pokeapi.co/api/v2/evolution-chain/' + str(evo_chain) + '/'
+
+          resp2 = requests.get(url=urlMachine)
+          if resp2.status_code != 404:
+            data2 = resp2.json()
+
+            species = data2['chain']['species']['name']
+            
+            data['baby_trigger_for'] = species
+
+      if data['fling_effect'] is not None:
+        data['fling_effect'] = data['fling_effect']['name']
+      
       del data['effect_entries']
       del data['machines']
       del data['names']

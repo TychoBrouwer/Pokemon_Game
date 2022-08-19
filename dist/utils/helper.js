@@ -83,7 +83,7 @@ function drawText(c, ctx, font, text, fontsize, fontColor, posX, posY) {
             posY: ((c.CHAR_IN_FONT.indexOf(text[i]) / 40) << 0) * c.FONT_HEIGHT[fontsize],
         };
         // Get the yOffset for the font type (fontSize and fontColor)
-        const yOffset = (fontsize === 0) ? fontColor * 2 * c.FONT_HEIGHT[fontsize] : 3 * 2 * c.FONT_HEIGHT[0] + fontColor * 2 * c.FONT_HEIGHT[fontsize];
+        const yOffset = (fontsize === 0) ? fontColor * 2 * c.FONT_HEIGHT[fontsize] : 6 * 2 * c.FONT_HEIGHT[0] + fontColor * 2 * c.FONT_HEIGHT[fontsize];
         if (text[i] === '_' || text[i] === '*') {
             positions.posX = -10;
         }
@@ -185,6 +185,8 @@ function generatePokemon(c, pokedexEntry, levelRange, pokemonId, pokeball) {
         xpNextLevel: c.LEVELS[pokedexEntry.growth_rate][level + 1],
         xpBase: pokedexEntry.base_experience,
         growth_rate: pokedexEntry.growth_rate,
+        capture_rate: pokedexEntry.capture_rate,
+        base_happiness: pokedexEntry.base_happiness,
         level: level,
         health: health,
         gender: randomFromMinMax(0, 1),

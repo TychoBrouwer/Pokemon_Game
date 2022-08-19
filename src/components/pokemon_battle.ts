@@ -1,5 +1,6 @@
 import * as pokedex from '../pokedex.json';
 import * as moveIndex from '../move_index.json';
+import * as itemIndex from '../item_index.json';
 import * as encounterTable from '../encounter_table.json';
 
 import { GameObject } from '../utils/game_object';
@@ -10,27 +11,37 @@ import { C } from '../utils/constants';
 import { randomFromArray, generatePokemon, drawText, randomFromMinMax } from '../utils/helper';
 import { keyboard } from '../utils/keyboard';
 
-import { PlayerDataType, EncounterTableType, PokedexType, PokemonDataType, MoveIndexType, MoveType, AccountDataType } from '../utils/types';
+import { PlayerDataType, AccountDataType, EncounterTableType, PokedexType, PokemonDataType, MoveIndexType, MoveType, ItemIndexType } from '../utils/types';
 
 const enum BattleStatus {
-  SlidePokemonIn,
+  SlideAvatarIn,
   WriteAppearText,
   WriteGoText,
+  SlideAvatarOut,
   ThrowPokemon,
   PlayerActionSelect,
   PlayerBag,
   BagSwitch,
+  BagConfirmUseItem,
+  UsePokeBall,
+  ThrowPokeBall,
+  BouncePokeBall,
+  ShakePokeBall,
+  PokemonBrokeFree,
+  PokemonCaptured,
+  UseHealingItem,
+  ConfirmBagUseItem,
   PlayerChoosePokemon,
   PlayerRun,
   PlayerRunText,
   PlayerSelectMove,
-  PlayerMove,
+  PlayerTurn,
   PlayerStatusMove,
   PlayerStatusEffect,
   PlayerSpecialMove,
   PlayerDamageMove,
   EnemyTakesDamage,
-  EnemyMove,
+  EnemyTurn,
   EnemyStatusMove,
   EnemyStatusEffect,
   EnemySpecialMove,
@@ -44,14 +55,18 @@ const enum BattleStatus {
   NewMoveText,
   FadeOut,
   FadeIn,
+  AddToPokedex,
   Finished,
 }
 
 export class PokemonBattle {
   private c: C;
   private loader: Loader;
+  private player: Player;
+
   private pokedex: PokedexType;
   private moveIndex: MoveIndexType;
+  private itemIndex: ItemIndexType;
   private encounterTable: EncounterTableType;
 
   private encounterMethod: number;
@@ -63,6 +78,7 @@ export class PokemonBattle {
   private avatarAssets: HTMLCanvasElement;
 
   private playerData: PlayerDataType;
+  private accountData: AccountDataType;
 
   private enemyPokemonSprite!: HTMLCanvasElement;
   private enemyPokemon: PokemonDataType;
@@ -88,16 +104,18 @@ export class PokemonBattle {
     evasion: 0,
   };
 
-  private bagSelected = 0;
-  private bagSwitchLeft = false;
-  private bagSelectedItem = 0;
-  private bagSelectedOffset = 0;
-
   private battleAction = 0;
   private escapeAttempts = 0;
   private battleMove = 0;
   private battleMoveName = '';
   private battleResultWin = false;
+  private turnsPassed = -1;
+
+  private bagSelected = 0;
+  private bagSwitchLeft = false;
+  private bagSelectedItem = 0;
+  private bagSelectedOffset = 0;
+  private selectedConfirm = true;
 
   private previousElapsed = 0;
   private delayStart = -1;
@@ -112,10 +130,12 @@ export class PokemonBattle {
   private defenseHalfWay = false;
   private enemyMoveDecided = false;
   private moveEffectApplied = false;
-  private drawAvatarFinished = false;
   private levelGained = false;
   private writeSecondLine = false;
   private animationCounter = 0;
+
+  private shakes = 0;
+  private shakeCheckDone = false;
 
   private battleBackground!: GameObject;
   private moveSelectorBox!: GameObject;
@@ -124,6 +144,7 @@ export class PokemonBattle {
 
   private playerAvatar!: GameObject;
   private pokeball!: GameObject;
+  private catchPokeball!: GameObject;
 
   private playerBattleGrounds!: GameObject;
   private playerPokemonObject!: GameObject;
@@ -160,7 +181,9 @@ export class PokemonBattle {
     // Get the pokedex and encounterTable
     this.pokedex = pokedex;
     this.moveIndex = moveIndex;
+    this.itemIndex = itemIndex;
     this.encounterTable = encounterTable;
+    this.player = player;
 
     // Set the supplied variables
     this.encounterMethod = encounterMethod;
@@ -173,8 +196,9 @@ export class PokemonBattle {
     this.font = this.loader.loadImageToCanvas('font', this.c.ASSETS_FONT_HEIGHT, this.c.ASSETS_FONT_WIDTH);
     this.avatarAssets = this.loader.loadImageToCanvas('avatar', this.c.ASSETS_AVATAR_HEIGHT, this.c.ASSETS_AVATAR_WIDTH);
 
-    // Get the playerData
+    // Get the playerData and accountData
     this.playerData = player.getPlayerData();
+    this.accountData = player.getAccountData();
 
     // Get the current player pokemon from the PlayerData
     this.playerPokemon = this.playerData.pokemon[this.playerData.currentPokemon];
@@ -414,13 +438,24 @@ export class PokemonBattle {
       this.ctx,
       this.battleAssets,
       this.c.POKEBALL_OFFSET_X,
-      this.c.POKEBALL_OFFSET_Y + 37,
+      this.c.POKEBALL_OFFSET_Y + 32,
       this.c.POKEBALL_SIZE,
       this.c.POKEBALL_SIZE,
       25,
       70
     );
     this.pokeball.setAnimation(false, 32, 0, this.c.POKEBALL_SIZE, 8);
+
+    this.catchPokeball = new GameObject(
+      this.ctx,
+      this.battleAssets,
+      this.c.POKEBALL_OFFSET_X,
+      this.c.POKEBALL_OFFSET_Y + 32,
+      this.c.POKEBALL_SIZE,
+      this.c.POKEBALL_SIZE,
+      28,
+      74
+    );
 
     this.bagBackground = new GameObject(
       this.ctx,
@@ -541,14 +576,14 @@ export class PokemonBattle {
     delta = Math.min(delta, 0.25); // maximum delta of 250 ms
     this.previousElapsed = elapsed;
 
-    if (this.battleStatus === BattleStatus.SlidePokemonIn) {
+    if (this.battleStatus === BattleStatus.SlideAvatarIn) {
       this.battleBackground.render();
       // Draw enemy pokemon with slide, with avatar, with next phase
       this.drawEnemyPokemon(delta, true, false);
       // Draw player avatar sliding in
       const isFinished = this.drawAvatar(delta, true, false);
-      // Draw action box without the player action selector
-      this.drawActionBox(false);
+      // Draw action dialogue box
+      this.battleDialogueBox.render();
 
       if (isFinished) {
         this.nextBattlePhase(BattleStatus.WriteAppearText);
@@ -559,22 +594,39 @@ export class PokemonBattle {
       this.drawEnemyPokemon(delta, false, false);
       // Draw player avatar
       this.drawAvatar(delta, false, false);
-      // Draw action box without player action selector
-      this.drawActionBox(false);
+
       // Write appear text to dialogue box, with next phase
       const text = 'Wild ' + this.enemyPokemon.pokemonName.toUpperCase() + ' appeared!|';
       const isFinished = this.writeToDialogueBox(delta, 1, text, '', 0, 1);
+
       // Draw enemy health with slide
       this.drawEnemyHealth(delta, true);
 
       if (isFinished) {
-        this.drawActionBox(false);
+        // Draw action dialogue box
+        this.battleDialogueBox.render();
         this.nextBattlePhase(BattleStatus.WriteGoText);
       }
     } else if (this.battleStatus === BattleStatus.WriteGoText) {
       // Write go text to dialogue box, with next phase
       const text = 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!';
       const isFinished = this.writeToDialogueBox(delta, 1, text, '', 0, 1);
+
+      if (isFinished) {
+        this.nextBattlePhase(BattleStatus.SlideAvatarOut);
+      }
+    } else if (this.battleStatus === BattleStatus.SlideAvatarOut) {
+      this.battleBackground.render();
+      // Draw enemy pokemon without slide
+      this.drawEnemyPokemon(delta, false, false);
+      // Draw enemy health without slide
+      this.drawEnemyHealth(delta, false);
+      // Draw player avatar with slideOut
+      const isFinished = this.drawAvatar(delta, false, true);
+      // Draw action dialogue box
+      this.battleDialogueBox.render();
+      // Draw go text to dialogue box
+      drawText(this.c, this.ctx, this.font, 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!', 0, 1, 16, 121);
 
       if (isFinished) {
         this.nextBattlePhase(BattleStatus.ThrowPokemon);
@@ -585,10 +637,13 @@ export class PokemonBattle {
       this.drawEnemyPokemon(delta, false, false);
       // Draw enemy health without slide
       this.drawEnemyHealth(delta, false);
+      // Draw player avatar with slideOut
+      this.drawAvatar(delta, false, true);
+
       // Draw player pokemon with slide, with throw
-      const isFinished = this.drawThrowPlayerPokemon(delta);
-      // Draw action box without player action selector
-      this.drawActionBox(false);
+      const isFinished = this.drawPlayerPokemon(delta, true);
+      // Draw action dialogue box
+      this.battleDialogueBox.render();
       // Draw go text to dialogue box
       drawText(this.c, this.ctx, this.font, 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!', 0, 1, 16, 121);
 
@@ -602,6 +657,8 @@ export class PokemonBattle {
       } else if (this.statusAfterFadeOut === BattleStatus.FadeIn) {
         this.statusAfterFadeIn = BattleStatus.Finished;
       }
+
+      this.turnsPassed++;
 
       // Detect keyboard press and increment/ decrement battleAction accordingly
       if (!this.keyDown) {
@@ -647,18 +704,10 @@ export class PokemonBattle {
         }
       }
 
-      this.battleBackground.render();
-      // Draw enemy pokemon without slide
-      this.drawEnemyPokemon(delta, false, false);
-      // Draw enemy health without slide
-      this.drawEnemyHealth(delta, false);
-      // Draw enemy player without slide
-      this.drawPlayerHealth(delta, false);
-      // Draw player pokemon with slide, with throw
-      this.drawThrowPlayerPokemon(delta);
-      // Draw action box with player action selector
-      this.drawActionBox(true);
-      // Write action select text to dialogue box, without next phase
+      this.drawCleanBattleScene(delta, true);
+
+      // Draw action choice selector
+      this.actionSelectorBox.render();
       drawText(this.c, this.ctx, this.font, 'What should ', 0, 1, 16, 121);
       drawText(this.c, this.ctx, this.font, this.playerPokemon.pokemonName.toUpperCase() + ' do?', 0, 1, 16, 121 + 16);
 
@@ -680,39 +729,10 @@ export class PokemonBattle {
         this.statusAfterFadeIn = BattleStatus.PlayerActionSelect;
       }
 
-      this.bagBackground.render();
-
-      this.ctx.fillStyle = '#F8E0A8';
-      this.ctx.fillRect(112, 16, 120, 128);
-
-      this.bagSwitchPokeball.render();
-
-      this.bag.updateSourcePosition(2 * this.c.GAME_WIDTH + this.bagSelected * this.c.ASSETS_BAG_WIDTH, this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_GENDER_OFFSET);
-      this.bag.render();
-
-      this.bagSelector.updateSourcePosition(2 * this.c.GAME_WIDTH + 5 * this.c.ASSETS_BAG_WIDTH + 16, this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_SEL_GENDER_OFFSET + this.bagSelected * this.c.ASSETS_BAG_SEL_HEIGHT);
-      this.bagSelector.render();
-
-      const text = this.c.BAG_POCKETS[this.bagSelected];
-      drawText(this.c, this.ctx, this.font, text, 0, 2, 32, 81);
-
       const items = this.playerData.inventory[this.bagSelected];
       const itemsToDisplay = Math.min(items.length + 1, 8);
-
-      for (let i = this.bagSelectedOffset; i < itemsToDisplay + this.bagSelectedOffset; i++) {
-        const x = (i - this.bagSelectedOffset) * 16;
-
-        if (i === items.length) {
-          drawText(this.c, this.ctx, this.font, 'CLOSE BAG', 0, 0, 112, 17 + x);
-        } else {
-          drawText(this.c, this.ctx, this.font, items[i].itemName.toUpperCase(), 0, 0, 112, 17 + x);
-          if (items[i].amount !== -1) {
-            drawText(this.c, this.ctx, this.font, 'x' + items[i].amount.toString().padStart(2, '_'), 0, 0, 214, 17 + x);
-          }
-        }
-      }
-
-      this.drawActionSelector(112, 233, 17, this.bagSelectedItem);  
+  
+      this.drawBag(true, false);
 
       // Detect keyboard press and increment/ decrement battleAction accordingly
       if (!this.keyDown) {
@@ -757,7 +777,11 @@ export class PokemonBattle {
 
           this.keyDown = true;
         } else if (keyboard.isDown(keyboard.ENTER)) {
-          // On enter use item
+          if (this.bagSelectedItem !== itemsToDisplay - 1) {
+            this.nextBattlePhase(BattleStatus.BagConfirmUseItem);
+          } else {
+            this.nextBattlePhase(BattleStatus.FadeOut);
+          }
 
           this.keyDown = true;
         }
@@ -781,10 +805,10 @@ export class PokemonBattle {
 
       if (this.animationCounter > -20 && this.animationCounter < 20) {
         this.bag.updateSourcePosition(2 * this.c.GAME_WIDTH + previousSelected * this.c.ASSETS_BAG_WIDTH, this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_GENDER_OFFSET);
-        this.bag.animate(delta, 128, 0, 1, 30, 6 - direction * this.animationCounter / 6, true);
+        this.bag.animate(delta, 128, 0, 1, 30, 6 - direction * this.animationCounter / 6, false, true);
       } else {
         this.bag.updateSourcePosition(2 * this.c.GAME_WIDTH + this.bagSelected * this.c.ASSETS_BAG_WIDTH, this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_GENDER_OFFSET);
-        this.bag.animate(delta, 128, 0, 1, 30, 6, true);
+        this.bag.animate(delta, 128, 0, 1, 30, 6, false, true);
       }
       this.bag.render();
 
@@ -810,20 +834,22 @@ export class PokemonBattle {
         const x = i * 16;
 
         if (i === items.length) {
-          drawText(this.c, this.ctx, this.font, 'CLOSE BAG', 0, 0, 112, 17 + x);
+          drawText(this.c, this.ctx, this.font, 'CLOSE BAG', 0, 3, 112, 17 + x);
         } else {
-          drawText(this.c, this.ctx, this.font, items[i].itemName.toUpperCase(), 0, 0, 112, 17 + x);
+          const itemData = this.itemIndex[items[i].itemId];
+
+          drawText(this.c, this.ctx, this.font, itemData.name.toUpperCase(), 0, 3, 112, 17 + x);
           if (items[i].amount !== -1) {
-            drawText(this.c, this.ctx, this.font, 'x' + items[i].amount.toString().padStart(2, '_'), 0, 0, 214, 17 + x);
+            drawText(this.c, this.ctx, this.font, 'x' + items[i].amount.toString().padStart(2, '_'), 0, 3, 214, 17 + x);
           }
         }
       }
 
       if (itemsToDisplay >= 1) {
         this.bagSelectedItem = 0;
-        this.drawActionSelector(112, 233, 17, this.bagSelectedItem);  
+        this.drawActionSelector(112, 233, 17, this.bagSelectedItem);
       }
-
+      
       if (this.animationCounter > -limit && this.animationCounter < limit) {
         this.animationCounter += delta * direction * speed;
 
@@ -835,6 +861,217 @@ export class PokemonBattle {
         this.bagSwitchPokeball.resetAnimation();
 
         this.nextBattlePhase(BattleStatus.PlayerBag);
+      }
+    } else if (this.battleStatus === BattleStatus.BagConfirmUseItem) {
+      this.drawBag(false, true);
+
+      drawText(this.c, this.ctx, this.font, 'What would you', 0, 3, 4, 105);
+      drawText(this.c, this.ctx, this.font, 'like to do?', 0, 3, 4, 105 + 16);
+      
+      // Draw the yes/no conformation box
+      this.ctx.drawImage(
+        this.battleAssets,
+        this.c.GAME_WIDTH,
+        3 * this.c.BATTLE_ARENA_HEIGHT + 4 * this.c.BATTLE_SCENE_HEIGHT + this.c.ACTION_BOX_HEIGHT + this.c.ASSETS_PLAYER_HEALTH_HEIGHT,
+        54,
+        46,
+        57,
+        57,
+        54,
+        46,
+      );
+
+      // The offset for the selection box
+      const column = (!this.selectedConfirm) ? 1 : 0;
+      this.drawActionSelector(64, 105, 64, column);
+      
+      // if key is pressed and not yet down, change selectedConfirm accordingly
+      if (!this.keyDown) {
+        if (keyboard.isDown(keyboard.DOWN) && this.selectedConfirm !== false) {
+          this.selectedConfirm = false;
+          this.keyDown = true;
+        } else if (keyboard.isDown(keyboard.UP) && this.selectedConfirm !== true) {
+          this.selectedConfirm = true;
+          this.keyDown = true;
+        } else if (keyboard.isDown(keyboard.ENTER)) {
+          // Continue back to the bag or use the item
+          if (!this.selectedConfirm) {
+            this.selectedConfirm = true;
+            this.nextBattlePhase(BattleStatus.PlayerBag);
+          } else {
+            const items = this.playerData.inventory[this.bagSelected];
+            const itemCategory = this.itemIndex[items[this.bagSelectedItem + this.bagSelectedOffset].itemId].category
+
+            if (itemCategory === 'standard-balls' || itemCategory === 'special-balls') {
+              this.statusAfterFadeOut = BattleStatus.UsePokeBall;
+              this.statusAfterFadeIn = BattleStatus.UsePokeBall;
+              this.nextBattlePhase(BattleStatus.FadeOut);
+            } else if (itemCategory === 'healing') {
+              this.nextBattlePhase(BattleStatus.UseHealingItem);
+            }
+          }
+
+          this.keyDown = true;
+        }
+      }
+    } else if (this.battleStatus === BattleStatus.UsePokeBall) {
+      if (this.statusAfterFadeOut === BattleStatus.UsePokeBall) {
+        this.nextBattlePhase(BattleStatus.FadeIn);
+        this.statusAfterFadeOut = BattleStatus.FadeIn;
+      } else if (this.statusAfterFadeOut === BattleStatus.FadeIn) {
+        this.statusAfterFadeIn = BattleStatus.Finished;
+      }
+
+      this.drawCleanBattleScene(delta, true);
+
+      const items = this.playerData.inventory[this.bagSelected];
+      const itemName = this.itemIndex[items[this.bagSelectedItem + this.bagSelectedOffset].itemId].name;
+      const playerName = this.accountData.playerName[0].toUpperCase() + this.accountData.playerName.substring(1);
+
+      if (this.statusAfterFadeIn === BattleStatus.Finished) {
+        const isFinished = this.writeToDialogueBox(delta, 0, playerName + ' used', itemName.toUpperCase() + '!', 0, 1);
+
+        if (isFinished) {
+          this.catchPokeball.setPosition(28, 74);
+
+          this.nextBattlePhase(BattleStatus.ThrowPokeBall);
+        }
+      }
+    } else if (this.battleStatus === BattleStatus.ThrowPokeBall) {
+      this.drawCleanBattleScene(delta, false);
+
+      const items = this.playerData.inventory[this.bagSelected];
+      const itemName = this.itemIndex[items[this.bagSelectedItem + this.bagSelectedOffset].itemId].name;
+      const playerName = this.accountData.playerName[0].toUpperCase() + this.accountData.playerName.substring(1);
+
+      drawText(this.c, this.ctx, this.font, playerName + ' used', 0, 1, 16, 121);
+      drawText(this.c, this.ctx, this.font, itemName.toUpperCase() + '!', 0, 1, 16, 121 + 16);
+
+      const isFinished = this.throwCatchPokeBall(delta);
+
+      // Draw enemy health without slide
+      this.drawEnemyHealth(delta, false);
+
+      if (isFinished) {
+        this.nextBattlePhase(BattleStatus.BouncePokeBall);
+      }
+    } else if (this.battleStatus === BattleStatus.BouncePokeBall) {
+      this.drawCleanBattleScene(delta, true);
+
+      const items = this.playerData.inventory[this.bagSelected];
+      const itemId = items[this.bagSelectedItem + this.bagSelectedOffset].itemId;
+      const itemName = this.itemIndex[itemId].name;
+      const playerName = this.accountData.playerName[0].toUpperCase() + this.accountData.playerName.substring(1);
+
+      drawText(this.c, this.ctx, this.font, playerName + ' used', 0, 1, 16, 121);
+      drawText(this.c, this.ctx, this.font, itemName.toUpperCase() + '!', 0, 1, 16, 121 + 16);
+
+      const isFinished = this.bouncePokeBall(delta);
+
+      if (isFinished) {
+        this.nextBattlePhase(BattleStatus.ShakePokeBall);
+      }
+    } else if (this.battleStatus === BattleStatus.ShakePokeBall) {
+      this.drawCleanBattleScene(delta, true);
+
+      const items = this.playerData.inventory[this.bagSelected];
+      const itemId = items[this.bagSelectedItem + this.bagSelectedOffset].itemId;
+      const itemName = this.itemIndex[itemId].name;
+      const playerName = this.accountData.playerName[0].toUpperCase() + this.accountData.playerName.substring(1);
+
+      drawText(this.c, this.ctx, this.font, playerName + ' used', 0, 1, 16, 121);
+      drawText(this.c, this.ctx, this.font, itemName.toUpperCase() + '!', 0, 1, 16, 121 + 16);
+
+      let checkPassed = false;
+      if (!this.shakeCheckDone) {
+        const catchRates: { [ballId: string]: number } = {
+          'master-ball': 999,
+          'ultra-ball': 2,
+          'great-ball': 1.5,
+          'poke-ball': 1,
+          'safari-ball': 1,
+          'net-ball': 1,
+          'nest-ball': Math.max((40 - this.enemyPokemon.level) / 10, 1),
+          'repeat-ball': 1,
+          'timer-ball': Math.min((this.turnsPassed + 10) / 10, 4),
+          'luxury-ball': 1,
+          'premier-ball': 1,
+        }
+  
+        if (itemId === 'luxury-ball') this.enemyPokemon.base_happiness = this.enemyPokemon.base_happiness * 2;
+  
+        const hpMax = this.enemyPokemon.stats.hp;
+        const hpCurrent = this.enemyPokemon.health;
+        const rate = this.enemyPokemon.capture_rate;
+        const ballBonus = catchRates[itemId];
+        const statusBonus = 1;
+  
+        const a = ((3 * hpMax - 2 * hpCurrent) * rate * ballBonus) / (3 * hpMax) * statusBonus;
+        const b = 1048560 / (Math.sqrt(Math.sqrt(16711680 / a) << 0) << 0) << 0;
+        const randomInt = randomFromMinMax(0, 65535);
+
+        checkPassed = randomInt < b;
+        if (a >= 255) {
+          checkPassed = true;
+        }
+
+        this.shakes++;
+        this.shakeCheckDone = true;
+      }
+
+      const isFinished = this.shakePokeBall(delta);
+
+      if (isFinished) {
+        if (!checkPassed && this.shakeCheckDone) {
+          this.nextBattlePhase(BattleStatus.PokemonBrokeFree);
+
+          this.shakes = 0;
+        } else if (this.shakes <= 3) {
+
+          this.nextBattlePhase(BattleStatus.ShakePokeBall);
+        } else {
+          this.battleResultWin = true;
+          this.nextBattlePhase(BattleStatus.PokemonCaptured);
+        }
+
+        this.shakeCheckDone = false;
+      }
+    } else if (this.battleStatus === BattleStatus.PokemonBrokeFree) {
+      this.drawCleanBattleScene(delta, true);
+
+      this.enemyPokemonObject.setPosition(this.c.GAME_WIDTH - (this.c.BATTLE_SCENE_WIDTH + this.c.POKEMON_SIZE) / 2, 22);
+      this.enemyPokemonObject.setScale(1);
+      this.enemyPokemonObject.resetColor();
+
+      const text1 = 'Pokemon broke free';
+      const text2 = '';
+
+      const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
+      if (isFinished) {
+        this.nextBattlePhase(BattleStatus.EnemyTurn);
+      }
+    } else if (this.battleStatus === BattleStatus.PokemonCaptured) {
+      this.drawCleanBattleScene(delta, true);
+
+      const text1 = 'Gotcha';
+      const text2 = this.enemyPokemon.pokemonName.toUpperCase() + ' was caught!|';
+
+      const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
+      if (isFinished) {
+        this.nextBattlePhase(BattleStatus.AddToPokedex);
+      }
+
+    } else if (this.battleStatus === BattleStatus.AddToPokedex) {
+      const text1 = this.enemyPokemon.pokemonName.toUpperCase() + '\'s data was';
+      const text2 = 'added to the POKéDEX.|';
+
+      const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
+      if (isFinished) {
+        this.drawCleanBattleScene(delta, true);
+
+        this.player.addPokemon(this.enemyPokemon);
+
+        this.nextBattlePhase(BattleStatus.FadeOut);
       }
     } else if (this.battleStatus === BattleStatus.PlayerRun) {
       this.escapeAttempts++;
@@ -851,12 +1088,10 @@ export class PokemonBattle {
       } else {
         console.log('escaped failed');
 
-        this.nextBattlePhase(BattleStatus.EnemyMove);
+        this.nextBattlePhase(BattleStatus.EnemyTurn);
       }
     } else if (this.battleStatus === BattleStatus.PlayerRunText) {
       const text1 = 'Got away safely!|';
-  
-      this.drawActionBox(false);
       const isFinished = this.writeToDialogueBox(delta, 1, text1, '', 0, 1);
 
       if (isFinished) {
@@ -945,10 +1180,10 @@ export class PokemonBattle {
           this.playerPokemon.moves[this.battleMove].pp--;
           console.log(this.playerPokemon.pokemonName + ' used ' + this.battleMoveName);
 
-          this.nextBattlePhase(BattleStatus.PlayerMove);
+          this.nextBattlePhase(BattleStatus.PlayerTurn);
         }
       }
-    } else if (this.battleStatus === BattleStatus.PlayerMove) {
+    } else if (this.battleStatus === BattleStatus.PlayerTurn) {
       const moveData = this.moveIndex[this.battleMoveName];
       const isFinished = this.writeMoveText(delta, moveData, true);
 
@@ -995,7 +1230,7 @@ export class PokemonBattle {
       const isFinished = this.statusEffect(delta, moveData, true);
 
       if (isFinished) {
-        this.nextBattlePhase(BattleStatus.EnemyMove);
+        this.nextBattlePhase(BattleStatus.EnemyTurn);
       }
     } else if (this.battleStatus === BattleStatus.PlayerDamageMove) {
       const moveData = this.moveIndex[this.battleMoveName];
@@ -1011,8 +1246,8 @@ export class PokemonBattle {
       this.drawEnemyHealth(delta, false);
       // Draw player health without slide
       this.drawPlayerHealth(delta, false);
-      // Draw action box without player action selector
-      this.drawActionBox(false);
+      // Draw action dialogue box
+      this.battleDialogueBox.render();
       // Draw text to dialogue box
       drawText(this.c, this.ctx, this.font, text1, 0, 1, 16, 121);
       drawText(this.c, this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
@@ -1034,11 +1269,11 @@ export class PokemonBattle {
           if (moveData.damage_class === 'special') {
             this.nextBattlePhase(BattleStatus.PlayerStatusEffect);
           } else {
-            this.nextBattlePhase(BattleStatus.EnemyMove);
+            this.nextBattlePhase(BattleStatus.EnemyTurn);
           }
         }
       }
-    } else if (this.battleStatus === BattleStatus.EnemyMove) {
+    } else if (this.battleStatus === BattleStatus.EnemyTurn) {
       if (!this.enemyMoveDecided) {
         this.battleMoveName = randomFromArray(this.enemyPokemon.moves).move;
         console.log('foo ' + this.enemyPokemon.pokemonName + ' used ' + this.battleMoveName);
@@ -1074,7 +1309,6 @@ export class PokemonBattle {
       if (isFinished) {
         this.nextBattlePhase(BattleStatus.EnemyDamageMove);
       }
-
     } else if (this.battleStatus === BattleStatus.EnemyStatusEffect) {
       const moveData = this.moveIndex[this.battleMoveName];
       const isFinished = this.statusEffect(delta, moveData, false);
@@ -1096,8 +1330,8 @@ export class PokemonBattle {
       this.drawPlayerHealth(delta, false);
       // Draw enemy health without slide
       this.drawEnemyHealth(delta, false);
-      // Draw action box without player action selector
-      this.drawActionBox(false);
+      // Draw action dialogue box
+      this.battleDialogueBox.render();
       // Draw text to dialogue box
       drawText(this.c, this.ctx, this.font, text1, 0, 1, 16, 121);
       drawText(this.c, this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
@@ -1130,9 +1364,7 @@ export class PokemonBattle {
       // Draw battle grounds player pokemon
       this.playerBattleGrounds.render();
       // Draw player pokemon
-      this.playerPokemonObject.render();
-      // Draw action box without player action selector
-      this.drawActionBox(false);
+      this.drawPlayerPokemon(delta, false);
       // Draw enemy health without slide
       if (!isFinished) {
         this.drawEnemyHealth(delta, false);
@@ -1152,9 +1384,6 @@ export class PokemonBattle {
       if (this.newXp === -1) {
         this.newXp = this.calculateXpGained() + this.playerPokemon.xp;
       } else {
-        // Draw action box without player action selector
-        this.drawActionBox(false);
-
         const text1 = this.playerPokemon.pokemonName.toUpperCase() + ' gained';
         const text2 = this.newXp - this.playerPokemon.xp + ' EXP. Points!|'
 
@@ -1165,8 +1394,8 @@ export class PokemonBattle {
         }
       }
     } else if (this.battleStatus === BattleStatus.GainXp) {
-      // Draw action box without player action selector
-      this.drawActionBox(false);
+      // Draw action dialogue box
+      this.battleDialogueBox.render();
 
       const isFinished = this.animateXpBar(delta);
       this.drawPlayerHealth(delta, false);
@@ -1202,8 +1431,6 @@ export class PokemonBattle {
     } else if (this.battleStatus === BattleStatus.NewMoveText) {
       const text1 = this.playerPokemon.pokemonName.toUpperCase() + ' learned';
       const text2 = this.playerPokemon.moves[this.playerPokemon.moves.length - 1].move.toUpperCase() + '!';
-
-      this.drawActionBox(false);
       const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
 
       if (isFinished) {
@@ -1511,9 +1738,6 @@ export class PokemonBattle {
       text2 = 'rose drastically!';
     }
 
-    // Draw action box without player action selector
-    this.drawActionBox(false);
-
     // Write status move text
     isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
 
@@ -1535,9 +1759,6 @@ export class PokemonBattle {
     const text1 = pokemonName.toUpperCase() + ' used';
     const text2 = moveData.name.toUpperCase() + '!';
 
-    // Draw action box without player action selector
-    this.drawActionBox(false);
-
     // Damage move
     const isFinished = this.writeToDialogueBox(delta, 0, text1, text2, 0, 1);
 
@@ -1546,6 +1767,97 @@ export class PokemonBattle {
     }
 
     return false;
+  }
+
+  private throwCatchPokeBall(delta: number) {
+    const speedPokeball = 192;
+    const sourcePokeBall = this.c.POKEBALL_OFFSET_X + 8 * this.c.POKEBALL_SIZE;
+    
+    // Calculate the x and y for the pokeball
+    const pokeballPosition = this.catchPokeball.getPosition();
+    let xPixelPokeball = pokeballPosition.x + delta * speedPokeball;
+    let yPixelPokeball = 0.00809 * xPixelPokeball ** 2 - 1.981 * xPixelPokeball + 123;
+
+    let isFinished = false;
+
+    if (xPixelPokeball > 170) {
+      this.animationCounter += delta * speedPokeball;
+
+      if (this.animationCounter >= 24) {
+        this.catchPokeball.updateSourcePosition(sourcePokeBall, this.c.POKEBALL_OFFSET_Y + 16);
+      } else {
+        this.catchPokeball.updateSourcePosition(sourcePokeBall, this.c.POKEBALL_OFFSET_Y);
+      }
+  
+      xPixelPokeball = 170;
+      yPixelPokeball = 20;
+    } else {
+      this.catchPokeball.updateSourcePosition(sourcePokeBall, this.c.POKEBALL_OFFSET_Y + 32);
+    }
+
+    if (this.animationCounter >= 24) {
+      this.enemyPokemonObject.setColor(254, 191, 246);
+      this.enemyPokemonObject.animate(delta, 72, 0, -1, 170, 26, false, false);
+      isFinished = this.enemyPokemonObject.scaleTo(delta, 1, 0, false);
+
+      if (isFinished) {
+        this.animationCounter = 0;
+      }
+    }
+
+    // Draw the pokeball
+    this.catchPokeball.setPosition(xPixelPokeball, yPixelPokeball);
+    this.catchPokeball.render(delta);
+
+    return isFinished;
+  }
+
+  private bouncePokeBall(delta: number) {
+    const speedPokeball = 192;
+    const sourcePokeBall = this.c.POKEBALL_OFFSET_X + 8 * this.c.POKEBALL_SIZE;
+
+    let isFinished = false;
+
+    if (this.animationCounter < 24) {
+      this.animationCounter += delta * speedPokeball;
+    }
+
+    if (this.animationCounter >= 24) {
+      this.animationCounter = this.animationCounter << 0;
+
+      this.catchPokeball.updateSourcePosition(sourcePokeBall, this.c.POKEBALL_OFFSET_Y + 32);
+
+      if (this.animationCounter % 2 === 0) {
+        const downFinished = this.catchPokeball.animate(delta, 10, 0, 1, 170, 47, 'quadratic-up', true);
+
+        if (downFinished) {
+          this.animationCounter++;
+        }
+      } else {
+        const upFinished = this.catchPokeball.animate(delta, 10, 0, -1, 170, 22 + (this.animationCounter - 24) * 5, 'quadratic-down', true);
+
+        if (upFinished) {
+          this.animationCounter++;
+        }
+      }
+    } else {
+      this.catchPokeball.updateSourcePosition(sourcePokeBall, this.c.POKEBALL_OFFSET_Y);
+    }
+
+    if (22 + (this.animationCounter - 24) * 5 >= 47) {
+      this.animationCounter = 0;
+
+      isFinished = true;
+    }
+
+    // Draw the pokeball
+    this.catchPokeball.render(delta);
+
+    return isFinished;
+  }
+
+  private shakePokeBall(delta: number) {
+    return true;
   }
 
   private animateHealthBar(delta: number, playerAttack: boolean) {
@@ -1594,54 +1906,105 @@ export class PokemonBattle {
     return false;
   }
 
-  private drawThrowPlayerPokemon(delta: number) {
-    const speedPokeball = 64;
+  private drawBag(itemDetails: boolean, itemUse: boolean) {
+    this.bagBackground.render();
 
-    let pokeballThrown = false;
-    let pokemonAltFinished = false;
-    let healthSlideFinished = false;
-    
+    this.ctx.fillStyle = '#F8E0A8';
+    this.ctx.fillRect(112, 16, 120, 128);
+
+    this.bagSwitchPokeball.render();
+
+    this.bag.updateSourcePosition(2 * this.c.GAME_WIDTH + this.bagSelected * this.c.ASSETS_BAG_WIDTH, this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_GENDER_OFFSET);
+    this.bag.render();
+
+    this.bagSelector.updateSourcePosition(2 * this.c.GAME_WIDTH + 5 * this.c.ASSETS_BAG_WIDTH + 16, this.c.ASSETS_BAG_OFFSET + this.c.ASSETS_BAG_SEL_GENDER_OFFSET + this.bagSelected * this.c.ASSETS_BAG_SEL_HEIGHT);
+    this.bagSelector.render();
+
+    const text = this.c.BAG_POCKETS[this.bagSelected];
+    drawText(this.c, this.ctx, this.font, text, 0, 2, 32, 81);
+
+    const items = this.playerData.inventory[this.bagSelected];
+    const itemsToDisplay = Math.min(items.length + 1, 8);
+
+    for (let i = this.bagSelectedOffset; i < itemsToDisplay + this.bagSelectedOffset; i++) {
+      const x = (i - this.bagSelectedOffset) * 16;
+
+      let fontColor = 3;
+      if (i === this.bagSelectedItem + this.bagSelectedOffset && itemUse) {
+        fontColor = 4;
+      }
+
+      if (i === items.length) {
+        drawText(this.c, this.ctx, this.font, 'CLOSE BAG', 0, fontColor, 112, 17 + x);
+      } else {
+        const itemData = this.itemIndex[items[i].itemId];
+
+        drawText(this.c, this.ctx, this.font, itemData.name.toUpperCase(), 0, fontColor, 112, 17 + x);
+        if (items[i].amount !== -1) {
+          drawText(this.c, this.ctx, this.font, 'x' + items[i].amount.toString().padStart(2, '_'), 0, fontColor, 214, 17 + x);
+        }
+      }
+    }
+
+    this.drawActionSelector(112, 233, 17, this.bagSelectedItem);
+
+    if (itemDetails && items[this.bagSelectedItem + this.bagSelectedOffset]) {
+      const itemText = this.itemIndex[items[this.bagSelectedItem + this.bagSelectedOffset].itemId].flavour_text_entry.split('\n');
+      drawText(this.c, this.ctx, this.font, itemText[0], 0, 3, 4, 105);
+      drawText(this.c, this.ctx, this.font, itemText[1], 0, 3, 4, 105 + 16);
+      drawText(this.c, this.ctx, this.font, itemText[2], 0, 3, 4, 105 + 32);  
+    }
+  }
+
+  private drawPlayerPokemon(delta: number, throwPokeBall: boolean) {
     // Draw battle grounds player pokemon
     this.playerBattleGrounds.render();
 
-    if (this.drawAvatarFinished) {
+    if (throwPokeBall) {
+      const speedPokeball = 64;
+
+      let pokeballThrown = false;
+      let pokemonAltFinished = false;
+      let healthSlideFinished = false;
+      
       // Calculate the x and y for the pokeball
       const pokeballPosition = this.pokeball.getPosition();
       const xPixelPokeball = pokeballPosition.x + delta * speedPokeball;
       const yPixelPokeball = 0.1 * xPixelPokeball ** 2 - 7.5 * xPixelPokeball + 195;
 
       // Draw the pokeball
-      this.pokeball.updateSourcePosition(this.c.POKEBALL_OFFSET_X + this.playerPokemon.pokeball * this.c.POKEBALL_SIZE, this.c.POKEBALL_OFFSET_Y + 37);
+      this.pokeball.updateSourcePosition(this.c.POKEBALL_OFFSET_X + this.playerPokemon.pokeball * this.c.POKEBALL_SIZE, this.c.POKEBALL_OFFSET_Y + 32);
       this.pokeball.setPosition(xPixelPokeball, yPixelPokeball);
       this.pokeball.render(delta);
 
       if (pokeballPosition.x > 60) {
         pokeballThrown = true;
       }
-    }
-
-    // Pokemon appear animation
-    if (pokeballThrown) {
-      // Draw pink appearing pokemon
-      pokemonAltFinished = this.playerPokemonObject.scaleTo(delta, 2, 1);
-      if (!pokemonAltFinished) {
+  
+      // Pokemon appear animation
+      if (pokeballThrown) {
+        // Draw pink appearing pokemon
+        pokemonAltFinished = this.playerPokemonObject.scaleTo(delta, 2, 1, true);
+        // if (!pokemonAltFinished) {
         this.playerPokemonObject.setColor(254, 191, 246);
+        // }
       }
-    }
-
-    if (pokemonAltFinished) {
-      // Draw pokemon
-      this.playerPokemonObject.resetColor();
+  
+      if (pokemonAltFinished) {
+        // Draw pokemon
+        this.playerPokemonObject.resetColor();
+        this.playerPokemonObject.render();
+  
+        // Draw player health
+        healthSlideFinished = this.drawPlayerHealth(delta, true);
+      }
+      
+      return healthSlideFinished;
+    } else {
       this.playerPokemonObject.render();
-
-      // Draw player health
-      healthSlideFinished = this.drawPlayerHealth(delta, true);
     }
-    
-    // Player slide out animation
-    this.drawAvatarFinished = this.drawAvatar(delta, false, true);
 
-    return healthSlideFinished;
+    return true;
   }
 
   private drawDefaultAttack(delta: number, playerAttack: boolean) {
@@ -1681,9 +2044,9 @@ export class PokemonBattle {
     let backwardFinished2 = false;
 
     if (!this.attackHalfWay) {
-      forwardFinished = attacker.animate(delta, speed, direction, 0, xPosAttacker + direction * 20, yPosAttacker, true);
+      forwardFinished = attacker.animate(delta, speed, direction, 0, xPosAttacker + direction * 20, yPosAttacker, false, true);
     } else if (this.attackHalfWay) {
-      backwardFinished = attacker.animate(delta, speed, -direction, 0, xPosAttacker, yPosAttacker, true);
+      backwardFinished = attacker.animate(delta, speed, -direction, 0, xPosAttacker, yPosAttacker, false, true);
     }
 
     if (forwardFinished) {
@@ -1695,9 +2058,9 @@ export class PokemonBattle {
     }
 
     if (this.attackHalfWay && !this.defenseHalfWay) {
-      forwardFinished2 = defender.animate(delta, speed, direction, 0, xPosDefender + direction * 10, yPosDefender, true)
+      forwardFinished2 = defender.animate(delta, speed, direction, 0, xPosDefender + direction * 10, yPosDefender, false, true)
     } else if (this.defenseHalfWay) {
-      backwardFinished2 = defender.animate(delta, speed, -direction, 0, xPosDefender, yPosDefender, true)
+      backwardFinished2 = defender.animate(delta, speed, -direction, 0, xPosDefender, yPosDefender, false, true)
     } else {
       defender.render();
     }
@@ -1718,7 +2081,7 @@ export class PokemonBattle {
 
     // Draw player health box
     if (slideIn) {
-      this.playerPokemonHealthBox.animate(delta, speedHealth, -1, 0, 127, 75, true);
+      this.playerPokemonHealthBox.animate(delta, speedHealth, -1, 0, 127, 75, false, true);
     } else {
       this.playerPokemonHealthBox.render();
     }
@@ -1738,8 +2101,8 @@ export class PokemonBattle {
     this.playerPokemonHealthBar.setWidth(healthBarWidth);
 
     if (slideIn) {
-      this.playerPokemonXpBox.animate(delta, speedHealth, -1, 0, 127 + 31, 75 + 33, true);  
-      this.playerPokemonHealthBar.animate(delta, speedHealth, -1, 0, 127 + 47, 75 + 17, true);  
+      this.playerPokemonXpBox.animate(delta, speedHealth, -1, 0, 127 + 31, 75 + 33, false, true);  
+      this.playerPokemonHealthBar.animate(delta, speedHealth, -1, 0, 127 + 47, 75 + 17, false, true);  
     } else {
       this.playerPokemonXpBox.render();
       this.playerPokemonHealthBar.render();
@@ -1757,7 +2120,7 @@ export class PokemonBattle {
 
       this.playerPokemonHealthText.update(this.playerHealthTextCanvas);
       if (slideIn) {
-        const isFinished = this.playerPokemonHealthText.animate(delta, speedHealth, -1, 0, 127, 75, true);
+        const isFinished = this.playerPokemonHealthText.animate(delta, speedHealth, -1, 0, 127, 75, false, true);
 
         return isFinished;
       } else {
@@ -1772,7 +2135,7 @@ export class PokemonBattle {
     const speedHealth = 224;
 
     // Draw enemy health box
-    this.enemyPokemonHealthBox.animate(delta, speedHealth, 1, 0, 13, 16, true);
+    this.enemyPokemonHealthBox.animate(delta, speedHealth, 1, 0, 13, 16, false, true);
 
     // Calculate variables for drawing the health bar
     const healthFrac = this.enemyPokemon.health / this.enemyPokemon.stats.hp;
@@ -1783,7 +2146,7 @@ export class PokemonBattle {
     this.playerPokemonHealthBar.updateSourcePosition(this.c.ASSETS_ENEMY_HEALTH_WIDTH + this.c.ASSETS_PLAYER_HEALTH_WIDTH, this.c.ASSETS_HEALTH_OFFSET + healthBarOffset);
     this.enemyPokemonHealthBar.setWidth(healthBarWidth);
     if (slideIn) {
-      this.enemyPokemonHealthBar.animate(delta, speedHealth, 1, 0, 13 + 39, 16 + 17, true);
+      this.enemyPokemonHealthBar.animate(delta, speedHealth, 1, 0, 13 + 39, 16 + 17, false, true);
     } else {
       this.enemyPokemonHealthBar.render();
     }
@@ -1797,7 +2160,7 @@ export class PokemonBattle {
 
       this.enemyPokemonHealthText.update(this.enemyHealthTextCanvas);
       if (slideIn) {
-        this.enemyPokemonHealthText.animate(delta, speedHealth, 1, 0, 13, 16, true);
+        this.enemyPokemonHealthText.animate(delta, speedHealth, 1, 0, 13, 16, false, true);
       } else {
         this.enemyPokemonHealthText.render();
       }
@@ -1808,32 +2171,33 @@ export class PokemonBattle {
     const speed = 176;
     let isFinished = false;
 
+    // Draw battle grounds player pokemon
+    this.playerBattleGrounds.render();
+
     if (slideIn) {
       // Draw battle grounds player pokemon
-      this.playerBattleGrounds.animate(delta, speed, -1, 0, 0, 100, true);
+      this.playerBattleGrounds.animate(delta, speed, -1, 0, 0, 100, false, true);
 
       // Draw the player avatar
-      isFinished = this.playerAvatar.animate(delta, speed, -1, 0, this.c.BATTLE_SCENE_WIDTH / 2, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, true);
+      isFinished = this.playerAvatar.animate(delta, speed, -1, 0, this.c.BATTLE_SCENE_WIDTH / 2, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, false, true);
     } else if (slideOut) {
+
       // Next animation frame and animate
       this.playerAvatar.animationTrigger(1);
-      const isFinishedFirstSprite = this.playerAvatar.animate(delta, speed, -1, 0, -16, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, false);
+      const isFinishedFirstSprite = this.playerAvatar.animate(delta, speed, -1, 0, -16, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, false, false);
 
       // Next animation frame and animate
       if (isFinishedFirstSprite) {
         this.playerAvatar.animationTrigger(2);
-        isFinished = this.playerAvatar.animate(delta, speed, -1, 0, -36, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, false);  
+        isFinished = this.playerAvatar.animate(delta, speed, -1, 0, -36, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, false, false);  
       }
 
       // Next animation frame and animate
       if (isFinished) {
         this.playerAvatar.animationTrigger(3);
-        this.playerAvatar.animate(delta, speed, -1, 0, -this.c.AVATAR_BATTLE_WIDTH, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, false);  
+        this.playerAvatar.animate(delta, speed, -1, 0, -this.c.AVATAR_BATTLE_WIDTH, this.c.BATTLE_ARENA_HEIGHT - this.c.AVATAR_BATTLE_HEIGHT, false, false);  
       }
     } else {
-      // Draw battle grounds player pokemon
-      this.playerBattleGrounds.render();
-
       // Draw the player avatar
       this.playerAvatar.render();
     }
@@ -1849,12 +2213,12 @@ export class PokemonBattle {
 
     if (slideIn) {
       // Draw battle grounds enemy pokemon
-      this.enemyBattleGrounds.animate(delta, speed, 1, 0, this.c.GAME_WIDTH - this.c.BATTLE_SCENE_WIDTH, 48, true);
+      this.enemyBattleGrounds.animate(delta, speed, 1, 0, this.c.GAME_WIDTH - this.c.BATTLE_SCENE_WIDTH, 48, false, true);
 
       // Darken enemy pokemon when sliding in
       this.enemyPokemonObject.darkenColor(0.9);
       // Draw enemy pokemon
-      const isFinished = this.enemyPokemonObject.animate(delta, speed, 1, 0, x, y, true);
+      const isFinished = this.enemyPokemonObject.animate(delta, speed, 1, 0, x, y, false, true);
 
       if (isFinished) {
         this.enemyPokemonObject.resetColor();
@@ -1870,7 +2234,7 @@ export class PokemonBattle {
         this.enemyPokemonObject.setHeight(28);
       }
 
-      const isFinished = this.enemyPokemonObject.animate(delta, speed, 0, 1, x, 75, false);
+      const isFinished = this.enemyPokemonObject.animate(delta, speed, 0, 1, x, 75, false, false);
 
       if (isFinished) {
         return true;
@@ -1884,9 +2248,27 @@ export class PokemonBattle {
     return false;
   }
 
+  private drawCleanBattleScene(delta: number, drawEnemyHealth: boolean){
+    this.battleBackground.render();
+    // Draw enemy pokemon without slide
+    this.drawEnemyPokemon(delta, false, false);
+    if (drawEnemyHealth) {
+      // Draw enemy health without slide
+      this.drawEnemyHealth(delta, false);
+    }
+    // Draw player health without slide
+    this.drawPlayerHealth(delta, false);
+    // Draw player pokemon with slide, without throw
+    this.drawPlayerPokemon(delta, false);
+    // Draw action box without player action selector
+    this.battleDialogueBox.render();
+  }
+
   private writeToDialogueBox(delta: number, delayAfter: number, textCol1: string, textCol2: string, fontsize: number, fontColor: number) {
     const speed = 48;
     const i = (this.animationCounter + delta * speed) << 0;
+
+    this.battleDialogueBox.render();
 
     if (!this.writeSecondLine) {
       const yText = 121;
@@ -1920,16 +2302,6 @@ export class PokemonBattle {
     }
 
     return false;
-  }
-
-  private drawActionBox(actionChoice: boolean) {
-    // Draw the battle dialogue box
-    this.battleDialogueBox.render();
-
-    // Draw the player action choice box
-    if (actionChoice) {
-      this.actionSelectorBox.render();
-    }
   }
 
   private drawActionSelector(xStart: number, xEnd: number, yStart: number, column: number) {

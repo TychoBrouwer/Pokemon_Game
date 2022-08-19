@@ -131,7 +131,7 @@ class Game {
             }
             else {
                 // Clear the canvases
-                this.battleCtx.clearRect(0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
+                this.overlayCtx.clearRect(0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
                 this.gameCtx.clearRect(0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
                 // Update the game (movement and actions)
                 this.update(delta);
@@ -178,7 +178,6 @@ class Game {
                     const battleResult = yield pokemonBattle.battle();
                     if (battleResult.result) {
                         console.log('battle with ' + battleResult.pokemon.pokemonName + ' won!');
-                        // this.player.addPokemon(foundPokemon);
                     }
                     else {
                         console.log('battle with ' + battleResult.pokemon.pokemonName + ' lost!');
@@ -207,59 +206,53 @@ class Game {
         const handX = (this.selectedStarter === 0) ? 48 : (this.selectedStarter === 1) ? 108 : 169;
         const handY = (this.selectedStarter === 1) ? 33 : 9;
         // Draw the background
-        this.battleCtx.drawImage(this.starterAtlas, 0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT, 0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
+        this.overlayCtx.drawImage(this.starterAtlas, 0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT, 0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
         // Draw professors bag
-        this.battleCtx.drawImage(this.starterAtlas, 0, 160, 110, 64, 65, 8, 110, 64);
+        this.overlayCtx.drawImage(this.starterAtlas, 0, 160, 110, 64, 65, 8, 110, 64);
         // Draw the dialogue box
-        this.battleCtx.drawImage(this.starterAtlas, 0, 244, 206, 46, 17, 113, 206, 46);
+        this.overlayCtx.drawImage(this.starterAtlas, 0, 244, 206, 46, 17, 113, 206, 46);
         // Draw first, most left pokeball
-        this.battleCtx.drawImage(this.starterAtlas, pokeballSource0, 160, 23, 20, 50, 54, 23, 20);
+        this.overlayCtx.drawImage(this.starterAtlas, pokeballSource0, 160, 23, 20, 50, 54, 23, 20);
         // Draw second, middle pokeball
-        this.battleCtx.drawImage(this.starterAtlas, pokeballSource1, 160, 23, 20, 110, 78, 23, 20);
+        this.overlayCtx.drawImage(this.starterAtlas, pokeballSource1, 160, 23, 20, 110, 78, 23, 20);
         // Draw third, most right pokeball
-        this.battleCtx.drawImage(this.starterAtlas, pokeballSource2, 160, 23, 20, 170, 54, 23, 20);
+        this.overlayCtx.drawImage(this.starterAtlas, pokeballSource2, 160, 23, 20, 170, 54, 23, 20);
         // Draw the selector hand
-        this.battleCtx.drawImage(this.starterAtlas, 202, 160, 25, 27, handX, handY, 25, 27);
+        this.overlayCtx.drawImage(this.starterAtlas, 202, 160, 25, 27, handX, handY, 25, 27);
         if (this.gameStatus === 'chooseStarter') {
             if (this.selectedStarter === 0) {
                 // Draw the background for the pokemon text
-                this.battleCtx.globalAlpha = 0.4;
-                this.battleCtx.beginPath();
-                this.battleCtx.rect(0, 72, 108, 32);
-                this.battleCtx.fill();
-                this.battleCtx.globalAlpha = 1;
-                // Draw the upper part of the pokemon text
-                this.battleCtx.drawImage(this.starterAtlas, 0, 224, 86, 10, 6, 76, 86, 10);
-                // Draw the lower part of the pokemon text
-                this.battleCtx.drawImage(this.starterAtlas, 0, 234, 42, 10, 31, 92, 42, 10);
+                this.overlayCtx.globalAlpha = 0.4;
+                this.overlayCtx.beginPath();
+                this.overlayCtx.rect(4, 72, 104, 32);
+                this.overlayCtx.fill();
+                this.overlayCtx.globalAlpha = 1;
+                (0, helper_1.drawText)(this.c, this.overlayCtx, this.font, 'WOOD GECKO POKéMON', 0, 5, 5, 73);
+                (0, helper_1.drawText)(this.c, this.overlayCtx, this.font, 'TREECKO', 0, 5, 65, 73 + 16);
             }
             else if (this.selectedStarter === 1) {
                 // Draw the background for the pokemon text
-                this.battleCtx.globalAlpha = 0.4;
-                this.battleCtx.beginPath();
-                this.battleCtx.rect(132, 80, 104, 32);
-                this.battleCtx.fill();
-                this.battleCtx.globalAlpha = 1;
-                // Draw the upper part of the pokemon text
-                this.battleCtx.drawImage(this.starterAtlas, 86, 224, 62, 10, 140, 82, 62, 10);
-                // Draw the lower part of the pokemon text
-                this.battleCtx.drawImage(this.starterAtlas, 86, 234, 42, 10, 186, 98, 42, 10);
+                this.overlayCtx.globalAlpha = 0.4;
+                this.overlayCtx.beginPath();
+                this.overlayCtx.rect(132, 80, 104, 32);
+                this.overlayCtx.fill();
+                this.overlayCtx.globalAlpha = 1;
+                (0, helper_1.drawText)(this.c, this.overlayCtx, this.font, 'CHICK POKéMON', 0, 5, 133, 81);
+                (0, helper_1.drawText)(this.c, this.overlayCtx, this.font, 'TORCHIC', 0, 5, 193, 81 + 16);
             }
             else {
                 // Draw the background for the pokemon text
-                this.battleCtx.globalAlpha = 0.4;
-                this.battleCtx.beginPath();
-                this.battleCtx.rect(60, 32, 112, 32);
-                this.battleCtx.fill();
-                this.battleCtx.globalAlpha = 1;
-                // Draw the upper part of the pokemon text
-                this.battleCtx.drawImage(this.starterAtlas, 148, 224, 75, 10, 78, 36, 75, 10);
-                // Draw the lower part of the pokemon text
-                this.battleCtx.drawImage(this.starterAtlas, 148, 234, 42, 10, 98, 52, 42, 10);
+                this.overlayCtx.globalAlpha = 0.4;
+                this.overlayCtx.beginPath();
+                this.overlayCtx.rect(60, 32, 112, 32);
+                this.overlayCtx.fill();
+                this.overlayCtx.globalAlpha = 1;
+                (0, helper_1.drawText)(this.c, this.overlayCtx, this.font, 'MUD FISH POKéMON', 0, 5, 61, 33);
+                (0, helper_1.drawText)(this.c, this.overlayCtx, this.font, 'MUDKIP', 0, 5, 135, 33 + 16);
             }
             // Draw the dialogue text to the box
-            (0, helper_1.drawText)(this.c, this.battleCtx, this.font, 'PROF. BIRCH is in trouble!', 0, 0, 24, 121);
-            (0, helper_1.drawText)(this.c, this.battleCtx, this.font, 'Release a POKéMON and rescue him!', 0, 0, 24, 137);
+            (0, helper_1.drawText)(this.c, this.overlayCtx, this.font, 'PROF. BIRCH is in trouble!', 0, 3, 24, 121);
+            (0, helper_1.drawText)(this.c, this.overlayCtx, this.font, 'Release a POKéMON and rescue him!', 0, 3, 24, 137);
             // if key is pressed and not yet down, increment selectedStarter accordingly
             if (!this.keyDown) {
                 if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT) && this.selectedStarter !== 0) {
@@ -281,7 +274,7 @@ class Game {
         }
         else if (this.gameStatus === 'confirmStarter') {
             // Draw conformation question to the dialogue box
-            (0, helper_1.drawText)(this.c, this.battleCtx, this.font, 'Do you choose this POKéMON?', 0, 0, 24, 121);
+            (0, helper_1.drawText)(this.c, this.overlayCtx, this.font, 'Do you choose this POKéMON?', 0, 3, 24, 121);
             // The x and y pixel for the center of the pokemon preview circle
             const xPixel = 120;
             const yPixel = 65;
@@ -292,31 +285,31 @@ class Game {
             const xSource = (pokemonId - this.c.ASSETS_GENERATION_OFFSET[generation] - 1) % 3 * this.c.POKEMON_SPRITE_WIDTH;
             const ySource = (((pokemonId - this.c.ASSETS_GENERATION_OFFSET[generation] - 1) / 3) << 0) * this.c.POKEMON_SIZE;
             // Draw the pokemon preview circle
-            this.battleCtx.fillStyle = '#ffffff';
-            this.battleCtx.beginPath();
-            this.battleCtx.arc(xPixel, yPixel, 40, 0, 2 * Math.PI);
-            this.battleCtx.fill();
-            this.battleCtx.fillStyle = '#000000';
+            this.overlayCtx.fillStyle = '#ffffff';
+            this.overlayCtx.beginPath();
+            this.overlayCtx.arc(xPixel, yPixel, 40, 0, 2 * Math.PI);
+            this.overlayCtx.fill();
+            this.overlayCtx.fillStyle = '#000000';
             // Draw the pokemon preview to the center of the circle
-            this.battleCtx.drawImage(pokemonSprite, xSource, ySource, this.c.POKEMON_SIZE, this.c.POKEMON_SIZE, (xPixel - this.c.POKEMON_SIZE / 2) << 0, (yPixel - this.c.POKEMON_SIZE / 2) << 0, this.c.POKEMON_SIZE, this.c.POKEMON_SIZE);
+            this.overlayCtx.drawImage(pokemonSprite, xSource, ySource, this.c.POKEMON_SIZE, this.c.POKEMON_SIZE, (xPixel - this.c.POKEMON_SIZE / 2) << 0, (yPixel - this.c.POKEMON_SIZE / 2) << 0, this.c.POKEMON_SIZE, this.c.POKEMON_SIZE);
             // Draw the yes/no conformation box
-            this.battleCtx.drawImage(this.starterAtlas, 206, 244, 54, 46, 170, 58, 54, 46);
+            this.overlayCtx.drawImage(this.starterAtlas, 206, 244, 54, 46, 169, 57, 54, 46);
             // The offset for the selection box
             const yOffset = (!this.selectedConfirm) ? 16 : 0;
             // Draw the selector rectangle
-            this.battleCtx.beginPath();
-            this.battleCtx.moveTo(177, 64.5 + yOffset);
-            this.battleCtx.lineTo(216, 64.5 + yOffset);
-            this.battleCtx.moveTo(216.5, 65 + yOffset);
-            this.battleCtx.lineTo(216.5, 78 + yOffset);
-            this.battleCtx.moveTo(216, 78.5 + yOffset);
-            this.battleCtx.lineTo(177, 78.5 + yOffset);
-            this.battleCtx.moveTo(176.5, 78 + yOffset);
-            this.battleCtx.lineTo(176.5, 65 + yOffset);
-            this.battleCtx.lineWidth = 1;
-            this.battleCtx.globalAlpha = 1;
-            this.battleCtx.strokeStyle = '#f86058';
-            this.battleCtx.stroke();
+            this.overlayCtx.beginPath();
+            this.overlayCtx.moveTo(176, 64.5 + yOffset);
+            this.overlayCtx.lineTo(215, 64.5 + yOffset);
+            this.overlayCtx.moveTo(215.5, 65 + yOffset);
+            this.overlayCtx.lineTo(215.5, 79 + yOffset);
+            this.overlayCtx.moveTo(215, 79.5 + yOffset);
+            this.overlayCtx.lineTo(176, 79.5 + yOffset);
+            this.overlayCtx.moveTo(175.5, 79 + yOffset);
+            this.overlayCtx.lineTo(175.5, 65 + yOffset);
+            this.overlayCtx.lineWidth = 1;
+            this.overlayCtx.globalAlpha = 1;
+            this.overlayCtx.strokeStyle = '#f86058';
+            this.overlayCtx.stroke();
             // if key is pressed and not yet down, change selectedConfirm accordingly
             if (!this.keyDown) {
                 if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.DOWN) && this.selectedConfirm !== false) {
@@ -330,11 +323,12 @@ class Game {
                 else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
                     // Continue back to game or return to starter selection screen accordingly
                     if (!this.selectedConfirm) {
+                        this.selectedConfirm = true;
                         this.gameStatus = 'chooseStarter';
                     }
                     else {
                         // Add the chosen starter to the players inventory (level = 5)
-                        this.player.addPokemon(pokemonId, [5, -1]);
+                        this.player.generatePokemon(pokemonId, [5, -1]);
                         this.gameStatus = 'game';
                         this.gameTriggers.chooseStarter = true;
                     }
