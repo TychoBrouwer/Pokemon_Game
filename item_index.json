@@ -1,0 +1,17 @@
+{
+  "secret-key": {
+    "attributes": [],
+    "baby_trigger_for": null,
+    "category": "event-items",
+    "cost": 0,
+    "fling_effect": null,
+    "fling_power": null,
+    "held_by_pokemon": [],
+    "id": 445,
+    "name": "Secret Key",
+    "game_index": 351,
+    "flavour_text_entry": "The key to the\nCINNABAR ISLAND\nGYM\u2019s entrance.",
+    "effect": "Used by trainer in the Galactic Eterna Building, on the ground floor, to the left of the TV\n:   Unlocks the secret rotom room, in which there are five appliances which can change Rotom's form.",
+    "short_effect": "Gen IV: The key to Rotom's appliance room. Gen III: The key to Cinnabar Gym."
+  }
+}

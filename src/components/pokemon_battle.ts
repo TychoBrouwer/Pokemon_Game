@@ -145,6 +145,7 @@ export class PokemonBattle {
   private playerAvatar!: GameObject;
   private pokeball!: GameObject;
   private catchPokeball!: GameObject;
+  private pokeBallXSource: number;
 
   private playerBattleGrounds!: GameObject;
   private playerPokemonObject!: GameObject;
@@ -175,6 +176,8 @@ export class PokemonBattle {
 
   constructor(c: C, context: CanvasRenderingContext2D, overlayCtx: CanvasRenderingContext2D, loader: Loader, player: Player, route: string, encounterMethod: number) {
     this.c = c;
+    this.pokeBallXSource = this.c.POKEBALL_OFFSET_X + 8 * this.c.POKEBALL_SIZE;
+
     // Set the loader to the supplied
     this.loader = loader;
 
@@ -929,6 +932,8 @@ export class PokemonBattle {
       const playerName = this.accountData.playerName[0].toUpperCase() + this.accountData.playerName.substring(1);
 
       if (this.statusAfterFadeIn === BattleStatus.Finished) {
+        this.pokeBallXSource = this.c.POKEBALL_OFFSET_X + this.c.POKE_BALLS[] * this.c.POKEBALL_SIZE;
+        this.catchPokeball.updateSourcePosition(this.pokeBallXSource, this.c.POKEBALL_OFFSET_Y);
         const isFinished = this.writeToDialogueBox(delta, 0, playerName + ' used', itemName.toUpperCase() + '!', 0, 1);
 
         if (isFinished) {
@@ -985,17 +990,18 @@ export class PokemonBattle {
       let checkPassed = false;
       if (!this.shakeCheckDone) {
         const catchRates: { [ballId: string]: number } = {
-          'master-ball': 999,
+          'master-ball': 255,
           'ultra-ball': 2,
           'great-ball': 1.5,
           'poke-ball': 1,
-          'safari-ball': 1,
-          'net-ball': 1,
-          'nest-ball': Math.max((40 - this.enemyPokemon.level) / 10, 1),
-          'repeat-ball': 1,
+          'safari-ball': 1.5,
+          'net-ball': this.enemyPokemon.types.some(e => e.type === 'water') || this.enemyPokemon.types.some(e => e.type === 'bug') ? 3.5 : 1,
+          'nest-ball': Math.max((41 - this.enemyPokemon.level) / 10, 1),
+          'repeat-ball': this.playerData.pokemon.some(e => e.pokemonName === this.enemyPokemon.pokemonName) ? 3.5 : 1,
           'timer-ball': Math.min((this.turnsPassed + 10) / 10, 4),
           'luxury-ball': 1,
           'premier-ball': 1,
+          'dive-ball': 1,
         }
   
         if (itemId === 'luxury-ball') this.enemyPokemon.base_happiness = this.enemyPokemon.base_happiness * 2;
@@ -1052,6 +1058,7 @@ export class PokemonBattle {
       }
     } else if (this.battleStatus === BattleStatus.PokemonCaptured) {
       this.drawCleanBattleScene(delta, true);
+      this.catchPokeball.render();
 
       const text1 = 'Gotcha';
       const text2 = this.enemyPokemon.pokemonName.toUpperCase() + ' was caught!|';
@@ -1062,13 +1069,15 @@ export class PokemonBattle {
       }
 
     } else if (this.battleStatus === BattleStatus.AddToPokedex) {
+      this.drawCleanBattleScene(delta, true);
+      this.catchPokeball.opacityTo(delta, 8, false, 0);
+
       const text1 = this.enemyPokemon.pokemonName.toUpperCase() + '\'s data was';
       const text2 = 'added to the POKéDEX.|';
 
       const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
       if (isFinished) {
         this.drawCleanBattleScene(delta, true);
-
         this.player.addPokemon(this.enemyPokemon);
 
         this.nextBattlePhase(BattleStatus.FadeOut);
@@ -1771,7 +1780,6 @@ export class PokemonBattle {
 
   private throwCatchPokeBall(delta: number) {
     const speedPokeball = 192;
-    const sourcePokeBall = this.c.POKEBALL_OFFSET_X + 8 * this.c.POKEBALL_SIZE;
     
     // Calculate the x and y for the pokeball
     const pokeballPosition = this.catchPokeball.getPosition();
@@ -1784,15 +1792,15 @@ export class PokemonBattle {
       this.animationCounter += delta * speedPokeball;
 
       if (this.animationCounter >= 24) {
-        this.catchPokeball.updateSourcePosition(sourcePokeBall, this.c.POKEBALL_OFFSET_Y + 16);
+        this.catchPokeball.updateSourcePosition(this.pokeBallXSource, this.c.POKEBALL_OFFSET_Y + 16);
       } else {
-        this.catchPokeball.updateSourcePosition(sourcePokeBall, this.c.POKEBALL_OFFSET_Y);
+        this.catchPokeball.updateSourcePosition(this.pokeBallXSource, this.c.POKEBALL_OFFSET_Y);
       }
   
       xPixelPokeball = 170;
       yPixelPokeball = 20;
     } else {
-      this.catchPokeball.updateSourcePosition(sourcePokeBall, this.c.POKEBALL_OFFSET_Y + 32);
+      this.catchPokeball.updateSourcePosition(this.pokeBallXSource, this.c.POKEBALL_OFFSET_Y + 32);
     }
 
     if (this.animationCounter >= 24) {
@@ -1814,8 +1822,6 @@ export class PokemonBattle {
 
   private bouncePokeBall(delta: number) {
     const speedPokeball = 192;
-    const sourcePokeBall = this.c.POKEBALL_OFFSET_X + 8 * this.c.POKEBALL_SIZE;
-
     let isFinished = false;
 
     if (this.animationCounter < 24) {
@@ -1825,23 +1831,23 @@ export class PokemonBattle {
     if (this.animationCounter >= 24) {
       this.animationCounter = this.animationCounter << 0;
 
-      this.catchPokeball.updateSourcePosition(sourcePokeBall, this.c.POKEBALL_OFFSET_Y + 32);
+      this.catchPokeball.updateSourcePosition(this.pokeBallXSource, this.c.POKEBALL_OFFSET_Y + 32);
 
       if (this.animationCounter % 2 === 0) {
-        const downFinished = this.catchPokeball.animate(delta, 10, 0, 1, 170, 47, 'quadratic-up', true);
+        const downFinished = this.catchPokeball.animate(delta, 8, 0, 1, 170, 47, 'sigmoid90-up', true);
 
         if (downFinished) {
           this.animationCounter++;
         }
       } else {
-        const upFinished = this.catchPokeball.animate(delta, 10, 0, -1, 170, 22 + (this.animationCounter - 24) * 5, 'quadratic-down', true);
+        const upFinished = this.catchPokeball.animate(delta, 8, 0, -1, 170, 22 + (this.animationCounter - 24) * 5, 'sigmoid90-down', true);
 
         if (upFinished) {
           this.animationCounter++;
         }
       }
     } else {
-      this.catchPokeball.updateSourcePosition(sourcePokeBall, this.c.POKEBALL_OFFSET_Y);
+      this.catchPokeball.updateSourcePosition(this.pokeBallXSource, this.c.POKEBALL_OFFSET_Y);
     }
 
     if (22 + (this.animationCounter - 24) * 5 >= 47) {
@@ -1857,6 +1863,8 @@ export class PokemonBattle {
   }
 
   private shakePokeBall(delta: number) {
+    this.catchPokeball.render();
+
     return true;
   }
 
@@ -2008,7 +2016,7 @@ export class PokemonBattle {
   }
 
   private drawDefaultAttack(delta: number, playerAttack: boolean) {
-    const speed = 160;
+    const speed = 196;
 
     // Draw battle grounds player pokemon
     this.playerBattleGrounds.render();

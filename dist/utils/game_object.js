@@ -177,15 +177,16 @@ class GameObject {
         const percentage = dirx !== 0 ? (this.x - this.xBegin) / (endx - this.xBegin) : (this.y - this.yBegin) / (endy - this.yBegin);
         let speedMod = 1;
         if (modifier === 'quadratic-up') {
-            // const sigma = 0.15;
-            // const mean = Math.abs(dirx !== 0 ? (endx - this.xBegin) / 2 : (endy - this.yBegin) / 2);
-            // const coordinate = dirx !== 0 ? this.x : this.y;
-            // speed = 1 / (1 + 2.71828 ** (- c1 * (coordinate - c2))) * speed;
-            // const speedMod = Math.sin(percentage * 2 * Math.PI - 0.5 * Math.PI) / 2.5 + 0.6
             speedMod = (Math.pow((0.77 * percentage), 2) + 0.4) * speed;
         }
         else if (modifier === 'quadratic-down') {
             speedMod = (1 - Math.pow((0.77 * percentage), 2)) * speed;
+        }
+        else if (modifier === 'sigmoid90-up') {
+            speedMod = (1 / (1 + Math.pow(2.1718, (-55 * (percentage - 0.1)))) / 1.5 + 0.33) * speed;
+        }
+        else if (modifier === 'sigmoid90-down') {
+            speedMod = (1 / (1 + Math.pow(2.1718, (55 * (percentage - 0.9)))) / 1.5 + 0.33) * speed;
         }
         speed = speedMod * speed;
         const newx = this.x + delta * speed * dirx;

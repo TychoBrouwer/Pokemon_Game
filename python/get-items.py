@@ -5,7 +5,7 @@ import re
 
 itemObject = {}
 
-for i in range(1, 570):
+for i in range(445, 460):
   url = 'https://pokeapi.co/api/v2/item/' + str(i) + '/'
 
   print(url)

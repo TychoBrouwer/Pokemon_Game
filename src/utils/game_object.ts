@@ -228,6 +228,10 @@ export class GameObject {
       speedMod = ((0.77 * percentage) ** 2 + 0.4) * speed;
     } else if (modifier === 'quadratic-down') {
       speedMod = (1 - (0.77 * percentage) ** 2) * speed;
+    } else if (modifier === 'sigmoid90-up') {
+      speedMod = (1 / (1 + 2.1718 ** (-55 * (percentage - 0.1))) / 1.5 + 0.33) * speed;
+    } else if (modifier === 'sigmoid90-down') {
+      speedMod = (1 / (1 + 2.1718 ** (55 * (percentage - 0.9))) / 1.5 + 0.33) * speed;
     }
     speed = speedMod * speed;
 
