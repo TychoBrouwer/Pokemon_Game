@@ -20,11 +20,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Player = void 0;
-const pokedex = __importStar(require("../pokedex.json"));
+const pokedex = __importStar(require("../data/pokedex.json"));
 const helper_1 = require("../utils/helper");
 class Player {
-    constructor(c) {
-        this.c = c;
+    constructor() {
         // Get playerData from localStorage
         this.playerData = (0, helper_1.getLocalStorage)('playerData');
         this.accountData = (0, helper_1.getLocalStorage)('accountData');
@@ -50,7 +49,7 @@ class Player {
     }
     generatePokemon(pokemonId, levelRange) {
         // Generate new pokemon from supplied 
-        const pokemon = (0, helper_1.generatePokemon)(this.c, this.pokedex[pokemonId.toString()], levelRange, pokemonId, 2);
+        const pokemon = (0, helper_1.generatePokemon)(this.pokedex[pokemonId.toString()], levelRange, pokemonId, 2);
         // Push new pokemon to playerData
         this.playerData.pokemon.push(pokemon);
         console.log(this.playerData.pokemon);

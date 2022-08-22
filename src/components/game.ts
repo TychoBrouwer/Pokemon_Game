@@ -14,23 +14,39 @@ import { Loader } from '../utils/loader';
 import { Camera } from './camera';
 import { Avatar } from './avatar';
 import { PokemonBattle } from './pokemon_battle';
-import { C } from '../utils/constants';
 
 import { keyboard } from '../utils/keyboard';
 import { randomFromMinMax, setLocalStorage, drawText } from '../utils/helper';
 
+import { AVATAR_HEIGHT, AVATAR_WIDTH, GAME_HEIGHT, GAME_WIDTH, GRASS_ENCOUNTER_RATE, MAPS, TILE_SIZE } from '../constants/game_constants';
+import { POKEBALL_SIZE, POKEMON_SIZE } from '../constants/battle_constants';
+import {
+  FILE_BUILDING_HEIGHT,
+  FILE_BUILDING_WIDTH,
+  FILE_MON_HEIGHT,
+  FILE_MON_WIDTH,
+  FILE_FONT_HEIGHT,
+  FILE_FONT_WIDTH,
+  FILE_STARTER_HEIGHT,
+  FILE_STARTER_WIDTH,
+  FILE_TILES_HEIGHT,
+  FILE_TILES_WIDTH,
+  ASSET_GENERATION_OFFSET,
+  ASSET_POKEMON_SPRITE_WIDTH,
+} from '../constants/asset_constants';
 
 import { AccountDataType, AddMapReturnType, PlayerDataType } from '../utils/types';
 
 export class Game {
-  public c = new C();
-  private player = new Player(this.c);
+  private player = new Player();
   private loader = new Loader();
 
   private map!: Map;
   private avatar!: Avatar;
   private camera!: Camera;
+
   private accountData: AccountDataType;
+  private genderOffsets: {[variableName: string]: number};
 
   private tileAtlas!: HTMLCanvasElement;
   private starterAtlas!: HTMLCanvasElement;
@@ -61,11 +77,10 @@ export class Game {
     this.gameCtx = gameCtx;
     this.battleCtx = battleCtx;
     this.overlayCtx = overlayCtx;
-    this.c = new C();
 
     // Get playerData and gameTriggers from localStorage
     let playerData: PlayerDataType = this.player.getStoredPlayerData('playerData');
-    let gameTriggers: {[trigger: string]: boolean} = this.player.getStoredPlayerData('gameTriggers');
+    let gameTriggers: typeof this.gameTriggers = this.player.getStoredPlayerData('gameTriggers');
 
     // If playerData in localStorage does not have data, create new player
     if (!playerData.location) {
@@ -73,6 +88,10 @@ export class Game {
     }
 
     this.accountData = this.player.getAccountData();
+    this.genderOffsets = {
+      ASSET_AVATAR_OFFSET: 0,
+    }
+
     this.setGenderVariables(this.accountData.male);
 
     // If gameTriggers in localStorage does not have data, create gameTriggers object
@@ -95,11 +114,11 @@ export class Game {
       this.init();
 
       // Create map object with the currentMap
-      this.map = new Map(this.c, this.c.MAPS[playerData.location]);
+      this.map = new Map(MAPS[playerData.location]);
       // Create avatar object with the loader and the map object
-      this.avatar = new Avatar(this.c, this.loader, this.map);
+      this.avatar = new Avatar(this.loader, this.map);
       // Create camera object with the currentMap and the width and height for the game
-      this.camera = new Camera(this.c, this.c.MAPS[playerData.location]);
+      this.camera = new Camera(MAPS[playerData.location]);
       // Set the camera object to follow the avatar object
       this.camera.follow(this.avatar);
 
@@ -137,13 +156,13 @@ export class Game {
     keyboard.listenForEvents([keyboard.LEFT, keyboard.RIGHT, keyboard.UP, keyboard.DOWN, keyboard.ENTER]);
 
     // Set the necessary images to class variables
-    this.tileAtlas = this.loader.loadImageToCanvas('tiles', this.c.ASSETS_TILES_HEIGHT, this.c.ASSETS_TILES_WIDTH);
-    this.starterAtlas = this.loader.loadImageToCanvas('starterAssets', this.c.ASSETS_STARTER_HEIGHT, this.c.ASSETS_STARTER_WIDTH);
-    this.font = this.loader.loadImageToCanvas('font', this.c.ASSETS_FONT_HEIGHT, this.c.ASSETS_FONT_WIDTH);
-    this.buildingAtlas = this.loader.loadImageToCanvas('buildingAtlas', this.c.ASSETS_BUILDING_TILES_HEIGHT, this.c.ASSETS_BUILDING_TILES_WIDTH);
+    this.tileAtlas = this.loader.loadImageToCanvas('tiles', FILE_TILES_HEIGHT, FILE_TILES_WIDTH);
+    this.starterAtlas = this.loader.loadImageToCanvas('starterAssets', FILE_STARTER_HEIGHT, FILE_STARTER_WIDTH);
+    this.font = this.loader.loadImageToCanvas('font', FILE_FONT_HEIGHT, FILE_FONT_WIDTH);
+    this.buildingAtlas = this.loader.loadImageToCanvas('buildingAtlas', FILE_BUILDING_HEIGHT, FILE_BUILDING_WIDTH);
   }
 
-  private async tick(elapsed: number) {
+  private tick(elapsed: number) {
     // Calculate the delta between the ticks
     let delta = (elapsed - this._previousElapsed) / 1000.0;
     delta = Math.min(delta, 0.25); // maximum delta of 250 ms
@@ -151,22 +170,25 @@ export class Game {
 
     // check for gameStatus to decide what to render
     if (this.gameStatus === 'chooseStarter' || this.gameStatus === 'confirmStarter') {
-
       // Render chooseStarter sequence
       this.chooseStarter(delta);
     } else {
       // Clear the canvases
-      this.overlayCtx.clearRect(0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
-      this.gameCtx.clearRect(0, 0, this.c.GAME_WIDTH, this.c.GAME_HEIGHT);
-
-      // Update the game (movement and actions)
-      this.update(delta);
+      this.overlayCtx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      this.gameCtx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      
+      if (this.gameStatus === 'game') {
+        // Update the game (movement and actions)
+        this.update(delta);
+  
+        // Find pokemon function
+        this.findWildPokemon();
+      }
+  
       // Render layers to canvas.
       this.render(delta);
-  
-      // Find pokemon function
-      await this.findPokemon();
     }
+
     
     // Request new animation frame
     window.requestAnimationFrame(this.tick.bind(this));
@@ -174,10 +196,9 @@ export class Game {
 
   private setGenderVariables(male: boolean) {
     if (male) {
-      this.c.AVATAR_GENDER_OFFSET = 4 * this.c.AVATAR_BATTLE_HEIGHT;
-      this.c.ASSETS_BAG_BG_GENDER_OFFSET = this.c.GAME_WIDTH;
-      this.c.ASSETS_BAG_GENDER_OFFSET = this.c.ASSETS_BAG_HEIGHT;
-      this.c.ASSETS_BAG_SEL_GENDER_OFFSET = 5 * this.c.ASSETS_BAG_SEL_HEIGHT;
+      this.genderOffsets = {
+        ASSET_AVATAR_OFFSET: 208,
+      }
     }
   }
 
@@ -191,10 +212,10 @@ export class Game {
     }
   }
 
-  async findPokemon(): Promise<void> {
+  async findWildPokemon(): Promise<void> {
     // Get current column and row of the avatar
-    const column = Math.floor(this.avatar.x / this.c.MAP_TSIZE);
-    const row = Math.floor(this.avatar.y / this.c.MAP_TSIZE);
+    const column = Math.floor(this.avatar.x / TILE_SIZE);
+    const row = Math.floor(this.avatar.y / TILE_SIZE);
 
     // Check if avatar has entered new tile
     if (column !== this.currentPlayerCol || row !== this.currentPlayerRow) {
@@ -203,13 +224,27 @@ export class Game {
       // Get a random number for deciding if pokemon has been found
       const randomNumber = randomFromMinMax(0, 2879);
 
-      if (tile === 2 && randomNumber < this.c.GRASS_ENCOUNTER_NUMBER) {
+      const encounterMethod = 
+        tile === 2 && randomNumber < GRASS_ENCOUNTER_RATE ? 0 : 
+        null;
+
+      if (encounterMethod !== null) {
+        this.gameStatus = 'wildPokemon';
+        this.animation = 0;
+        this.direction = 0;
+
+        console.log('test')
+
         // Define new pokemon battle
-        const pokemonBattle = new PokemonBattle(this.c, this.battleCtx, this.overlayCtx, this.loader, this.player, this.currentMap, 0);
+        const pokemonBattle = new PokemonBattle(this.battleCtx, this.overlayCtx, this.loader, this.player, this.currentMap, encounterMethod);
 
         // Start new pokemon battle and wait for result
         const battleResult = await pokemonBattle.battle();
-        
+
+        this.gameStatus = 'game';
+
+        console.log('test')
+
         if (battleResult.result) {
           console.log('battle with ' + battleResult.pokemon.pokemonName + ' won!')
         } else {
@@ -248,12 +283,12 @@ export class Game {
       this.starterAtlas,
       0,
       0,
-      this.c.GAME_WIDTH,
-      this.c.GAME_HEIGHT,
+      GAME_WIDTH,
+      GAME_HEIGHT,
       0,
       0,
-      this.c.GAME_WIDTH,
-      this.c.GAME_HEIGHT,
+      GAME_WIDTH,
+      GAME_HEIGHT,
     );
 
     // Draw professors bag
@@ -343,8 +378,8 @@ export class Game {
         this.overlayCtx.fill();
         this.overlayCtx.globalAlpha = 1;
 
-        drawText(this.c, this.overlayCtx, this.font, 'WOOD GECKO POKéMON', 0, 5, 5, 73);
-        drawText(this.c, this.overlayCtx, this.font, 'TREECKO', 0, 5, 65, 73 + 16);
+        drawText(this.overlayCtx, this.font, 'WOOD GECKO POKéMON', 0, 5, 5, 73);
+        drawText(this.overlayCtx, this.font, 'TREECKO', 0, 5, 65, 73 + 16);
       } else if (this.selectedStarter === 1) {
         // Draw the background for the pokemon text
         this.overlayCtx.globalAlpha = 0.4;
@@ -353,8 +388,8 @@ export class Game {
         this.overlayCtx.fill();
         this.overlayCtx.globalAlpha = 1;
 
-        drawText(this.c, this.overlayCtx, this.font, 'CHICK POKéMON', 0, 5, 133, 81);
-        drawText(this.c, this.overlayCtx, this.font, 'TORCHIC', 0, 5, 193, 81 + 16);
+        drawText(this.overlayCtx, this.font, 'CHICK POKéMON', 0, 5, 133, 81);
+        drawText(this.overlayCtx, this.font, 'TORCHIC', 0, 5, 193, 81 + 16);
       } else {
         // Draw the background for the pokemon text
         this.overlayCtx.globalAlpha = 0.4;
@@ -363,13 +398,13 @@ export class Game {
         this.overlayCtx.fill();
         this.overlayCtx.globalAlpha = 1;
 
-        drawText(this.c, this.overlayCtx, this.font, 'MUD FISH POKéMON', 0, 5, 61, 33);
-        drawText(this.c, this.overlayCtx, this.font, 'MUDKIP', 0, 5, 135, 33 + 16);
+        drawText(this.overlayCtx, this.font, 'MUD FISH POKéMON', 0, 5, 61, 33);
+        drawText(this.overlayCtx, this.font, 'MUDKIP', 0, 5, 135, 33 + 16);
       }
 
       // Draw the dialogue text to the box
-      drawText(this.c, this.overlayCtx, this.font, 'PROF. BIRCH is in trouble!', 0, 3, 24, 121);
-      drawText(this.c, this.overlayCtx, this.font, 'Release a POKéMON and rescue him!', 0, 3, 24, 137);
+      drawText(this.overlayCtx, this.font, 'PROF. BIRCH is in trouble!', 0, 3, 24, 121);
+      drawText(this.overlayCtx, this.font, 'Release a POKéMON and rescue him!', 0, 3, 24, 137);
   
       // if key is pressed and not yet down, increment selectedStarter accordingly
       if (!this.keyDown) {
@@ -390,7 +425,7 @@ export class Game {
       this.selectedConfirm = true;
     } else if (this.gameStatus === 'confirmStarter') {
       // Draw conformation question to the dialogue box
-      drawText(this.c, this.overlayCtx, this.font, 'Do you choose this POKéMON?', 0, 3, 24, 121);
+      drawText(this.overlayCtx, this.font, 'Do you choose this POKéMON?', 0, 3, 24, 121);
 
       // The x and y pixel for the center of the pokemon preview circle
       const xPixel = 120;
@@ -399,9 +434,9 @@ export class Game {
       // Get the assets for the currently selected starter
       const pokemonId = (this.selectedStarter === 0) ? 252 : (this.selectedStarter === 1) ? 255 : 258;
       const generation = 2;
-      const pokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (generation + 1), this.c.ASSETS_POKEMON_HEIGHT[generation], this.c.ASSETS_POKEMON_WIDTH);
-      const xSource = (pokemonId - this.c.ASSETS_GENERATION_OFFSET[generation] - 1) % 3 * this.c.POKEMON_SPRITE_WIDTH;
-      const ySource = (((pokemonId - this.c.ASSETS_GENERATION_OFFSET[generation] - 1) / 3) << 0) * this.c.POKEMON_SIZE;
+      const pokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (generation + 1), FILE_MON_HEIGHT[generation], FILE_MON_WIDTH);
+      const xSource = (pokemonId - ASSET_GENERATION_OFFSET[generation] - 1) % 3 * ASSET_POKEMON_SPRITE_WIDTH;
+      const ySource = (((pokemonId - ASSET_GENERATION_OFFSET[generation] - 1) / 3) << 0) * POKEBALL_SIZE;
   
       // Draw the pokemon preview circle
       this.overlayCtx.fillStyle = '#ffffff';
@@ -415,12 +450,12 @@ export class Game {
         pokemonSprite,
         xSource,
         ySource,
-        this.c.POKEMON_SIZE,
-        this.c.POKEMON_SIZE,
-        (xPixel - this.c.POKEMON_SIZE / 2) << 0,
-        (yPixel - this.c.POKEMON_SIZE / 2) << 0,
-        this.c.POKEMON_SIZE,
-        this.c.POKEMON_SIZE,
+        POKEMON_SIZE,
+        POKEMON_SIZE,
+        (xPixel - POKEMON_SIZE / 2) << 0,
+        (yPixel - POKEMON_SIZE / 2) << 0,
+        POKEMON_SIZE,
+        POKEMON_SIZE,
       );
 
       // Draw the yes/no conformation box
@@ -589,12 +624,12 @@ export class Game {
 
   private drawLayer(layer: number): void {
     // get the render boundaries from the camera position
-    const startCol = Math.floor(this.camera.x / this.c.MAP_TSIZE);
-    const endCol = startCol + (this.camera.width / this.c.MAP_TSIZE);
-    const startRow = Math.floor(this.camera.y / this.c.MAP_TSIZE);
-    const endRow = startRow + (this.camera.height / this.c.MAP_TSIZE);
-    const offsetX = -this.camera.x + startCol * this.c.MAP_TSIZE;
-    const offsetY = -this.camera.y + startRow * this.c.MAP_TSIZE;
+    const startCol = Math.floor(this.camera.x / TILE_SIZE);
+    const endCol = startCol + (this.camera.width / TILE_SIZE);
+    const startRow = Math.floor(this.camera.y / TILE_SIZE);
+    const endRow = startRow + (this.camera.height / TILE_SIZE);
+    const offsetX = -this.camera.x + startCol * TILE_SIZE;
+    const offsetY = -this.camera.y + startRow * TILE_SIZE;
 
     // Loop through columns and rows
     for (let col = startCol; col <= endCol; col++) {
@@ -603,8 +638,8 @@ export class Game {
         let tile = this.map.getTile(layer, col, row);
         if (tile === -1) break; 
         // Get the x and y coordinates of the tile location
-        const x = (col - startCol) * this.c.MAP_TSIZE + offsetX;
-        const y = (row - startRow) * this.c.MAP_TSIZE + offsetY;
+        const x = (col - startCol) * TILE_SIZE + offsetX;
+        const y = (row - startRow) * TILE_SIZE + offsetY;
 
         let atlas: HTMLCanvasElement;
 
@@ -621,14 +656,14 @@ export class Game {
         if (tile !== 0 && atlas) {
           this.gameCtx.drawImage(
             atlas,
-            (tile - 1) % 16 * this.c.MAP_TSIZE,
-            Math.floor((tile - 1) / 16) * this.c.MAP_TSIZE,
-            this.c.MAP_TSIZE,
-            this.c.MAP_TSIZE,
+            (tile - 1) % 16 * TILE_SIZE,
+            Math.floor((tile - 1) / 16) * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE,
             Math.round(x),
             Math.round(y),
-            this.c.MAP_TSIZE,
-            this.c.MAP_TSIZE
+            TILE_SIZE,
+            TILE_SIZE
           );
         }
       }
@@ -638,30 +673,32 @@ export class Game {
   private drawPlayer(delta: number, onlyDrawTop: boolean): void {
     if (!onlyDrawTop) {
       // Set player direction and increment animation counter
-      this.direction = this.diry === 1 ? 0 : this.dirx === -1 ? 1 : this.diry === -1 ? 2 : this.dirx === 1 ? 3 : this.direction;
-      if (this.diry === 0 && this.dirx === 0) {
-        this.animation = 0;
-      } else {
-        this.animation = this.animation < 3.95 ? this.animation + 6 * delta : 0;
+      if (this.gameStatus === 'game') {
+        this.direction = this.diry === 1 ? 0 : this.dirx === -1 ? 1 : this.diry === -1 ? 2 : this.dirx === 1 ? 3 : this.direction;
+        if (this.diry === 0 && this.dirx === 0) {
+          this.animation = 0;
+        } else {
+          this.animation = this.animation < 3.95 ? this.animation + 6 * delta : 0;
+        }
       }
     }
 
     // Set the height of sprite to be drawn
-    const height = onlyDrawTop ? 0.7 * this.c.AVATAR_HEIGHT : this.c.AVATAR_HEIGHT;
+    const height = onlyDrawTop ? 0.7 * AVATAR_HEIGHT : AVATAR_HEIGHT;
     // Set the x pixel of the source from the direction and animation
-    const xSource = this.direction * this.c.AVATAR_WIDTH * 4 + (this.animation << 0) * this.c.AVATAR_WIDTH;
+    const xSource = this.direction * AVATAR_WIDTH * 4 + (this.animation << 0) * AVATAR_WIDTH;
 
     if (this.avatar.avatarAsset) {
       // Drawn the avatar sprite
       this.gameCtx.drawImage(
         this.avatar.avatarAsset,
         xSource,
-        this.c.AVATAR_GENDER_OFFSET,
-        this.c.AVATAR_WIDTH,
+        this.genderOffsets.ASSET_AVATAR_OFFSET,
+        AVATAR_WIDTH,
         height,
-        (0.5 + this.avatar.screenX - this.c.AVATAR_WIDTH / 2) << 0,
-        (0.5 + this.avatar.screenY - this.c.AVATAR_HEIGHT / 2 + (((1 < this.animation && this.animation < 2) || (3 < this.animation && this.animation < 4)) ? 1 : 0)) << 0,
-        this.c.AVATAR_WIDTH,
+        (0.5 + this.avatar.screenX - AVATAR_WIDTH / 2) << 0,
+        (0.5 + this.avatar.screenY - AVATAR_HEIGHT / 2 + (((1 < this.animation && this.animation < 2) || (3 < this.animation && this.animation < 4)) ? 1 : 0)) << 0,
+        AVATAR_WIDTH,
         height
       );
     }

@@ -1,6 +1,9 @@
-import * as moveIndex from '../move_index.json';
+import * as moveIndex from '../data/move_index.json';
 
-import { C } from '../utils/constants';
+import { FONT_WIDTH, FONT_HEIGHT, CHAR_IN_FONT } from '../constants/game_constants'
+import { POKEMON_SIZE } from '../constants/battle_constants'
+import { ASSET_GENERATION_OFFSET, ASSET_POKEMON_SPRITE_WIDTH } from '../constants/asset_constants'
+import { SIZE_TABLE, POKEMON_PERSONALITIES, LEVELS } from '../constants/mon_constants'
 
 import { PokemonDataType, PokemonInfoType } from '../utils/types';
 
@@ -34,13 +37,13 @@ export function getLocalStorage(key: string) {
   return JSON.parse(data);
 }
 
-export function drawText(c: C, ctx: CanvasRenderingContext2D, font: HTMLCanvasElement, text: string, fontsize: number, fontColor: number, posX: number, posY: number) {
+export function drawText(ctx: CanvasRenderingContext2D, font: HTMLCanvasElement, text: string, fontsize: number, fontColor: number, posX: number, posY: number) {
   text = text.replace('É', 'é');
   
   // Loop through the text to Draw
   for (let i = 0; i < text.length; i++) {
     // Set default width
-    let width = c.FONT_WIDTH[fontsize];
+    let width: number = FONT_WIDTH[fontsize];
     if (fontsize === 0) {
       // characters that are seven pixels wide
       if (text[i] === '|') {
@@ -66,11 +69,11 @@ export function drawText(c: C, ctx: CanvasRenderingContext2D, font: HTMLCanvasEl
 
     // Get the positions of the letter to draw
     const positions = {
-      posX: c.CHAR_IN_FONT.indexOf(text[i]) % 40 * c.FONT_WIDTH[fontsize],
-      posY: ((c.CHAR_IN_FONT.indexOf(text[i]) / 40) << 0) * c.FONT_HEIGHT[fontsize],
+      posX: CHAR_IN_FONT.indexOf(text[i]) % 40 * FONT_WIDTH[fontsize],
+      posY: ((CHAR_IN_FONT.indexOf(text[i]) / 40) << 0) * FONT_HEIGHT[fontsize],
     }
     // Get the yOffset for the font type (fontSize and fontColor)
-    const yOffset = (fontsize === 0) ? fontColor * 2 * c.FONT_HEIGHT[fontsize] : 6 * 2 * c.FONT_HEIGHT[0] + fontColor * 2 * c.FONT_HEIGHT[fontsize];
+    const yOffset = (fontsize === 0) ? fontColor * 2 * FONT_HEIGHT[fontsize] : 6 * 2 * FONT_HEIGHT[0] + fontColor * 2 * FONT_HEIGHT[fontsize];
 
     if (text[i] === '_' || text[i] === '*') {
       positions.posX = -10;
@@ -82,20 +85,20 @@ export function drawText(c: C, ctx: CanvasRenderingContext2D, font: HTMLCanvasEl
       positions.posX,
       positions.posY + yOffset,
       width,
-      c.FONT_HEIGHT[fontsize],
-      posX + c.FONT_WIDTH[fontsize] * i
+      FONT_HEIGHT[fontsize],
+      posX + FONT_WIDTH[fontsize] * i
         - 3 * (text.substring(0, i).match(/ |l|\./g)||[]).length
         - 2 * (text.substring(0, i).match(/i|!/g)||[]).length
         - 1 * (text.substring(0, i).match(/r/g)||[]).length
         - 5 * (text.substring(0, i).match(/\*/g)||[]).length,
       posY,
       width,
-      c.FONT_HEIGHT[fontsize]
+      FONT_HEIGHT[fontsize]
     );
   }
 }
 
-export function generatePokemon(c: C, pokedexEntry: PokemonInfoType, levelRange: number[], pokemonId: number, pokeball: number): PokemonDataType {
+export function generatePokemon(pokedexEntry: PokemonInfoType, levelRange: number[], pokemonId: number, pokeball: number): PokemonDataType {
   // Get random level from the supplied range
   const level = randomFromMinMax(levelRange[0], levelRange[1]);
 
@@ -129,20 +132,20 @@ export function generatePokemon(c: C, pokedexEntry: PokemonInfoType, levelRange:
   // Set nature for every category
   const nature = {
     hp: 1,
-    attack: (c.POKEMON_PERSONALITIES.increase.attack.includes(personality)) ? 1.1 : 
-            (c.POKEMON_PERSONALITIES.decrease.attack.includes(personality)) ? 0.9 :
+    attack: (POKEMON_PERSONALITIES.increase.attack.includes(personality)) ? 1.1 : 
+            (POKEMON_PERSONALITIES.decrease.attack.includes(personality)) ? 0.9 :
             1,
-    defense:  (c.POKEMON_PERSONALITIES.increase.defense.includes(personality)) ? 1.1 : 
-              (c.POKEMON_PERSONALITIES.decrease.defense.includes(personality)) ? 0.9 :
+    defense:  (POKEMON_PERSONALITIES.increase.defense.includes(personality)) ? 1.1 : 
+              (POKEMON_PERSONALITIES.decrease.defense.includes(personality)) ? 0.9 :
               1,
-    specialDefense: (c.POKEMON_PERSONALITIES.increase.specialDefense.includes(personality)) ? 1.1 : 
-                    (c.POKEMON_PERSONALITIES.decrease.specialDefense.includes(personality)) ? 0.9 :
+    specialDefense: (POKEMON_PERSONALITIES.increase.specialDefense.includes(personality)) ? 1.1 : 
+                    (POKEMON_PERSONALITIES.decrease.specialDefense.includes(personality)) ? 0.9 :
                     1,
-    specialAttack:  (c.POKEMON_PERSONALITIES.increase.specialAttack.includes(personality)) ? 1.1 : 
-                    (c.POKEMON_PERSONALITIES.decrease.specialAttack.includes(personality)) ? 0.9 :
+    specialAttack:  (POKEMON_PERSONALITIES.increase.specialAttack.includes(personality)) ? 1.1 : 
+                    (POKEMON_PERSONALITIES.decrease.specialAttack.includes(personality)) ? 0.9 :
                     1,
-    speed:  (c.POKEMON_PERSONALITIES.increase.speed.includes(personality)) ? 1.1 : 
-            (c.POKEMON_PERSONALITIES.decrease.speed.includes(personality)) ? 0.9 :
+    speed:  (POKEMON_PERSONALITIES.increase.speed.includes(personality)) ? 1.1 : 
+            (POKEMON_PERSONALITIES.decrease.speed.includes(personality)) ? 0.9 :
             1,
   };
   // Get random individual value (0-31 inclusive)
@@ -173,7 +176,7 @@ export function generatePokemon(c: C, pokedexEntry: PokemonInfoType, levelRange:
   const size = randomFromMinMax(0, 65535);
   // Compute height from size
   let height = 0;
-  for (const [maxSize, values] of Object.entries(c.SIZE_TABLE)) {
+  for (const [maxSize, values] of Object.entries(SIZE_TABLE)) {
     if (size <= parseInt(maxSize)) {
       height = Math.floor(pokedexEntry.height * Math.floor((size - values.z) / values.y + values.x) / 10)
 
@@ -186,9 +189,9 @@ export function generatePokemon(c: C, pokedexEntry: PokemonInfoType, levelRange:
     pokemonId: pokemonId,
     generation: generation,
     pokemonName: pokedexEntry.name,
-    xp: c.LEVELS[pokedexEntry.growth_rate][level],
-    xpCurLevel: c.LEVELS[pokedexEntry.growth_rate][level],
-    xpNextLevel: c.LEVELS[pokedexEntry.growth_rate][level + 1],
+    xp: LEVELS[pokedexEntry.growth_rate][level],
+    xpCurLevel: LEVELS[pokedexEntry.growth_rate][level],
+    xpNextLevel: LEVELS[pokedexEntry.growth_rate][level + 1],
     xpBase: pokedexEntry.base_experience,
     growth_rate: pokedexEntry.growth_rate,
     capture_rate: pokedexEntry.capture_rate,
@@ -216,8 +219,8 @@ export function generatePokemon(c: C, pokedexEntry: PokemonInfoType, levelRange:
       speed: Math.floor((Math.floor((2 * pokedexEntry.stats[5].base_stat + IV.speed + Math.floor(EV.speed / 4)) * level / 100) + 5) * nature.speed),
     },
     types: pokedexEntry.types,
-    xSource: (pokemonId - c.ASSETS_GENERATION_OFFSET[generation] - 1) % 3 * c.POKEMON_SPRITE_WIDTH,
-    ySource: (((pokemonId - c.ASSETS_GENERATION_OFFSET[generation] - 1) / 3) << 0) * c.POKEMON_SIZE,
+    xSource: (pokemonId - ASSET_GENERATION_OFFSET[generation] - 1) % 3 * ASSET_POKEMON_SPRITE_WIDTH,
+    ySource: (((pokemonId - ASSET_GENERATION_OFFSET[generation] - 1) / 3) << 0) * POKEMON_SIZE,
   }
 
   // Return pokemonData object

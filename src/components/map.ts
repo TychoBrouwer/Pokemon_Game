@@ -1,10 +1,8 @@
+import { TILE_SIZE, MAPS } from '../constants/game_constants';
+
 import { MapType, MapLocation } from '../utils/types';
 
-import { C } from '../utils/constants';
-
 export class Map {
-  private c: C;
-
   public currentMap: MapType
   private MapLocation: MapLocation;
   private prevMapCols = 0;
@@ -14,9 +12,7 @@ export class Map {
     [direction: string]: string;
   }
 
-  constructor(c: C, map: MapType) {
-    this.c = c;
-
+  constructor(map: MapType) {
     // Set the currentMap
     this.currentMap = map;
     // Set the adjacent loaded maps object
@@ -42,7 +38,7 @@ export class Map {
     this.prevMapRows = this.currentMap.ROWS
 
     // Update the currentMap
-    this.currentMap = this.c.MAPS[mapName];
+    this.currentMap = MAPS[mapName];
     // Reset the adjacent loaded maps object
     this.adjacentMaps = {};
 
@@ -104,27 +100,27 @@ export class Map {
 
       // compute solid in one way or partly solid tiles
       const partlySolid: boolean =
-        (tile === 3 && rowHalfTile * this.c.MAP_TSIZE < y && (dirY === -1 || dirX !== 0)) ||
-        (tile === 4 && rowHalfTile * this.c.MAP_TSIZE < y && (dirY === -1 || dirX === -1)) ||
-        (tile === 7 && rowHalfTile * this.c.MAP_TSIZE < y && (dirY === -1 || dirX === 1)) ||
-        (tile === 5 && rowHalfTile * this.c.MAP_TSIZE < y && colHalfTile * this.c.MAP_TSIZE < x) ||
-        (tile === 8 && rowHalfTile * this.c.MAP_TSIZE < y && colHalfTile * this.c.MAP_TSIZE > x) ||
+        (tile === 3 && rowHalfTile * TILE_SIZE < y && (dirY === -1 || dirX !== 0)) ||
+        (tile === 4 && rowHalfTile * TILE_SIZE < y && (dirY === -1 || dirX === -1)) ||
+        (tile === 7 && rowHalfTile * TILE_SIZE < y && (dirY === -1 || dirX === 1)) ||
+        (tile === 5 && rowHalfTile * TILE_SIZE < y && colHalfTile * TILE_SIZE < x) ||
+        (tile === 8 && rowHalfTile * TILE_SIZE < y && colHalfTile * TILE_SIZE > x) ||
 
         (tile === 6 && 
-          (rowHalfTile * this.c.MAP_TSIZE < y || colHalfTile * this.c.MAP_TSIZE < x) && 
+          (rowHalfTile * TILE_SIZE < y || colHalfTile * TILE_SIZE < x) && 
           (dirX === -1 || dirY === -1)
         ) ||
 
         (tile === 9 && (
-          rowHalfTile * this.c.MAP_TSIZE < y || colHalfTile * this.c.MAP_TSIZE < x && 
+          rowHalfTile * TILE_SIZE < y || colHalfTile * TILE_SIZE < x && 
           (dirX === 1 || dirY === -1)
         )) ||
-        (tile === 30 && (row + 0.3) * this.c.MAP_TSIZE < y) ||
-        (tile === 33 && colHalfTile * this.c.MAP_TSIZE < x && (dirX === -1 || dirY !== 0)) ||
-        (tile === 34 && colHalfTile * this.c.MAP_TSIZE < x && (dirX === -1 || dirY === 1));
+        (tile === 30 && (row + 0.3) * TILE_SIZE < y) ||
+        (tile === 33 && colHalfTile * TILE_SIZE < x && (dirX === -1 || dirY !== 0)) ||
+        (tile === 34 && colHalfTile * TILE_SIZE < x && (dirX === -1 || dirY === 1));
         (tile === 35 && 
-          (rowHalfTile * this.c.MAP_TSIZE < y  ||
-          colHalfTile * this.c.MAP_TSIZE < x) && (dirX === -1 || dirY !== 0)
+          (rowHalfTile * TILE_SIZE < y  ||
+          colHalfTile * TILE_SIZE < x) && (dirX === -1 || dirY !== 0)
         );
         
       // Return and compute the result of the solidity determination
@@ -134,7 +130,7 @@ export class Map {
 
   addMap(mapName: string, location: string, tileOffset: number) {
     // Get the map to add
-    const mapToAdd = {...this.c.MAPS[mapName]};
+    const mapToAdd = MAPS[mapName];
 
     // Initialize the final layers array to be returned
     const finalLayers: number[][] = [];
@@ -271,21 +267,21 @@ export class Map {
 
   getCol(x: number): number {
     // Get the column of an x coordinate
-    return Math.floor(x / this.c.MAP_TSIZE);
+    return Math.floor(x / TILE_SIZE);
   }
 
   getRow(y: number): number {
     // Get the row of a y coordinate
-    return Math.floor(y / this.c.MAP_TSIZE);
+    return Math.floor(y / TILE_SIZE);
   }
 
   getX(col: number): number {
     // Get x of a column of the map
-    return col * this.c.MAP_TSIZE;
+    return col * TILE_SIZE;
   }
 
   getY(row: number): number {
     // Get y of a row of the map
-    return row * this.c.MAP_TSIZE;
+    return row * TILE_SIZE;
   }
 }

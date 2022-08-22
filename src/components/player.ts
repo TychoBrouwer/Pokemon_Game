@@ -1,21 +1,15 @@
-import * as pokedex from '../pokedex.json';
-
-import { C } from '../utils/constants';
+import * as pokedex from '../data/pokedex.json';
 
 import { getLocalStorage, setLocalStorage, generatePokemon } from '../utils/helper';
 
 import { PokedexType, PlayerDataType, AccountDataType, PokemonDataType } from '../utils/types';
 
-
 export class Player {
-  private c: C;
-
   public playerData!: PlayerDataType;
   private pokedex: PokedexType;
   private accountData: AccountDataType;
 
-  constructor(c: C) {
-    this.c = c;
+  constructor() {
 
     // Get playerData from localStorage
     this.playerData = getLocalStorage('playerData');
@@ -47,7 +41,7 @@ export class Player {
 
   generatePokemon(pokemonId: number, levelRange: number[]) {
     // Generate new pokemon from supplied 
-    const pokemon = generatePokemon(this.c, this.pokedex[pokemonId.toString()], levelRange, pokemonId, 2);
+    const pokemon = generatePokemon(this.pokedex[pokemonId.toString()], levelRange, pokemonId, 2);
     // Push new pokemon to playerData
     this.playerData.pokemon.push(pokemon);
 
