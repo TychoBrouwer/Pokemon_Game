@@ -10,7 +10,17 @@ import { Player } from './player';
 import { randomFromArray, generatePokemon, drawText, randomFromMinMax } from '../utils/helper';
 import { keyboard } from '../utils/keyboard';
 
-import { ACTION_BOX_HEIGHT, ACTION_BOX_WIDTH, BATTLE_ARENA_HEIGHT, BATTLE_SCENE_HEIGHT, BATTLE_SCENE_WIDTH, NORMAL_STAGES, POKEBALL_SIZE, POKEMON_SIZE, SPECIAL_STAGES } from '../constants/battle_constants';
+import { 
+  ACTION_BOX_HEIGHT, 
+  ACTION_BOX_WIDTH,
+  BATTLE_ARENA_HEIGHT, 
+  BATTLE_SCENE_HEIGHT, 
+  BATTLE_SCENE_WIDTH, 
+  NORMAL_STAGES, 
+  POKEBALL_SIZE, 
+  POKEMON_SIZE, 
+  SPECIAL_STAGES
+} from '../constants/battle_constants';
 import { AVATAR_BATTLE_HEIGHT, AVATAR_BATTLE_WIDTH, FONT_HEIGHT, GAME_HEIGHT, GAME_WIDTH } from '../constants/game_constants';
 import { BAG_POCKETS } from '../constants/bag_constants';
 import { POKE_BALLS } from '../constants/items_constants';
@@ -40,7 +50,16 @@ import {
   ASSET_BAG_SEL_HEIGHT,
 } from '../constants/asset_constants';
 
-import { PlayerDataType, AccountDataType, EncounterTableType, PokedexType, PokemonDataType, MoveIndexType, MoveType, ItemIndexType } from '../utils/types';
+import { 
+  PlayerDataType, 
+  AccountDataType, 
+  EncounterTableType,
+  PokedexType, 
+  PokemonDataType,
+  MoveIndexType, 
+  MoveType, 
+  ItemIndexType
+} from '../utils/types';
 
 const enum BattleStatus {
   SlideAvatarIn,
@@ -1337,7 +1356,7 @@ export class PokemonBattle {
       this.playerMove = false;
 
       if (!this.enemyMoveDecided) {
-        this.battleMoveName = randomFromArray(this.enemyPokemon.moves).move;
+        this.battleMoveName = randomFromArray(this.enemyPokemon.moves.map(moveData => moveData.move));
         console.log('foo ' + this.enemyPokemon.pokemonName + ' used ' + this.battleMoveName);
 
         this.enemyMoveDecided = true;
