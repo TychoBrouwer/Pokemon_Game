@@ -195,7 +195,7 @@ class GameObject {
             (diry === -1 && newy > endy) || (diry === 1 && newy < endy)) {
             this.x = newx;
             this.y = newy;
-            this.render();
+            this.render(0);
             return false;
         }
         else {
@@ -232,7 +232,7 @@ class GameObject {
             ySource = this.ySource + frame * this.animationYOffset;
         }
         this.ctx.globalAlpha = this.opacity;
-        this.ctx.drawImage(this.gameObject, xSource, ySource, this.widthSource, this.heightSource, this.x, (0.5 + this.y) << 0, this.width, this.height);
+        this.ctx.drawImage(this.gameObject, xSource, ySource, this.widthSource, this.heightSource, this.x > 0 ? (0.5 + this.x) << 0 : (-0.5 + this.x) << 0, this.y > 0 ? (0.5 + this.y) << 0 : (-0.5 + this.y) << 0, this.width, this.height);
         this.ctx.globalAlpha = 1;
         this.animationCounter += delta * 1000;
     }

@@ -174,10 +174,11 @@ export class Game {
       this.chooseStarter(delta);
     } else {
       // Clear the canvases
-      this.overlayCtx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
       this.gameCtx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
       
       if (this.gameStatus === 'game') {
+        this.overlayCtx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
         // Update the game (movement and actions)
         this.update(delta);
   
@@ -233,8 +234,6 @@ export class Game {
         this.animation = 0;
         this.direction = 0;
 
-        console.log('test')
-
         // Define new pokemon battle
         const pokemonBattle = new PokemonBattle(this.battleCtx, this.overlayCtx, this.loader, this.player, this.currentMap, encounterMethod);
 
@@ -242,8 +241,6 @@ export class Game {
         const battleResult = await pokemonBattle.battle();
 
         this.gameStatus = 'game';
-
-        console.log('test')
 
         if (battleResult.result) {
           console.log('battle with ' + battleResult.pokemon.pokemonName + ' won!')
@@ -636,7 +633,8 @@ export class Game {
       for (let row = startRow; row <= endRow; row++) {
         // Get the tile identity number to draw
         let tile = this.map.getTile(layer, col, row);
-        if (tile === -1) break; 
+
+        if (tile === 0) break;
         // Get the x and y coordinates of the tile location
         const x = (col - startCol) * TILE_SIZE + offsetX;
         const y = (row - startRow) * TILE_SIZE + offsetY;
@@ -653,19 +651,17 @@ export class Game {
         }
 
         // Draw tile to screen
-        if (tile !== 0 && atlas) {
-          this.gameCtx.drawImage(
-            atlas,
-            (tile - 1) % 16 * TILE_SIZE,
-            Math.floor((tile - 1) / 16) * TILE_SIZE,
-            TILE_SIZE,
-            TILE_SIZE,
-            Math.round(x),
-            Math.round(y),
-            TILE_SIZE,
-            TILE_SIZE
-          );
-        }
+        this.gameCtx.drawImage(
+          atlas,
+          (tile - 1) % 16 * TILE_SIZE,
+          Math.floor((tile - 1) / 16) * TILE_SIZE,
+          TILE_SIZE,
+          TILE_SIZE,
+          Math.round(x),
+          Math.round(y),
+          TILE_SIZE,
+          TILE_SIZE
+        );
       }
     }
   }

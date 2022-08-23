@@ -1,21 +1,21 @@
 export class GameObject {
-  ctx: CanvasRenderingContext2D;
-  spriteCtx!: CanvasRenderingContext2D | null;
-  originalImageData!: Uint8ClampedArray;
-  gameObject: HTMLCanvasElement;
-  xSource: number;
-  ySource: number;
-  widthSource: number;
-  width: number;
-  heightSource: number;
-  height: number;
-  x: number;
-  y: number;
-  xBegin: number;
-  yBegin: number;
-  scaleFactor = 1;
-  opacity = 1;
-  currentColor = [-1, -1, -1];
+  private ctx: CanvasRenderingContext2D;
+  private spriteCtx!: CanvasRenderingContext2D | null;
+  private originalImageData!: Uint8ClampedArray;
+  private gameObject: HTMLCanvasElement;
+  private xSource: number;
+  private ySource: number;
+  private widthSource: number;
+  private width: number;
+  private heightSource: number;
+  private height: number;
+  public x: number;
+  public y: number;
+  private xBegin: number;
+  private yBegin: number;
+  private scaleFactor = 1;
+  private opacity = 1;
+  private currentColor = [-1, -1, -1];
 
   animationCounter = 0;
   animation = false;
@@ -67,7 +67,6 @@ export class GameObject {
     this.y = y;
     this.xBegin = x;
     this.yBegin = y;
-
   }
 
   getPosition() {
@@ -238,12 +237,13 @@ export class GameObject {
     const newx = this.x + delta * speed * dirx;
     const newy = this.y + delta * speed * diry;
 
+
     if ((dirx === -1 && newx > endx) || (dirx === 1 && newx < endx) || 
         (diry === -1 && newy > endy) || (diry === 1 && newy < endy)) {
       this.x = newx;
       this.y = newy;
 
-      this.render();
+      this.render(0);
 
       return false;
     } else {
@@ -296,8 +296,8 @@ export class GameObject {
       ySource,
       this.widthSource,
       this.heightSource,
-      this.x,
-      (0.5 + this.y) << 0,
+      this.x > 0 ? (0.5 + this.x) << 0 : (-0.5 + this.x) << 0,
+      this.y > 0 ? (0.5 + this.y) << 0 : (-0.5 + this.y) << 0,
       this.width,
       this.height,
     );

@@ -133,9 +133,9 @@ class Game {
         }
         else {
             // Clear the canvases
-            this.overlayCtx.clearRect(0, 0, game_constants_1.GAME_WIDTH, game_constants_1.GAME_HEIGHT);
             this.gameCtx.clearRect(0, 0, game_constants_1.GAME_WIDTH, game_constants_1.GAME_HEIGHT);
             if (this.gameStatus === 'game') {
+                this.overlayCtx.clearRect(0, 0, game_constants_1.GAME_WIDTH, game_constants_1.GAME_HEIGHT);
                 // Update the game (movement and actions)
                 this.update(delta);
                 // Find pokemon function
@@ -179,13 +179,11 @@ class Game {
                     this.gameStatus = 'wildPokemon';
                     this.animation = 0;
                     this.direction = 0;
-                    console.log('test');
                     // Define new pokemon battle
                     const pokemonBattle = new pokemon_battle_1.PokemonBattle(this.battleCtx, this.overlayCtx, this.loader, this.player, this.currentMap, encounterMethod);
                     // Start new pokemon battle and wait for result
                     const battleResult = yield pokemonBattle.battle();
                     this.gameStatus = 'game';
-                    console.log('test');
                     if (battleResult.result) {
                         console.log('battle with ' + battleResult.pokemon.pokemonName + ' won!');
                     }
@@ -452,7 +450,7 @@ class Game {
             for (let row = startRow; row <= endRow; row++) {
                 // Get the tile identity number to draw
                 let tile = this.map.getTile(layer, col, row);
-                if (tile === -1)
+                if (tile === 0)
                     break;
                 // Get the x and y coordinates of the tile location
                 const x = (col - startCol) * game_constants_1.TILE_SIZE + offsetX;
@@ -468,9 +466,7 @@ class Game {
                     atlas = this.tileAtlas;
                 }
                 // Draw tile to screen
-                if (tile !== 0 && atlas) {
-                    this.gameCtx.drawImage(atlas, (tile - 1) % 16 * game_constants_1.TILE_SIZE, Math.floor((tile - 1) / 16) * game_constants_1.TILE_SIZE, game_constants_1.TILE_SIZE, game_constants_1.TILE_SIZE, Math.round(x), Math.round(y), game_constants_1.TILE_SIZE, game_constants_1.TILE_SIZE);
-                }
+                this.gameCtx.drawImage(atlas, (tile - 1) % 16 * game_constants_1.TILE_SIZE, Math.floor((tile - 1) / 16) * game_constants_1.TILE_SIZE, game_constants_1.TILE_SIZE, game_constants_1.TILE_SIZE, Math.round(x), Math.round(y), game_constants_1.TILE_SIZE, game_constants_1.TILE_SIZE);
             }
         }
     }
