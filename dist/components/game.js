@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Game = void 0;
 const tiles_png_1 = __importDefault(require("../assets/tiles.png"));
-const character_png_1 = __importDefault(require("../assets/character.png"));
+const avatar_png_1 = __importDefault(require("../assets/avatar.png"));
 const battle_assets_png_1 = __importDefault(require("../assets/battle_assets.png"));
 const choose_starter_png_1 = __importDefault(require("../assets/choose_starter.png"));
 const pokemon_1st_generation_png_1 = __importDefault(require("../assets/pokemon_1st_generation.png"));
@@ -27,7 +27,7 @@ const map_1 = require("./map");
 const loader_1 = require("../utils/loader");
 const camera_1 = require("./camera");
 const avatar_1 = require("./avatar");
-const pokemon_battle_1 = require("./pokemon_battle");
+const battle_1 = require("./battle");
 const keyboard_1 = require("../utils/keyboard");
 const helper_1 = require("../utils/helper");
 const game_constants_1 = require("../constants/game_constants");
@@ -102,7 +102,7 @@ class Game {
     load() {
         return [
             this.loader.loadImage('tiles', tiles_png_1.default),
-            this.loader.loadImage('avatar', character_png_1.default),
+            this.loader.loadImage('avatar', avatar_png_1.default),
             this.loader.loadImage('battleAssets', battle_assets_png_1.default),
             this.loader.loadImage('starterAssets', choose_starter_png_1.default),
             this.loader.loadImage('pokemonGeneration1', pokemon_1st_generation_png_1.default),
@@ -116,10 +116,10 @@ class Game {
         // Start the eventListeners for the supplied keys
         keyboard_1.keyboard.listenForEvents([keyboard_1.keyboard.LEFT, keyboard_1.keyboard.RIGHT, keyboard_1.keyboard.UP, keyboard_1.keyboard.DOWN, keyboard_1.keyboard.ENTER]);
         // Set the necessary images to class variables
-        this.tileAtlas = this.loader.loadImageToCanvas('tiles', asset_constants_1.FILE_TILES_HEIGHT, asset_constants_1.FILE_TILES_WIDTH);
-        this.starterAtlas = this.loader.loadImageToCanvas('starterAssets', asset_constants_1.FILE_STARTER_HEIGHT, asset_constants_1.FILE_STARTER_WIDTH);
-        this.font = this.loader.loadImageToCanvas('font', asset_constants_1.FILE_FONT_HEIGHT, asset_constants_1.FILE_FONT_WIDTH);
-        this.buildingAtlas = this.loader.loadImageToCanvas('buildingAtlas', asset_constants_1.FILE_BUILDING_HEIGHT, asset_constants_1.FILE_BUILDING_WIDTH);
+        this.tileAtlas = this.loader.getImageCanvas('tiles');
+        this.starterAtlas = this.loader.getImageCanvas('starterAssets');
+        this.font = this.loader.getImageCanvas('font');
+        this.buildingAtlas = this.loader.getImageCanvas('buildingAtlas');
     }
     tick(elapsed) {
         // Calculate the delta between the ticks
@@ -180,7 +180,7 @@ class Game {
                     this.animation = 0;
                     this.direction = 0;
                     // Define new pokemon battle
-                    const pokemonBattle = new pokemon_battle_1.PokemonBattle(this.battleCtx, this.overlayCtx, this.loader, this.player, this.currentMap, encounterMethod);
+                    const pokemonBattle = new battle_1.Battle(this.battleCtx, this.overlayCtx, this.loader, this.player, this.currentMap, encounterMethod);
                     // Start new pokemon battle and wait for result
                     const battleResult = yield pokemonBattle.battle();
                     this.gameStatus = 'game';
@@ -289,9 +289,9 @@ class Game {
             // Get the assets for the currently selected starter
             const pokemonId = (this.selectedStarter === 0) ? 252 : (this.selectedStarter === 1) ? 255 : 258;
             const generation = 2;
-            const pokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (generation + 1), asset_constants_1.FILE_MON_HEIGHT[generation], asset_constants_1.FILE_MON_WIDTH);
+            const pokemonSprite = this.loader.getImageCanvas('pokemonGeneration' + (generation + 1));
             const xSource = (pokemonId - asset_constants_1.ASSET_GENERATION_OFFSET[generation] - 1) % 3 * asset_constants_1.ASSET_POKEMON_SPRITE_WIDTH;
-            const ySource = (((pokemonId - asset_constants_1.ASSET_GENERATION_OFFSET[generation] - 1) / 3) << 0) * battle_constants_1.POKEBALL_SIZE;
+            const ySource = (((pokemonId - asset_constants_1.ASSET_GENERATION_OFFSET[generation] - 1) / 3) << 0) * battle_constants_1.POKEMON_SIZE;
             // Draw the pokemon preview circle
             this.overlayCtx.fillStyle = '#ffffff';
             this.overlayCtx.beginPath();

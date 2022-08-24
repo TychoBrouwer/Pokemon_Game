@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Avatar = void 0;
 const game_constants_1 = require("../constants/game_constants");
-const asset_constants_1 = require("../constants/asset_constants");
 class Avatar {
     constructor(loader, map) {
         this.x = 0;
@@ -11,7 +10,7 @@ class Avatar {
         this.screenY = 0;
         // Get avatar assets from supplied loader
         this.loader = loader;
-        this.avatarAsset = this.loader.loadImageToCanvas('avatar', asset_constants_1.FILE_AVATAR_HEIGHT, asset_constants_1.FILE_AVATAR_WIDTH);
+        this.avatarAsset = this.loader.getImageCanvas('avatar');
         // Set the map to the map supplied
         this.map = map;
     }

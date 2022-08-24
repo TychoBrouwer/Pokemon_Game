@@ -1,3 +1,5 @@
+import { cropCanvas } from "./helper";
+
 export class GameObject {
   private ctx: CanvasRenderingContext2D;
   private spriteCtx!: CanvasRenderingContext2D | null;
@@ -15,7 +17,7 @@ export class GameObject {
   private yBegin: number;
   private scaleFactor = 1;
   private opacity = 1;
-  private currentColor = [-1, -1, -1];
+  public currentColor = [-1, -1, -1];
 
   animationCounter = 0;
   animation = false;
@@ -26,11 +28,19 @@ export class GameObject {
   animationNOfFrames = 0;
   animationFrame = 0;
 
-  constructor(ctx: CanvasRenderingContext2D, gameObject: HTMLCanvasElement, xSource: number, ySource: number, width: number, height: number, x: number, y: number) {
-    this.ctx = ctx;  
-    this.gameObject = gameObject;
+  constructor(ctx: CanvasRenderingContext2D, gameObject: HTMLCanvasElement, saveOriginalImageData: boolean, xSource: number, ySource: number, width: number, height: number, x: number, y: number) {
     this.xSource = xSource;
-    this.ySource = ySource
+    this.ySource = ySource;
+
+    if (gameObject && saveOriginalImageData) {
+      this.gameObject = cropCanvas(gameObject, xSource, ySource, width, height);
+      this.xSource = 0;
+      this.ySource = 0;
+    } else {
+      this.gameObject = gameObject;
+    }
+    
+    this.ctx = ctx;  
     this.widthSource = width;
     this.width = width;
     this.heightSource = height;
@@ -40,7 +50,8 @@ export class GameObject {
     this.xBegin = x;
     this.yBegin = y;
 
-    if (gameObject) {
+
+    if (gameObject && saveOriginalImageData) {
       this.spriteCtx = gameObject.getContext('2d');
       if (this.spriteCtx) {
         const original = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource).data;
@@ -104,6 +115,8 @@ export class GameObject {
   }
 
   setColor(r: number, g: number, b: number) {
+    console.log((this.currentColor[0] !== r  || this.currentColor[1] !== g || this.currentColor[2] !== b))
+
     if (this.spriteCtx && (this.currentColor[0] !== r  || this.currentColor[1] !== g || this.currentColor[2] !== b)) {
       const imgData = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource);
 

@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GameObject = void 0;
+const helper_1 = require("./helper");
 class GameObject {
-    constructor(ctx, gameObject, xSource, ySource, width, height, x, y) {
+    constructor(ctx, gameObject, saveOriginalImageData, xSource, ySource, width, height, x, y) {
         this.scaleFactor = 1;
         this.opacity = 1;
         this.currentColor = [-1, -1, -1];
@@ -14,10 +15,17 @@ class GameObject {
         this.animationDelay = 0;
         this.animationNOfFrames = 0;
         this.animationFrame = 0;
-        this.ctx = ctx;
-        this.gameObject = gameObject;
         this.xSource = xSource;
         this.ySource = ySource;
+        if (gameObject && saveOriginalImageData) {
+            this.gameObject = (0, helper_1.cropCanvas)(gameObject, xSource, ySource, width, height);
+            this.xSource = 0;
+            this.ySource = 0;
+        }
+        else {
+            this.gameObject = gameObject;
+        }
+        this.ctx = ctx;
         this.widthSource = width;
         this.width = width;
         this.heightSource = height;
@@ -26,7 +34,7 @@ class GameObject {
         this.y = y;
         this.xBegin = x;
         this.yBegin = y;
-        if (gameObject) {
+        if (gameObject && saveOriginalImageData) {
             this.spriteCtx = gameObject.getContext('2d');
             if (this.spriteCtx) {
                 const original = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource).data;
@@ -77,6 +85,7 @@ class GameObject {
         this.opacity = opacity;
     }
     setColor(r, g, b) {
+        console.log((this.currentColor[0] !== r || this.currentColor[1] !== g || this.currentColor[2] !== b));
         if (this.spriteCtx && (this.currentColor[0] !== r || this.currentColor[1] !== g || this.currentColor[2] !== b)) {
             const imgData = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource);
             for (let i = 0; i < imgData.data.length; i += 4) {

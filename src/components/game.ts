@@ -1,5 +1,5 @@
 import tileMap from '../assets/tiles.png';
-import avatarAssets from '../assets/character.png';
+import avatarAssets from '../assets/avatar.png';
 import battleAssets from '../assets/battle_assets.png';
 import starterAssets from '../assets/choose_starter.png';
 import pokemonGeneration1 from '../assets/pokemon_1st_generation.png';
@@ -13,24 +13,14 @@ import { Map } from './map';
 import { Loader } from '../utils/loader';
 import { Camera } from './camera';
 import { Avatar } from './avatar';
-import { PokemonBattle } from './pokemon_battle';
+import { Battle } from './battle';
 
 import { keyboard } from '../utils/keyboard';
 import { randomFromMinMax, setLocalStorage, drawText } from '../utils/helper';
 
 import { AVATAR_HEIGHT, AVATAR_WIDTH, GAME_HEIGHT, GAME_WIDTH, GRASS_ENCOUNTER_RATE, MAPS, TILE_SIZE } from '../constants/game_constants';
-import { POKEBALL_SIZE, POKEMON_SIZE } from '../constants/battle_constants';
+import { POKEMON_SIZE } from '../constants/battle_constants';
 import {
-  FILE_BUILDING_HEIGHT,
-  FILE_BUILDING_WIDTH,
-  FILE_MON_HEIGHT,
-  FILE_MON_WIDTH,
-  FILE_FONT_HEIGHT,
-  FILE_FONT_WIDTH,
-  FILE_STARTER_HEIGHT,
-  FILE_STARTER_WIDTH,
-  FILE_TILES_HEIGHT,
-  FILE_TILES_WIDTH,
   ASSET_GENERATION_OFFSET,
   ASSET_POKEMON_SPRITE_WIDTH,
 } from '../constants/asset_constants';
@@ -156,10 +146,10 @@ export class Game {
     keyboard.listenForEvents([keyboard.LEFT, keyboard.RIGHT, keyboard.UP, keyboard.DOWN, keyboard.ENTER]);
 
     // Set the necessary images to class variables
-    this.tileAtlas = this.loader.loadImageToCanvas('tiles', FILE_TILES_HEIGHT, FILE_TILES_WIDTH);
-    this.starterAtlas = this.loader.loadImageToCanvas('starterAssets', FILE_STARTER_HEIGHT, FILE_STARTER_WIDTH);
-    this.font = this.loader.loadImageToCanvas('font', FILE_FONT_HEIGHT, FILE_FONT_WIDTH);
-    this.buildingAtlas = this.loader.loadImageToCanvas('buildingAtlas', FILE_BUILDING_HEIGHT, FILE_BUILDING_WIDTH);
+    this.tileAtlas = this.loader.getImageCanvas('tiles');
+    this.starterAtlas = this.loader.getImageCanvas('starterAssets');
+    this.font = this.loader.getImageCanvas('font');
+    this.buildingAtlas = this.loader.getImageCanvas('buildingAtlas');
   }
 
   private tick(elapsed: number) {
@@ -190,7 +180,6 @@ export class Game {
       this.render(delta);
     }
 
-    
     // Request new animation frame
     window.requestAnimationFrame(this.tick.bind(this));
   }
@@ -235,7 +224,7 @@ export class Game {
         this.direction = 0;
 
         // Define new pokemon battle
-        const pokemonBattle = new PokemonBattle(this.battleCtx, this.overlayCtx, this.loader, this.player, this.currentMap, encounterMethod);
+        const pokemonBattle = new Battle(this.battleCtx, this.overlayCtx, this.loader, this.player, this.currentMap, encounterMethod);
 
         // Start new pokemon battle and wait for result
         const battleResult = await pokemonBattle.battle();
@@ -431,9 +420,9 @@ export class Game {
       // Get the assets for the currently selected starter
       const pokemonId = (this.selectedStarter === 0) ? 252 : (this.selectedStarter === 1) ? 255 : 258;
       const generation = 2;
-      const pokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (generation + 1), FILE_MON_HEIGHT[generation], FILE_MON_WIDTH);
+      const pokemonSprite = this.loader.getImageCanvas('pokemonGeneration' + (generation + 1));
       const xSource = (pokemonId - ASSET_GENERATION_OFFSET[generation] - 1) % 3 * ASSET_POKEMON_SPRITE_WIDTH;
-      const ySource = (((pokemonId - ASSET_GENERATION_OFFSET[generation] - 1) / 3) << 0) * POKEBALL_SIZE;
+      const ySource = (((pokemonId - ASSET_GENERATION_OFFSET[generation] - 1) / 3) << 0) * POKEMON_SIZE;
   
       // Draw the pokemon preview circle
       this.overlayCtx.fillStyle = '#ffffff';

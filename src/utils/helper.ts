@@ -226,3 +226,23 @@ export function generatePokemon(pokedexEntry: PokemonInfoType, levelRange: numbe
   // Return pokemonData object
   return pokemonData;
 }
+
+export function cropCanvas(sourceCanvas: HTMLCanvasElement, xSource: number, ySource: number, width: number, height: number) {
+  const destCanvas = document.createElement('canvas');
+  destCanvas.width = width;
+  destCanvas.height = height;
+
+  destCanvas.getContext("2d")?.drawImage(
+    sourceCanvas,
+    xSource,
+    ySource,
+    width,
+    height,
+    0,
+    0,
+    width,
+    height
+  );
+  
+  return destCanvas;
+}

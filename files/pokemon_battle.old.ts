@@ -1,14 +1,14 @@
-import * as pokedex from '../data/pokedex.json';
-import * as moveIndex from '../data/move_index.json';
-import * as itemIndex from '../data/item_index.json';
-import * as encounterTable from '../data/encounter_table.json';
+import * as pokedex from '../src/data/pokedex.json';
+import * as moveIndex from '../src/data/move_index.json';
+import * as itemIndex from '../src/data/item_index.json';
+import * as encounterTable from '../src/data/encounter_table.json';
 
-import { GameObject } from '../utils/game_object';
-import { Loader } from '../utils/loader';
-import { Player } from './player';
+import { GameObject } from '../src/utils/game_object';
+import { Loader } from '../src/utils/loader';
+import { Player } from '../src/components/player';
 
-import { randomFromArray, generatePokemon, drawText, randomFromMinMax } from '../utils/helper';
-import { keyboard } from '../utils/keyboard';
+import { randomFromArray, generatePokemon, drawText, randomFromMinMax } from '../src/utils/helper';
+import { keyboard } from '../src/utils/keyboard';
 
 import { 
   ACTION_BOX_HEIGHT, 
@@ -20,11 +20,11 @@ import {
   POKEBALL_SIZE, 
   POKEMON_SIZE, 
   SPECIAL_STAGES
-} from '../constants/battle_constants';
-import { AVATAR_BATTLE_HEIGHT, AVATAR_BATTLE_WIDTH, FONT_HEIGHT, GAME_HEIGHT, GAME_WIDTH } from '../constants/game_constants';
-import { BAG_POCKETS } from '../constants/bag_constants';
-import { POKE_BALLS } from '../constants/items_constants';
-import { TYPES_EFFECTIVENESS, TYPES, LEVELS } from '../constants/mon_constants';
+} from '../src/constants/battle_constants';
+import { AVATAR_BATTLE_HEIGHT, AVATAR_BATTLE_WIDTH, FONT_HEIGHT, GAME_HEIGHT, GAME_WIDTH } from '../src/constants/game_constants';
+import { BAG_POCKETS } from '../src/constants/bag_constants';
+import { POKE_BALLS } from '../src/constants/items_constants';
+import { TYPES_EFFECTIVENESS, TYPES, LEVELS } from '../src/constants/mon_constants';
 import {
   FILE_BATTLE_HEIGHT,
   FILE_BATTLE_WIDTH,
@@ -48,7 +48,7 @@ import {
   ASSET_BAG_POK_SIZE,
   ASSET_BAG_SEL_WIDTH,
   ASSET_BAG_SEL_HEIGHT,
-} from '../constants/asset_constants';
+} from '../src/constants/asset_constants';
 
 import { 
   PlayerDataType, 
@@ -59,7 +59,7 @@ import {
   MoveIndexType, 
   MoveType, 
   ItemIndexType
-} from '../utils/types';
+} from '../src/utils/types';
 
 const enum BattleStatus {
   SlideAvatarIn,

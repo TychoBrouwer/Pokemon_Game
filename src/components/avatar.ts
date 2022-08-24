@@ -2,7 +2,6 @@ import { Loader } from '../utils/loader';
 import { Map } from './map';
 
 import { TILE_SIZE, AVATAR_WIDTH, AVATAR_HEIGHT, AVATAR_SPEED_WALK } from '../constants/game_constants'
-import { FILE_AVATAR_HEIGHT, FILE_AVATAR_WIDTH } from '../constants/asset_constants'
 
 export class Avatar {
   private loader: Loader;
@@ -18,7 +17,7 @@ export class Avatar {
   constructor(loader: Loader, map: Map) {    
     // Get avatar assets from supplied loader
     this.loader = loader;
-    this.avatarAsset = this.loader.loadImageToCanvas('avatar', FILE_AVATAR_HEIGHT, FILE_AVATAR_WIDTH);
+    this.avatarAsset = this.loader.getImageCanvas('avatar');
 
     // Set the map to the map supplied
     this.map = map;

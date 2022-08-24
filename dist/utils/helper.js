@@ -19,7 +19,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generatePokemon = exports.drawText = exports.getLocalStorage = exports.setLocalStorage = exports.randomFromMinMax = exports.randomFromArray = void 0;
+exports.cropCanvas = exports.generatePokemon = exports.drawText = exports.getLocalStorage = exports.setLocalStorage = exports.randomFromMinMax = exports.randomFromArray = void 0;
 const moveIndex = __importStar(require("../data/move_index.json"));
 const game_constants_1 = require("../constants/game_constants");
 const battle_constants_1 = require("../constants/battle_constants");
@@ -221,4 +221,13 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
     return pokemonData;
 }
 exports.generatePokemon = generatePokemon;
+function cropCanvas(sourceCanvas, xSource, ySource, width, height) {
+    var _a;
+    const destCanvas = document.createElement('canvas');
+    destCanvas.width = width;
+    destCanvas.height = height;
+    (_a = destCanvas.getContext("2d")) === null || _a === void 0 ? void 0 : _a.drawImage(sourceCanvas, xSource, ySource, width, height, 0, 0, width, height);
+    return destCanvas;
+}
+exports.cropCanvas = cropCanvas;
 //# sourceMappingURL=helper.js.map

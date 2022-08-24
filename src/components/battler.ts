@@ -11,14 +11,6 @@ import {
   POKEMON_SIZE, 
 } from '../constants/battle_constants';
 import {
-  FILE_BATTLE_HEIGHT,
-  FILE_BATTLE_WIDTH,
-  FILE_FONT_HEIGHT,
-  FILE_FONT_WIDTH,
-  FILE_MON_HEIGHT,
-  FILE_MON_WIDTH,
-  FILE_AVATAR_HEIGHT,
-  FILE_AVATAR_WIDTH,
   ASSET_PLAYER_HEALTH_HEIGHT,
   ASSET_PLAYER_HEALTH_WIDTH,
   ASSET_HEALTH_OFFSET,
@@ -31,18 +23,41 @@ import { LEVELS } from '../constants/mon_constants';
 
 import { drawText } from '../utils/helper';
 
-import { PokemonDataType } from "../utils/types";
+import { MoveType, PokemonDataType } from "../utils/types";
+
+interface AnimationFunctionType {
+  (delta: number, direction: number): boolean;
+} 
 
 export class Battler {
   private ctx: CanvasRenderingContext2D;
   private loader: Loader;
-  private pokemonData: PokemonDataType;
+  public pokemonData: PokemonDataType;
   private encounterMethod: number;
+
+  private elapsedTime = 0;
+  private delayStart = -1;
 
   private battlerPositionId: 0 | 1 | 2 | 3;
   private slideDirection: 1 | -1;
   private playerSide: boolean;
   private genderOffsets: {[variableName: string]: number};
+  private monDefaultPos: {x: number, y: number};
+  public newPokemonHealth = 0;
+
+  private callback = false;
+  private animationResult = false;
+  private animationQueue: [AnimationFunctionType, number][] = [];
+
+  public pokemonStages = {
+    attack: 0,
+    defense: 0,
+    specialDefense: 0,
+    specialAttack: 0,
+    speed: 0,
+    accuracy: 0,
+    evasion: 0,
+  };
 
   private battleAssets: HTMLCanvasElement;
   private font: HTMLCanvasElement;
@@ -77,23 +92,28 @@ export class Battler {
       this.playerSide = false;
     }
 
-    this.battleAssets = this.loader.loadImageToCanvas('battleAssets', FILE_BATTLE_HEIGHT, FILE_BATTLE_WIDTH);
-    this.font = this.loader.loadImageToCanvas('font', FILE_FONT_HEIGHT, FILE_FONT_WIDTH);
-    this.pokemonSprite = this.loader.loadImageToCanvas('pokemonGeneration' + (this.pokemonData.generation + 1), FILE_MON_HEIGHT[this.pokemonData.generation], FILE_MON_WIDTH);
-    this.avatarAssets = this.loader.loadImageToCanvas('avatar', FILE_AVATAR_HEIGHT, FILE_AVATAR_WIDTH);
+    this.battleAssets = this.loader.getImageCanvas('battleAssets');
+    this.font = this.loader.getImageCanvas('font');
+    this.pokemonSprite = this.loader.getImageCanvas('pokemonGeneration' + (this.pokemonData.generation + 1));
+    this.avatarAssets = this.loader.getImageCanvas('avatar');
 
     this.pokemonTextCanvas = document.createElement('canvas');
     this.pokemonTextCanvas.height= ASSET_PLAYER_HEALTH_HEIGHT;
     this.pokemonTextCanvas.width = ASSET_ENEMY_HEALTH_WIDTH;
     this.pokemonTextCtx = this.pokemonTextCanvas.getContext('2d');
 
-    const healthX = this.playerSide ? 135 : 13;
+    // const healthX = this.playerSide ? 135 : 13;
     const healthY = this.playerSide ? 75 : 16;
     const playerHealthAdj = this.playerSide ? 8 : 0;
+    this.monDefaultPos = {
+      x: this.playerSide ? (BATTLE_SCENE_WIDTH - POKEMON_SIZE) / 2 : GAME_WIDTH - (BATTLE_SCENE_WIDTH + POKEMON_SIZE) / 2,
+      y: this.playerSide ? BATTLE_ARENA_HEIGHT - POKEMON_SIZE : 22,
+    }
 
     this.battleGround = new GameObject(
       this.ctx,
       this.battleAssets,
+      false,
       this.encounterMethod % 3 * BATTLE_SCENE_WIDTH,
       ((0.5 + this.encounterMethod / 3) << 0) * BATTLE_SCENE_HEIGHT + 3 * BATTLE_ARENA_HEIGHT + ACTION_BOX_HEIGHT,
       BATTLE_SCENE_WIDTH,
@@ -105,6 +125,7 @@ export class Battler {
     this.avatar = new GameObject(
       this.ctx,
       this.avatarAssets,
+      false,
       ASSET_AVATAR_BATTLE_OFFSET,
       this.genderOffsets.ASSET_AVATAR_OFFSET,
       AVATAR_BATTLE_WIDTH,
@@ -117,17 +138,19 @@ export class Battler {
     this.pokemonObject = new GameObject(
       this.ctx,
       this.pokemonSprite,
+      true,
       this.pokemonData.xSource + (this.playerSide ? 2 * POKEMON_SIZE : 0),
       this.pokemonData.ySource,
       POKEMON_SIZE,
       POKEMON_SIZE,
       this.playerSide ? GAME_WIDTH + (BATTLE_SCENE_WIDTH - POKEMON_SIZE) / 2 : -(BATTLE_SCENE_WIDTH + POKEMON_SIZE) / 2,
-      this.playerSide ? BATTLE_ARENA_HEIGHT - POKEMON_SIZE : 22,
+      this.monDefaultPos.y,
     );
 
     this.pokemonHealthBox = new GameObject(
       this.ctx,
       this.battleAssets,
+      false,
       this.playerSide ? 0 : ASSET_PLAYER_HEALTH_WIDTH,
       ASSET_HEALTH_OFFSET,
       this.playerSide ? ASSET_PLAYER_HEALTH_WIDTH : ASSET_ENEMY_HEALTH_WIDTH,
@@ -139,6 +162,7 @@ export class Battler {
     this.pokemonHealthBar = new GameObject(
       this.ctx,
       this.battleAssets,
+      false,
       ASSET_ENEMY_HEALTH_WIDTH + ASSET_PLAYER_HEALTH_WIDTH,
       ASSET_HEALTH_OFFSET,
       48,
@@ -150,6 +174,7 @@ export class Battler {
     this.pokemonHealthText = new GameObject(
       this.ctx,
       this.pokemonTextCanvas,
+      false,
       0,
       0,
       ASSET_PLAYER_HEALTH_WIDTH,
@@ -161,17 +186,19 @@ export class Battler {
     this.pokemonXpBox = new GameObject(
       this.ctx,
       this.battleAssets,
+      false,
       ASSET_ENEMY_HEALTH_WIDTH + ASSET_PLAYER_HEALTH_WIDTH,
       ASSET_HEALTH_OFFSET + 3 * 2,
       64,
       2,
-      (this.playerSide ? GAME_WIDTH : -ASSET_ENEMY_HEALTH_WIDTH) + 39 + playerHealthAdj,
+      (this.playerSide ? GAME_WIDTH : -ASSET_ENEMY_HEALTH_WIDTH) + 23 + playerHealthAdj,
       healthY + 33,
     );
 
     this.pokeball = new GameObject(
       this.ctx,
       this.battleAssets,
+      false,
       ASSET_POKEBALL_OFFSET_X,
       ASSET_POKEBALL_OFFSET_Y + 32,
       POKEBALL_SIZE,
@@ -182,13 +209,32 @@ export class Battler {
     this.pokeball.setAnimation(false, 32, 0, POKEBALL_SIZE, 8);
   }
 
-  animateHealthBar(delta: number, newHealth: number) {
+  private renderDelay(duration: number): boolean {
+    if (this.delayStart === -1) {
+      this.delayStart = this.elapsedTime;
+
+    } else if (this.delayStart + duration <= this.elapsedTime) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private resetDelay() {
+    this.delayStart = -1;
+  }
+
+  private getNextAnim() {
+    return this.animationQueue[this.animationQueue.length - 1];
+  }
+
+  animateHealthBar(delta: number) {
     const currentHealth = this.pokemonData.health;
 
-    if (currentHealth > newHealth) {
+    if (currentHealth > this.newPokemonHealth) {
       this.pokemonData.health -= 16 * delta;
     } else {
-      this.pokemonData.health = newHealth;
+      this.pokemonData.health = this.newPokemonHealth;
 
       return true;
     }
@@ -236,7 +282,7 @@ export class Battler {
     this.pokemonHealthBar.animate(delta, speedHealth, this.slideDirection, 0, healthX + 39, this.pokemonHealthBar.y, false, true);
 
     this.pokemonXpBox.setWidth(xpBarWidth);
-    this.pokemonXpBox.animate(delta, speedHealth, this.slideDirection, 0, healthX + 39 + playerHealthAdj, this.pokemonXpBox.y, false, true);
+    this.pokemonXpBox.animate(delta, speedHealth, this.slideDirection, 0, healthX + 23, this.pokemonXpBox.y, false, true);
 
     let isFinished = false;
     if (this.pokemonTextCtx) {
@@ -262,8 +308,22 @@ export class Battler {
 
   drawHealth() {
     this.pokemonHealthBox.render();
+
+    const healthFrac = this.pokemonData.health / this.pokemonData.stats.hp;
+    const healthBarOffset = (healthFrac < 0.2) ? 4 : (healthFrac < 0.5) ? 2: 0;
+    const healthBarWidth = (healthFrac * 48) << 0;
+
+    this.pokemonHealthBar.updateSourcePosition(ASSET_ENEMY_HEALTH_WIDTH + ASSET_PLAYER_HEALTH_WIDTH, ASSET_HEALTH_OFFSET + healthBarOffset);
+    this.pokemonHealthBar.setWidth(healthBarWidth);
     this.pokemonHealthBar.render();
-    this.pokemonXpBox.render();
+
+    if (this.playerSide) {
+      const xpFrac = (this.pokemonData.xp - this.pokemonData.xpCurLevel) / (this.pokemonData.xpNextLevel - this.pokemonData.xpCurLevel);
+      const xpBarWidth = (xpFrac * 48) << 0;
+
+      this.pokemonXpBox.setWidth(xpBarWidth);
+      this.pokemonXpBox.render();
+    }
 
     const playerHealthAdj = this.playerSide ? 8 : 0;
 
@@ -271,6 +331,7 @@ export class Battler {
     const healthText = (this.pokemonData.health << 0).toString().padStart(3, '_') + '/' + this.pokemonData.stats.hp.toString().padStart(3, '_');
 
     if (this.pokemonTextCtx) {
+      this.pokemonTextCtx.clearRect(0, 0, ASSET_PLAYER_HEALTH_WIDTH, ASSET_PLAYER_HEALTH_HEIGHT);
       drawText(this.pokemonTextCtx, this.font, nameText, 1, 0, 6 + playerHealthAdj, 6);
       drawText(this.pokemonTextCtx, this.font, this.pokemonData.level.toString(), 1, 0, 76 + playerHealthAdj, 6);
 
@@ -304,19 +365,19 @@ export class Battler {
   drawPokemonSlideDown(delta: number) {
     const speed = 176;
 
+    this.battleGround.render();
+
     const y = (this.playerSide ? BATTLE_ARENA_HEIGHT - POKEMON_SIZE : 22) + 53;
 
     // Draw battle grounds enemy pokemon
     this.pokemonObject.render();
 
-    if (this.pokemonObject.y > 47) {
+    if (!this.playerSide && this.pokemonObject.y > 47) {
       this.pokemonObject.setHeight(28);
     }
 
     const isFinished = this.pokemonObject.animate(delta, speed, 0, 1, this.pokemonObject.x, y, false, false);
 
-    this.battleGround.render();
-    
     return isFinished;
   }
 
@@ -345,7 +406,6 @@ export class Battler {
 
     if (pokeballThrown) {
       pokemonAltFinished = this.pokemonObject.scaleTo(delta, 2, 1, true);
-      this.pokemonObject.setColor(254, 191, 246);
     } else {
       this.pokemonObject.setPosition(BATTLE_SCENE_WIDTH / 2, BATTLE_ARENA_HEIGHT);
       this.pokemonObject.setScale(0);
@@ -356,6 +416,8 @@ export class Battler {
       this.pokemonObject.render();
 
       healthSlideFinished = this.drawHealthSlideIn(delta);
+    } else if (pokeballThrown) {
+      this.pokemonObject.setColor(254, 191, 246);
     }
     
     return healthSlideFinished;
@@ -422,5 +484,136 @@ export class Battler {
   drawAvatar() {
     this.battleGround.render();
     this.avatar.render();
+  }
+
+  addAttackAnim(moveData: MoveType) {
+    if (moveData.name === 'tackle') {
+      this.animationQueue.push([ this.horizontalLunge, 1 ]);
+    }
+  }
+
+  addDamageAnim(moveData: MoveType) {
+    if (moveData.name === 'tackle') {
+      if (this.playerSide) {
+        this.animationQueue.push([ this.fadeInOut, -1 ]);
+        this.animationQueue.push([ this.fadeInOut, -1 ]);
+        this.animationQueue.push([ this.fadeInOut, -1 ]);
+        this.animationQueue.push([ this.fadeInOut, -1 ]);
+        this.animationQueue.push([ this.horizontalShake, 1 ]);
+      } else {
+        this.animationQueue.push([ this.fadeInOut, -1 ]);
+        this.animationQueue.push([ this.fadeInOut, -1 ]);
+        this.animationQueue.push([ this.fadeInOut, -1 ]);
+        this.animationQueue.push([ this.fadeInOut, -1 ]);
+        this.animationQueue.push([ this.horizontalShake, -1 ]);
+        this.animationQueue.push([ this.horizontalShake, -1 ]);
+      }
+    }
+  }
+
+  drawAnim(delta: number) {
+    this.animationResult = this.runAnimation(delta);
+
+    if (this.animationResult) {
+      this.animationQueue.pop();
+      this.callback = false;
+
+      if (this.animationQueue.length === 0) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private horizontalLunge(delta: number, direction: number) {
+    const speed = 128;
+
+    this.battleGround.render();
+
+    let isFinished = false;
+    if (!this.callback) {
+      this.callback = this.pokemonObject.animate(
+        delta, speed,
+        -this.slideDirection * direction, 0,
+        this.monDefaultPos.x - this.slideDirection * direction * 15, this.monDefaultPos.y,
+        false, true
+      );
+    } else if (this.callback) {
+      isFinished = this.pokemonObject.animate(
+        delta, speed,
+        this.slideDirection * direction, 0,
+        this.monDefaultPos.x, this.monDefaultPos.y,
+        false, true
+      );
+    }
+
+    return isFinished;
+  }
+
+  private horizontalShake(delta: number, direction: number) {
+    const speed = 64;
+
+    this.battleGround.render();
+
+    let isFinished = false;
+    if (!this.callback) {
+      this.callback = this.pokemonObject.animate(
+        delta, speed,
+        -this.slideDirection * direction, 0,
+        this.monDefaultPos.x - this.slideDirection * direction * 5, this.monDefaultPos.y,
+        false, true
+      );
+    } else if (this.callback) {
+      isFinished = this.pokemonObject.animate(
+        delta, speed,
+        this.slideDirection * direction, 0,
+        this.monDefaultPos.x, this.monDefaultPos.y,
+        false, true
+      );
+    }
+
+    return isFinished;
+  }
+
+  private fadeInOut(_: number, __: number) {
+    const delay = 70;
+
+    this.battleGround.render();
+
+    let isFinished = false;
+    if (!this.callback) {
+      this.callback = this.renderDelay(delay);
+    } else if (this.callback) {
+      this.pokemonObject.setOpacity(0);
+      isFinished = this.renderDelay(delay * 2);
+    }
+
+    if (isFinished) {
+      this.pokemonObject.setOpacity(1);
+      this.resetDelay();
+    }
+
+    return isFinished;
+  }
+
+  private runAnimation(delta: number) {
+    const nextAnimation = this.getNextAnim();
+    if (nextAnimation) {
+      const functionArgs = nextAnimation[1];
+
+      return nextAnimation[0].call(this, delta, functionArgs);
+    }
+    
+    return true
+  }
+
+  resetAnimation() {
+    this.callback = false;
+    this.animationResult = false;
+  }
+
+  updateElapsedTime(elapsedTime: number) {
+    this.elapsedTime = elapsedTime;
   }
 }
