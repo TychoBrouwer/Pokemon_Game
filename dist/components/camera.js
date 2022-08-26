@@ -1,22 +1,19 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Camera = void 0;
-const game_constants_1 = require("../constants/game_constants");
-class Camera {
+import { GAME_HEIGHT, GAME_WIDTH, TILE_SIZE } from '../constants/game_constants';
+export class Camera {
     constructor(map) {
         this.x = 0;
         this.y = 0;
         // Set camera properties to supplied values
-        this.width = game_constants_1.GAME_WIDTH;
-        this.height = game_constants_1.GAME_HEIGHT;
+        this.width = GAME_WIDTH;
+        this.height = GAME_HEIGHT;
         // Set the max x and y for the camera
-        this.maxX = map.COLS * game_constants_1.TILE_SIZE - this.width;
-        this.maxY = map.ROWS * game_constants_1.TILE_SIZE - this.height;
+        this.maxX = map.COLS * TILE_SIZE - this.width;
+        this.maxY = map.ROWS * TILE_SIZE - this.height;
     }
     updateMap(currentMap) {
         // Update the max x and y for the camera to the new map
-        this.maxX = currentMap.COLS * game_constants_1.TILE_SIZE - this.width;
-        this.maxY = currentMap.ROWS * game_constants_1.TILE_SIZE - this.height;
+        this.maxX = currentMap.COLS * TILE_SIZE - this.width;
+        this.maxY = currentMap.ROWS * TILE_SIZE - this.height;
     }
     follow(sprite) {
         // Set the avatar to be followed
@@ -42,5 +39,4 @@ class Camera {
         }
     }
 }
-exports.Camera = Camera;
 //# sourceMappingURL=camera.js.map

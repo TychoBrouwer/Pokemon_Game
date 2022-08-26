@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.route_102 = void 0;
-exports.route_102 = {
+export const route_102 = {
     COLS: 50,
     ROWS: 20,
     layers: [[

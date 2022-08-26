@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.keyboard = void 0;
-exports.keyboard = {
+export const keyboard = {
     LEFT: 'a',
     RIGHT: 'd',
     UP: 'w',

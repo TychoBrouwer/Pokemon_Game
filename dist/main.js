@@ -1,7 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const game_1 = require("./components/game");
-const game_constants_1 = require("./constants/game_constants");
+import { Game } from './components/game';
+import { GAME_HEIGHT, GAME_WIDTH } from './constants/game_constants';
 window.onload = function () {
     const gameCanvas = document.getElementById('mainGameCanvas');
     const gameContext = gameCanvas.getContext('2d');
@@ -10,13 +8,13 @@ window.onload = function () {
     const overlayCanvas = document.getElementById('overlayCanvas');
     const overlayContext = overlayCanvas.getContext('2d');
     if (gameContext && battleContext && overlayContext) {
-        new game_1.Game(gameContext, battleContext, overlayContext);
-        gameCanvas.height = game_constants_1.GAME_HEIGHT;
-        gameCanvas.width = game_constants_1.GAME_WIDTH;
-        battleCanvas.height = game_constants_1.GAME_HEIGHT;
-        battleCanvas.width = game_constants_1.GAME_WIDTH;
-        overlayCanvas.height = game_constants_1.GAME_HEIGHT;
-        overlayCanvas.width = game_constants_1.GAME_WIDTH;
+        new Game(gameContext, battleContext, overlayContext);
+        gameCanvas.height = GAME_HEIGHT;
+        gameCanvas.width = GAME_WIDTH;
+        battleCanvas.height = GAME_HEIGHT;
+        battleCanvas.width = GAME_WIDTH;
+        overlayCanvas.height = GAME_HEIGHT;
+        overlayCanvas.width = GAME_WIDTH;
     }
 };
 //# sourceMappingURL=main.js.map

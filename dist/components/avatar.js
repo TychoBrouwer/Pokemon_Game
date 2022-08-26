@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Avatar = void 0;
-const game_constants_1 = require("../constants/game_constants");
-class Avatar {
+import { TILE_SIZE, AVATAR_WIDTH, AVATAR_HEIGHT, AVATAR_SPEED_WALK } from '../constants/game_constants';
+export class Avatar {
     constructor(loader, map) {
         this.x = 0;
         this.y = 0;
@@ -24,8 +21,8 @@ class Avatar {
         // Update the class variables
         this.map = map;
         // Update the avatar position with the offset supplied
-        this.x = this.x + addedTiles[0] * game_constants_1.TILE_SIZE;
-        this.y = this.y + addedTiles[1] * game_constants_1.TILE_SIZE;
+        this.x = this.x + addedTiles[0] * TILE_SIZE;
+        this.y = this.y + addedTiles[1] * TILE_SIZE;
     }
     move(delta, dirx, diry) {
         if (this.map) {
@@ -33,13 +30,13 @@ class Avatar {
             const x = this.x;
             const y = this.y;
             // Update x and y with delta and direction
-            this.x += dirx * game_constants_1.AVATAR_SPEED_WALK * delta;
-            this.y += diry * game_constants_1.AVATAR_SPEED_WALK * delta;
+            this.x += dirx * AVATAR_SPEED_WALK * delta;
+            this.y += diry * AVATAR_SPEED_WALK * delta;
             // Check for collision
             this.collide(dirx, diry, x, y);
             // Compute max allowable values of x and y
-            const maxX = this.map.currentMap.COLS * game_constants_1.TILE_SIZE;
-            const maxY = this.map.currentMap.ROWS * game_constants_1.TILE_SIZE;
+            const maxX = this.map.currentMap.COLS * TILE_SIZE;
+            const maxY = this.map.currentMap.ROWS * TILE_SIZE;
             // Limit x and y to between 0 and max values
             this.x = Math.max(0, Math.min(this.x, maxX));
             this.y = Math.max(0, Math.min(this.y, maxY));
@@ -48,9 +45,9 @@ class Avatar {
     collide(dirx, diry, x, y) {
         if (this.map) {
             // Coordinates of different points on hitbox
-            const left = this.x - game_constants_1.AVATAR_WIDTH / 2;
-            const right = this.x + game_constants_1.AVATAR_WIDTH / 2 - 1;
-            const bottom = this.y + game_constants_1.AVATAR_HEIGHT / 2 - 1;
+            const left = this.x - AVATAR_WIDTH / 2;
+            const right = this.x + AVATAR_WIDTH / 2 - 1;
+            const bottom = this.y + AVATAR_HEIGHT / 2 - 1;
             const middleY = (this.y + bottom) / 2;
             // Check for collision
             const collision = this.map.isSolidTileAtXY(left, this.y, dirx, diry) ||
@@ -75,5 +72,4 @@ class Avatar {
         }
     }
 }
-exports.Avatar = Avatar;
 //# sourceMappingURL=avatar.js.map

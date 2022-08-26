@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.oldale_town = void 0;
-exports.oldale_town = {
+export const oldale_town = {
     COLS: 20,
     ROWS: 20,
     layers: [[

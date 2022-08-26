@@ -38,7 +38,7 @@ export function getLocalStorage(key: string) {
 }
 
 export function drawText(ctx: CanvasRenderingContext2D, font: HTMLCanvasElement, text: string, fontsize: number, fontColor: number, posX: number, posY: number) {
-  text = text.replace('É', 'é');
+  text = text.replaceAll('É', 'é');
   
   // Loop through the text to Draw
   for (let i = 0; i < text.length; i++) {

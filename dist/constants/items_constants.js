@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.POKE_BALLS = void 0;
-exports.POKE_BALLS = {
+export const POKE_BALLS = {
     'repeat-ball': 0,
     'nest-ball': 1,
     'poke-ball': 2,

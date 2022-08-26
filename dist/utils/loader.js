@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Loader = void 0;
-class Loader {
+export class Loader {
     constructor() {
         this.images = {};
         this.canvas = {};
@@ -41,5 +38,4 @@ class Loader {
         this.canvas[key] = assetCanvas;
     }
 }
-exports.Loader = Loader;
 //# sourceMappingURL=loader.js.map

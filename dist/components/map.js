@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Map = void 0;
-const game_constants_1 = require("../constants/game_constants");
-class Map {
+import { TILE_SIZE, MAPS } from '../constants/game_constants';
+export class Map {
     constructor(map) {
         this.prevMapCols = 0;
         this.prevMapRows = 0;
@@ -19,7 +16,6 @@ class Map {
         };
     }
     getTile(layer, col, row) {
-        // Get the tile number of the supplied layer, column, and row
         return this.currentMap.layers[layer][row * this.currentMap.COLS + col];
     }
     updateMap(mapName) {
@@ -27,7 +23,7 @@ class Map {
         this.prevMapCols = this.currentMap.COLS;
         this.prevMapRows = this.currentMap.ROWS;
         // Update the currentMap
-        this.currentMap = game_constants_1.MAPS[mapName];
+        this.currentMap = MAPS[mapName];
         // Reset the adjacent loaded maps object
         this.adjacentMaps = {};
         // Reset the location of the currentMap on the whole map
@@ -83,29 +79,29 @@ class Map {
             const colHalfTile = col + 0.5;
             const rowHalfTile = row + 0.5;
             // compute solid in one way or partly solid tiles
-            const partlySolid = (tile === 3 && rowHalfTile * game_constants_1.TILE_SIZE < y && (dirY === -1 || dirX !== 0)) ||
-                (tile === 4 && rowHalfTile * game_constants_1.TILE_SIZE < y && (dirY === -1 || dirX === -1)) ||
-                (tile === 7 && rowHalfTile * game_constants_1.TILE_SIZE < y && (dirY === -1 || dirX === 1)) ||
-                (tile === 5 && rowHalfTile * game_constants_1.TILE_SIZE < y && colHalfTile * game_constants_1.TILE_SIZE < x) ||
-                (tile === 8 && rowHalfTile * game_constants_1.TILE_SIZE < y && colHalfTile * game_constants_1.TILE_SIZE > x) ||
+            const partlySolid = (tile === 3 && rowHalfTile * TILE_SIZE < y && (dirY === -1 || dirX !== 0)) ||
+                (tile === 4 && rowHalfTile * TILE_SIZE < y && (dirY === -1 || dirX === -1)) ||
+                (tile === 7 && rowHalfTile * TILE_SIZE < y && (dirY === -1 || dirX === 1)) ||
+                (tile === 5 && rowHalfTile * TILE_SIZE < y && colHalfTile * TILE_SIZE < x) ||
+                (tile === 8 && rowHalfTile * TILE_SIZE < y && colHalfTile * TILE_SIZE > x) ||
                 (tile === 6 &&
-                    (rowHalfTile * game_constants_1.TILE_SIZE < y || colHalfTile * game_constants_1.TILE_SIZE < x) &&
+                    (rowHalfTile * TILE_SIZE < y || colHalfTile * TILE_SIZE < x) &&
                     (dirX === -1 || dirY === -1)) ||
-                (tile === 9 && (rowHalfTile * game_constants_1.TILE_SIZE < y || colHalfTile * game_constants_1.TILE_SIZE < x &&
+                (tile === 9 && (rowHalfTile * TILE_SIZE < y || colHalfTile * TILE_SIZE < x &&
                     (dirX === 1 || dirY === -1))) ||
-                (tile === 30 && (row + 0.3) * game_constants_1.TILE_SIZE < y) ||
-                (tile === 33 && colHalfTile * game_constants_1.TILE_SIZE < x && (dirX === -1 || dirY !== 0)) ||
-                (tile === 34 && colHalfTile * game_constants_1.TILE_SIZE < x && (dirX === -1 || dirY === 1));
+                (tile === 30 && (row + 0.3) * TILE_SIZE < y) ||
+                (tile === 33 && colHalfTile * TILE_SIZE < x && (dirX === -1 || dirY !== 0)) ||
+                (tile === 34 && colHalfTile * TILE_SIZE < x && (dirX === -1 || dirY === 1));
             (tile === 35 &&
-                (rowHalfTile * game_constants_1.TILE_SIZE < y ||
-                    colHalfTile * game_constants_1.TILE_SIZE < x) && (dirX === -1 || dirY !== 0));
+                (rowHalfTile * TILE_SIZE < y ||
+                    colHalfTile * TILE_SIZE < x) && (dirX === -1 || dirY !== 0));
             // Return and compute the result of the solidity determination
             return res || isSolid || partlySolid;
         }, false);
     }
     addMap(mapName, location, tileOffset) {
         // Get the map to add
-        const mapToAdd = game_constants_1.MAPS[mapName];
+        const mapToAdd = MAPS[mapName];
         // Initialize the final layers array to be returned
         const finalLayers = [];
         // Initialize the variables for the final size of the complete map
@@ -227,20 +223,19 @@ class Map {
     }
     getCol(x) {
         // Get the column of an x coordinate
-        return Math.floor(x / game_constants_1.TILE_SIZE);
+        return Math.floor(x / TILE_SIZE);
     }
     getRow(y) {
         // Get the row of a y coordinate
-        return Math.floor(y / game_constants_1.TILE_SIZE);
+        return Math.floor(y / TILE_SIZE);
     }
     getX(col) {
         // Get x of a column of the map
-        return col * game_constants_1.TILE_SIZE;
+        return col * TILE_SIZE;
     }
     getY(row) {
         // Get y of a row of the map
-        return row * game_constants_1.TILE_SIZE;
+        return row * TILE_SIZE;
     }
 }
-exports.Map = Map;
 //# sourceMappingURL=map.js.map

@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.littleroot_town = void 0;
-exports.littleroot_town = {
+export const littleroot_town = {
     COLS: 20,
     ROWS: 20,
     layers: [[

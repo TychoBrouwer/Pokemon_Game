@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.LEVELS = exports.TYPES_EFFECTIVENESS = exports.TYPES = exports.POKEMON_PERSONALITIES = exports.SIZE_TABLE = void 0;
-exports.SIZE_TABLE = {
+export const SIZE_TABLE = {
     9: {
         x: 290,
         y: 1,
@@ -78,7 +75,7 @@ exports.SIZE_TABLE = {
         z: 65410,
     },
 };
-exports.POKEMON_PERSONALITIES = {
+export const POKEMON_PERSONALITIES = {
     increase: {
         attack: [1, 2, 3, 4],
         defense: [5, 7, 8, 9],
@@ -94,11 +91,11 @@ exports.POKEMON_PERSONALITIES = {
         speed: [2, 7, 17, 22],
     },
 };
-exports.TYPES = [
+export const TYPES = [
     'normal', 'fight', 'flying', 'poison', 'ground', 'rock', 'bug', 'ghost', 'steel',
     'fire', 'water', 'grass', 'electric', 'psychic', 'ice', 'dragon', 'dark', 'fairy',
 ];
-exports.TYPES_EFFECTIVENESS = [
+export const TYPES_EFFECTIVENESS = [
     1, 1, 1, 1, 1, 0.5, 1, 0, 0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     2, 1, 0.5, 0.5, 1, 2, 0.5, 0, 2, 1, 1, 1, 1, 0.5, 2, 1, 2, 0.5,
     1, 2, 1, 1, 1, 0.5, 2, 1, 0.5, 1, 1, 2, 0.5, 1, 1, 1, 1, 1,
@@ -118,7 +115,7 @@ exports.TYPES_EFFECTIVENESS = [
     1, 0.5, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 0.5, 0.5,
     1, 2, 1, 0.5, 1, 1, 1, 1, 0.5, 0.5, 1, 1, 1, 1, 1, 2, 2, 1,
 ];
-exports.LEVELS = {
+export const LEVELS = {
     'erratic': {
         1: 2.0, 2: 15.7, 3: 52.4, 4: 122.9, 5: 237.5, 6: 406.1, 7: 638.0, 8: 942.1, 9: 1326.8, 10: 1800.0,
         11: 2369.2, 12: 3041.3, 13: 3822.8, 14: 4719.7, 15: 5737.5, 16: 6881.3, 17: 8155.6, 18: 9564.5, 19: 11111.6, 20: 12800.0,

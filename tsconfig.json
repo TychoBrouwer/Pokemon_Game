@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
+    "target": "ES2021",
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "lib": [ "dom", "ES2021" ],
+    "allowSyntheticDefaultImports": true,
     "noImplicitAny": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
@@ -11,7 +14,7 @@
     "baseUrl": ".",
     "paths": {
       "*": ["node_modules/*"]
-    }
+    },
   },
   "include": [
     "src/**/*"

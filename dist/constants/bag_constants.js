@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BAG_POCKETS = void 0;
-exports.BAG_POCKETS = [
+export const BAG_POCKETS = [
     '*****************Items*****************',
     '******Poké Balls*******',
     '********TMs & HMs********',

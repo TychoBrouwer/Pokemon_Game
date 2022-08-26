@@ -1,48 +1,23 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.cropCanvas = exports.generatePokemon = exports.drawText = exports.getLocalStorage = exports.setLocalStorage = exports.randomFromMinMax = exports.randomFromArray = void 0;
-const moveIndex = __importStar(require("../data/move_index.json"));
-const game_constants_1 = require("../constants/game_constants");
-const battle_constants_1 = require("../constants/battle_constants");
-const asset_constants_1 = require("../constants/asset_constants");
-const mon_constants_1 = require("../constants/mon_constants");
-function randomFromArray(propbabilityArray) {
+import * as moveIndex from '../data/move_index.json';
+import { FONT_WIDTH, FONT_HEIGHT, CHAR_IN_FONT } from '../constants/game_constants';
+import { POKEMON_SIZE } from '../constants/battle_constants';
+import { ASSET_GENERATION_OFFSET, ASSET_POKEMON_SPRITE_WIDTH } from '../constants/asset_constants';
+import { SIZE_TABLE, POKEMON_PERSONALITIES, LEVELS } from '../constants/mon_constants';
+export function randomFromArray(propbabilityArray) {
     // Get random from array
     return propbabilityArray[Math.floor(Math.random() * propbabilityArray.length)];
 }
-exports.randomFromArray = randomFromArray;
-function randomFromMinMax(min, max) {
+export function randomFromMinMax(min, max) {
     // Get random from min and max, if max = -1 return min
     return (max !== -1) ? Math.floor(Math.random() * (max - min + 1)) + min : min;
 }
-exports.randomFromMinMax = randomFromMinMax;
-function setLocalStorage(key, data) {
+export function setLocalStorage(key, data) {
     // Set item in localStorage
     if (data) {
         localStorage.setItem(key, JSON.stringify(data));
     }
 }
-exports.setLocalStorage = setLocalStorage;
-function getLocalStorage(key) {
+export function getLocalStorage(key) {
     // Get item from localStorage
     const data = localStorage.getItem(key);
     // Return empty object if not found
@@ -52,13 +27,12 @@ function getLocalStorage(key) {
     // returned parsed data
     return JSON.parse(data);
 }
-exports.getLocalStorage = getLocalStorage;
-function drawText(ctx, font, text, fontsize, fontColor, posX, posY) {
-    text = text.replace('É', 'é');
+export function drawText(ctx, font, text, fontsize, fontColor, posX, posY) {
+    text = text.replaceAll('É', 'é');
     // Loop through the text to Draw
     for (let i = 0; i < text.length; i++) {
         // Set default width
-        let width = game_constants_1.FONT_WIDTH[fontsize];
+        let width = FONT_WIDTH[fontsize];
         if (fontsize === 0) {
             // characters that are seven pixels wide
             if (text[i] === '|') {
@@ -83,24 +57,23 @@ function drawText(ctx, font, text, fontsize, fontColor, posX, posY) {
         }
         // Get the positions of the letter to draw
         const positions = {
-            posX: game_constants_1.CHAR_IN_FONT.indexOf(text[i]) % 40 * game_constants_1.FONT_WIDTH[fontsize],
-            posY: ((game_constants_1.CHAR_IN_FONT.indexOf(text[i]) / 40) << 0) * game_constants_1.FONT_HEIGHT[fontsize],
+            posX: CHAR_IN_FONT.indexOf(text[i]) % 40 * FONT_WIDTH[fontsize],
+            posY: ((CHAR_IN_FONT.indexOf(text[i]) / 40) << 0) * FONT_HEIGHT[fontsize],
         };
         // Get the yOffset for the font type (fontSize and fontColor)
-        const yOffset = (fontsize === 0) ? fontColor * 2 * game_constants_1.FONT_HEIGHT[fontsize] : 6 * 2 * game_constants_1.FONT_HEIGHT[0] + fontColor * 2 * game_constants_1.FONT_HEIGHT[fontsize];
+        const yOffset = (fontsize === 0) ? fontColor * 2 * FONT_HEIGHT[fontsize] : 6 * 2 * FONT_HEIGHT[0] + fontColor * 2 * FONT_HEIGHT[fontsize];
         if (text[i] === '_' || text[i] === '*') {
             positions.posX = -10;
         }
         // Draw the letter
-        ctx.drawImage(font, positions.posX, positions.posY + yOffset, width, game_constants_1.FONT_HEIGHT[fontsize], posX + game_constants_1.FONT_WIDTH[fontsize] * i
+        ctx.drawImage(font, positions.posX, positions.posY + yOffset, width, FONT_HEIGHT[fontsize], posX + FONT_WIDTH[fontsize] * i
             - 3 * (text.substring(0, i).match(/ |l|\./g) || []).length
             - 2 * (text.substring(0, i).match(/i|!/g) || []).length
             - 1 * (text.substring(0, i).match(/r/g) || []).length
-            - 5 * (text.substring(0, i).match(/\*/g) || []).length, posY, width, game_constants_1.FONT_HEIGHT[fontsize]);
+            - 5 * (text.substring(0, i).match(/\*/g) || []).length, posY, width, FONT_HEIGHT[fontsize]);
     }
 }
-exports.drawText = drawText;
-function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
+export function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
     // Get random level from the supplied range
     const level = randomFromMinMax(levelRange[0], levelRange[1]);
     // Get the moves the pokemon starts with
@@ -131,20 +104,20 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
     // Set nature for every category
     const nature = {
         hp: 1,
-        attack: (mon_constants_1.POKEMON_PERSONALITIES.increase.attack.includes(personality)) ? 1.1 :
-            (mon_constants_1.POKEMON_PERSONALITIES.decrease.attack.includes(personality)) ? 0.9 :
+        attack: (POKEMON_PERSONALITIES.increase.attack.includes(personality)) ? 1.1 :
+            (POKEMON_PERSONALITIES.decrease.attack.includes(personality)) ? 0.9 :
                 1,
-        defense: (mon_constants_1.POKEMON_PERSONALITIES.increase.defense.includes(personality)) ? 1.1 :
-            (mon_constants_1.POKEMON_PERSONALITIES.decrease.defense.includes(personality)) ? 0.9 :
+        defense: (POKEMON_PERSONALITIES.increase.defense.includes(personality)) ? 1.1 :
+            (POKEMON_PERSONALITIES.decrease.defense.includes(personality)) ? 0.9 :
                 1,
-        specialDefense: (mon_constants_1.POKEMON_PERSONALITIES.increase.specialDefense.includes(personality)) ? 1.1 :
-            (mon_constants_1.POKEMON_PERSONALITIES.decrease.specialDefense.includes(personality)) ? 0.9 :
+        specialDefense: (POKEMON_PERSONALITIES.increase.specialDefense.includes(personality)) ? 1.1 :
+            (POKEMON_PERSONALITIES.decrease.specialDefense.includes(personality)) ? 0.9 :
                 1,
-        specialAttack: (mon_constants_1.POKEMON_PERSONALITIES.increase.specialAttack.includes(personality)) ? 1.1 :
-            (mon_constants_1.POKEMON_PERSONALITIES.decrease.specialAttack.includes(personality)) ? 0.9 :
+        specialAttack: (POKEMON_PERSONALITIES.increase.specialAttack.includes(personality)) ? 1.1 :
+            (POKEMON_PERSONALITIES.decrease.specialAttack.includes(personality)) ? 0.9 :
                 1,
-        speed: (mon_constants_1.POKEMON_PERSONALITIES.increase.speed.includes(personality)) ? 1.1 :
-            (mon_constants_1.POKEMON_PERSONALITIES.decrease.speed.includes(personality)) ? 0.9 :
+        speed: (POKEMON_PERSONALITIES.increase.speed.includes(personality)) ? 1.1 :
+            (POKEMON_PERSONALITIES.decrease.speed.includes(personality)) ? 0.9 :
                 1,
     };
     // Get random individual value (0-31 inclusive)
@@ -173,7 +146,7 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
     const size = randomFromMinMax(0, 65535);
     // Compute height from size
     let height = 0;
-    for (const [maxSize, values] of Object.entries(mon_constants_1.SIZE_TABLE)) {
+    for (const [maxSize, values] of Object.entries(SIZE_TABLE)) {
         if (size <= parseInt(maxSize)) {
             height = Math.floor(pokedexEntry.height * Math.floor((size - values.z) / values.y + values.x) / 10);
             break;
@@ -184,9 +157,9 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
         pokemonId: pokemonId,
         generation: generation,
         pokemonName: pokedexEntry.name,
-        xp: mon_constants_1.LEVELS[pokedexEntry.growth_rate][level],
-        xpCurLevel: mon_constants_1.LEVELS[pokedexEntry.growth_rate][level],
-        xpNextLevel: mon_constants_1.LEVELS[pokedexEntry.growth_rate][level + 1],
+        xp: LEVELS[pokedexEntry.growth_rate][level],
+        xpCurLevel: LEVELS[pokedexEntry.growth_rate][level],
+        xpNextLevel: LEVELS[pokedexEntry.growth_rate][level + 1],
         xpBase: pokedexEntry.base_experience,
         growth_rate: pokedexEntry.growth_rate,
         capture_rate: pokedexEntry.capture_rate,
@@ -214,20 +187,17 @@ function generatePokemon(pokedexEntry, levelRange, pokemonId, pokeball) {
             speed: Math.floor((Math.floor((2 * pokedexEntry.stats[5].base_stat + IV.speed + Math.floor(EV.speed / 4)) * level / 100) + 5) * nature.speed),
         },
         types: pokedexEntry.types,
-        xSource: (pokemonId - asset_constants_1.ASSET_GENERATION_OFFSET[generation] - 1) % 3 * asset_constants_1.ASSET_POKEMON_SPRITE_WIDTH,
-        ySource: (((pokemonId - asset_constants_1.ASSET_GENERATION_OFFSET[generation] - 1) / 3) << 0) * battle_constants_1.POKEMON_SIZE,
+        xSource: (pokemonId - ASSET_GENERATION_OFFSET[generation] - 1) % 3 * ASSET_POKEMON_SPRITE_WIDTH,
+        ySource: (((pokemonId - ASSET_GENERATION_OFFSET[generation] - 1) / 3) << 0) * POKEMON_SIZE,
     };
     // Return pokemonData object
     return pokemonData;
 }
-exports.generatePokemon = generatePokemon;
-function cropCanvas(sourceCanvas, xSource, ySource, width, height) {
-    var _a;
+export function cropCanvas(sourceCanvas, xSource, ySource, width, height) {
     const destCanvas = document.createElement('canvas');
     destCanvas.width = width;
     destCanvas.height = height;
-    (_a = destCanvas.getContext("2d")) === null || _a === void 0 ? void 0 : _a.drawImage(sourceCanvas, xSource, ySource, width, height, 0, 0, width, height);
+    destCanvas.getContext("2d")?.drawImage(sourceCanvas, xSource, ySource, width, height, 0, 0, width, height);
     return destCanvas;
 }
-exports.cropCanvas = cropCanvas;
 //# sourceMappingURL=helper.js.map

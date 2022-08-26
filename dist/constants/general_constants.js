@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CHAR_IN_FONT = void 0;
-exports.CHAR_IN_FONT = [
+export const CHAR_IN_FONT = [
     'A',
     'B',
     'C',

@@ -115,8 +115,6 @@ export class GameObject {
   }
 
   setColor(r: number, g: number, b: number) {
-    console.log((this.currentColor[0] !== r  || this.currentColor[1] !== g || this.currentColor[2] !== b))
-
     if (this.spriteCtx && (this.currentColor[0] !== r  || this.currentColor[1] !== g || this.currentColor[2] !== b)) {
       const imgData = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource);
 

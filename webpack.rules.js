@@ -12,7 +12,7 @@ module.exports = [
     use: {
       loader: '@vercel/webpack-asset-relocator-loader',
       options: {
-        outputAssetBase: 'native_modules',
+        outputAssetBase: 'assets',
       },
     },
   },
@@ -30,7 +30,7 @@ module.exports = [
     test: /\.(png|jpe?g|gif|jp2|webp)$/,
     loader: 'file-loader',
     options: {
-      name: 'assets/[name].[ext]'
+      outputPath: 'assets'
     }
   }
 ];

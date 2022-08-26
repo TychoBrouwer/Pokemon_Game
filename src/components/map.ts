@@ -28,7 +28,6 @@ export class Map {
   }
 
   getTile(layer: number, col: number, row: number): number {
-    // Get the tile number of the supplied layer, column, and row
     return this.currentMap.layers[layer][row * this.currentMap.COLS + col];
   }
 

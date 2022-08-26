@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GameObject = void 0;
-const helper_1 = require("./helper");
-class GameObject {
+import { cropCanvas } from "./helper";
+export class GameObject {
     constructor(ctx, gameObject, saveOriginalImageData, xSource, ySource, width, height, x, y) {
         this.scaleFactor = 1;
         this.opacity = 1;
@@ -18,7 +15,7 @@ class GameObject {
         this.xSource = xSource;
         this.ySource = ySource;
         if (gameObject && saveOriginalImageData) {
-            this.gameObject = (0, helper_1.cropCanvas)(gameObject, xSource, ySource, width, height);
+            this.gameObject = cropCanvas(gameObject, xSource, ySource, width, height);
             this.xSource = 0;
             this.ySource = 0;
         }
@@ -85,7 +82,6 @@ class GameObject {
         this.opacity = opacity;
     }
     setColor(r, g, b) {
-        console.log((this.currentColor[0] !== r || this.currentColor[1] !== g || this.currentColor[2] !== b));
         if (this.spriteCtx && (this.currentColor[0] !== r || this.currentColor[1] !== g || this.currentColor[2] !== b)) {
             const imgData = this.spriteCtx.getImageData(this.xSource, this.ySource, this.widthSource, this.heightSource);
             for (let i = 0; i < imgData.data.length; i += 4) {
@@ -186,16 +182,16 @@ class GameObject {
         const percentage = dirx !== 0 ? (this.x - this.xBegin) / (endx - this.xBegin) : (this.y - this.yBegin) / (endy - this.yBegin);
         let speedMod = 1;
         if (modifier === 'quadratic-up') {
-            speedMod = (Math.pow((0.77 * percentage), 2) + 0.4) * speed;
+            speedMod = ((0.77 * percentage) ** 2 + 0.4) * speed;
         }
         else if (modifier === 'quadratic-down') {
-            speedMod = (1 - Math.pow((0.77 * percentage), 2)) * speed;
+            speedMod = (1 - (0.77 * percentage) ** 2) * speed;
         }
         else if (modifier === 'sigmoid90-up') {
-            speedMod = (1 / (1 + Math.pow(2.1718, (-55 * (percentage - 0.1)))) / 1.5 + 0.33) * speed;
+            speedMod = (1 / (1 + 2.1718 ** (-55 * (percentage - 0.1))) / 1.5 + 0.33) * speed;
         }
         else if (modifier === 'sigmoid90-down') {
-            speedMod = (1 / (1 + Math.pow(2.1718, (55 * (percentage - 0.9)))) / 1.5 + 0.33) * speed;
+            speedMod = (1 / (1 + 2.1718 ** (55 * (percentage - 0.9))) / 1.5 + 0.33) * speed;
         }
         speed = speedMod * speed;
         const newx = this.x + delta * speed * dirx;
@@ -246,5 +242,4 @@ class GameObject {
         this.animationCounter += delta * 1000;
     }
 }
-exports.GameObject = GameObject;
 //# sourceMappingURL=game_object.js.map

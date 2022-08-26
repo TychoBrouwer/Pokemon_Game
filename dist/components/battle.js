@@ -1,49 +1,18 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Battle = void 0;
-const pokedex = __importStar(require("../data/pokedex.json"));
-const moveIndex = __importStar(require("../data/move_index.json"));
-const itemIndex = __importStar(require("../data/item_index.json"));
-const encounterTable = __importStar(require("../data/encounter_table.json"));
-const game_object_1 = require("../utils/game_object");
-const battler_1 = require("./battler");
-const helper_1 = require("../utils/helper");
-const keyboard_1 = require("../utils/keyboard");
-const battle_constants_1 = require("../constants/battle_constants");
-const game_constants_1 = require("../constants/game_constants");
-const bag_constants_1 = require("../constants/bag_constants");
-const items_constants_1 = require("../constants/items_constants");
-const mon_constants_1 = require("../constants/mon_constants");
-const asset_constants_1 = require("../constants/asset_constants");
-class Battle {
+import * as pokedex from '../data/pokedex.json';
+import * as moveIndex from '../data/move_index.json';
+import * as itemIndex from '../data/item_index.json';
+import * as encounterTable from '../data/encounter_table.json';
+import { GameObject } from '../utils/game_object';
+import { Battler } from './battler';
+import { randomFromArray, generatePokemon, drawText, randomFromMinMax } from '../utils/helper';
+import { keyboard } from '../utils/keyboard';
+import { ACTION_BOX_HEIGHT, ACTION_BOX_WIDTH, BATTLE_ARENA_HEIGHT, BATTLE_SCENE_HEIGHT, BATTLE_SCENE_WIDTH, NORMAL_STAGES, POKEBALL_SIZE, POKEMON_SIZE, SPECIAL_STAGES } from '../constants/battle_constants';
+import { AVATAR_BATTLE_HEIGHT, AVATAR_BATTLE_WIDTH, FONT_HEIGHT, GAME_HEIGHT, GAME_WIDTH } from '../constants/game_constants';
+import { BAG_POCKETS } from '../constants/bag_constants';
+import { POKE_BALLS } from '../constants/items_constants';
+import { TYPES_EFFECTIVENESS, TYPES } from '../constants/mon_constants';
+import { ASSET_PLAYER_HEALTH_HEIGHT, ASSET_POKEBALL_OFFSET_X, ASSET_AVATAR_BATTLE_OFFSET, ASSET_POKEBALL_OFFSET_Y, ASSET_BAG_OFFSET, ASSET_BAG_WIDTH, ASSET_BAG_HEIGHT, ASSET_BAG_POK_SIZE, ASSET_BAG_SEL_WIDTH, ASSET_BAG_SEL_HEIGHT, } from '../constants/asset_constants';
+export class Battle {
     constructor(context, overlayCtx, loader, player, route, encounterMethod) {
         this.battleAction = 0;
         this.escapeAttempts = 0;
@@ -61,8 +30,8 @@ class Battle {
         this.previousElapsed = 0;
         this.delayStart = -1;
         this.battleStatus = 0;
-        this.statusAfterFadeOut = 35 /* FadeIn */;
-        this.statusAfterFadeIn = 37 /* Finished */;
+        this.statusAfterFadeOut = 35 /* BattleStatus.FadeIn */;
+        this.statusAfterFadeIn = 37 /* BattleStatus.Finished */;
         this.keyDown = false;
         this.newHealth = -1;
         this.newXp = -1;
@@ -105,23 +74,23 @@ class Battle {
         this.enemyPokemon = this.init();
         this.loadGameObjects();
         this.bagTextCanvas = document.createElement('canvas');
-        this.bagTextCanvas.height = game_constants_1.FONT_HEIGHT[0];
+        this.bagTextCanvas.height = FONT_HEIGHT[0];
         this.bagTextCanvas.width = 64;
         this.bagTextCtx = this.bagTextCanvas.getContext('2d');
-        this.pokeBallXSource = asset_constants_1.ASSET_POKEBALL_OFFSET_X + 8 * battle_constants_1.POKEBALL_SIZE;
+        this.pokeBallXSource = ASSET_POKEBALL_OFFSET_X + 8 * POKEBALL_SIZE;
         console.log(this.enemyPokemon);
         console.log(this.playerPokemon);
         this.battlers = [];
-        this.battlers[0] = new battler_1.Battler(this.ctx, this.loader, this.playerPokemon, 0, this.encounterMethod, this.genderOffsets);
-        this.battlers[1] = new battler_1.Battler(this.ctx, this.loader, this.enemyPokemon, 1, this.encounterMethod, this.genderOffsets);
+        this.battlers[0] = new Battler(this.ctx, this.loader, this.playerPokemon, 0, this.encounterMethod, this.genderOffsets);
+        this.battlers[1] = new Battler(this.ctx, this.loader, this.enemyPokemon, 1, this.encounterMethod, this.genderOffsets);
     }
     setGenderVariables(male) {
         if (male) {
             this.genderOffsets = {
-                ASSET_AVATAR_OFFSET: 4 * game_constants_1.AVATAR_BATTLE_HEIGHT,
-                ASSET_BAG_BG_OFFSET: game_constants_1.GAME_WIDTH,
-                ASSET_BAG_OFFSET: asset_constants_1.ASSET_BAG_HEIGHT,
-                ASSET_BAG_SEL_OFFSET: 5 * asset_constants_1.ASSET_BAG_SEL_HEIGHT,
+                ASSET_AVATAR_OFFSET: 4 * AVATAR_BATTLE_HEIGHT,
+                ASSET_BAG_BG_OFFSET: GAME_WIDTH,
+                ASSET_BAG_OFFSET: ASSET_BAG_HEIGHT,
+                ASSET_BAG_SEL_OFFSET: 5 * ASSET_BAG_SEL_HEIGHT,
             };
         }
     }
@@ -134,9 +103,9 @@ class Battle {
             candidateIds.push(...Array(candidates[pokemonIndex].rate).fill(parseInt(pokemonIndex)));
         }
         // Randomly choose the pokemon from candidateIds
-        const pokemonId = (0, helper_1.randomFromArray)(candidateIds);
+        const pokemonId = randomFromArray(candidateIds);
         // Generate enemy pokemon
-        const enemyPokemon = (0, helper_1.generatePokemon)(this.pokedex[pokemonId.toString()], candidates[pokemonId].level, pokemonId, -1);
+        const enemyPokemon = generatePokemon(this.pokedex[pokemonId.toString()], candidates[pokemonId].level, pokemonId, -1);
         // Set the necessary assets
         this.enemyPokemonSprite = this.loader.getImageCanvas('pokemonGeneration' + (enemyPokemon.generation + 1));
         if (enemyPokemon.generation === this.playerPokemon.generation) {
@@ -148,54 +117,52 @@ class Battle {
         return enemyPokemon;
     }
     loadGameObjects() {
-        this.battleBackground = new game_object_1.GameObject(this.ctx, this.battleAssets, false, this.encounterMethod % 4 * game_constants_1.GAME_WIDTH, ((0.5 + this.encounterMethod / 4) << 0) * battle_constants_1.BATTLE_ARENA_HEIGHT, game_constants_1.GAME_WIDTH, battle_constants_1.BATTLE_ARENA_HEIGHT, 0, 0);
-        this.moveSelectorBox = new game_object_1.GameObject(this.ctx, this.battleAssets, false, 0, 3 * battle_constants_1.BATTLE_ARENA_HEIGHT + 4 * battle_constants_1.BATTLE_SCENE_HEIGHT + battle_constants_1.ACTION_BOX_HEIGHT + asset_constants_1.ASSET_PLAYER_HEALTH_HEIGHT, game_constants_1.GAME_WIDTH, battle_constants_1.ACTION_BOX_HEIGHT, 0, battle_constants_1.BATTLE_ARENA_HEIGHT);
-        this.battleDialogueBox = new game_object_1.GameObject(this.ctx, this.battleAssets, false, 0, 3 * battle_constants_1.BATTLE_ARENA_HEIGHT, game_constants_1.GAME_WIDTH, battle_constants_1.ACTION_BOX_HEIGHT, 0, battle_constants_1.BATTLE_ARENA_HEIGHT);
-        this.actionSelectorBox = new game_object_1.GameObject(this.ctx, this.battleAssets, false, game_constants_1.GAME_WIDTH, 3 * battle_constants_1.BATTLE_ARENA_HEIGHT, battle_constants_1.ACTION_BOX_WIDTH, battle_constants_1.ACTION_BOX_HEIGHT, game_constants_1.GAME_WIDTH - battle_constants_1.ACTION_BOX_WIDTH, battle_constants_1.BATTLE_ARENA_HEIGHT);
-        this.playerPokemonObject = new game_object_1.GameObject(this.ctx, this.playerPokemonSprite, true, this.playerPokemon.xSource + 2 * battle_constants_1.POKEMON_SIZE, this.playerPokemon.ySource, battle_constants_1.POKEMON_SIZE, battle_constants_1.POKEMON_SIZE, (battle_constants_1.BATTLE_SCENE_WIDTH - battle_constants_1.POKEMON_SIZE) / 2, battle_constants_1.BATTLE_ARENA_HEIGHT - battle_constants_1.POKEMON_SIZE);
+        this.battleBackground = new GameObject(this.ctx, this.battleAssets, false, this.encounterMethod % 4 * GAME_WIDTH, ((0.5 + this.encounterMethod / 4) << 0) * BATTLE_ARENA_HEIGHT, GAME_WIDTH, BATTLE_ARENA_HEIGHT, 0, 0);
+        this.moveSelectorBox = new GameObject(this.ctx, this.battleAssets, false, 0, 3 * BATTLE_ARENA_HEIGHT + 4 * BATTLE_SCENE_HEIGHT + ACTION_BOX_HEIGHT + ASSET_PLAYER_HEALTH_HEIGHT, GAME_WIDTH, ACTION_BOX_HEIGHT, 0, BATTLE_ARENA_HEIGHT);
+        this.battleDialogueBox = new GameObject(this.ctx, this.battleAssets, false, 0, 3 * BATTLE_ARENA_HEIGHT, GAME_WIDTH, ACTION_BOX_HEIGHT, 0, BATTLE_ARENA_HEIGHT);
+        this.actionSelectorBox = new GameObject(this.ctx, this.battleAssets, false, GAME_WIDTH, 3 * BATTLE_ARENA_HEIGHT, ACTION_BOX_WIDTH, ACTION_BOX_HEIGHT, GAME_WIDTH - ACTION_BOX_WIDTH, BATTLE_ARENA_HEIGHT);
+        this.playerPokemonObject = new GameObject(this.ctx, this.playerPokemonSprite, true, this.playerPokemon.xSource + 2 * POKEMON_SIZE, this.playerPokemon.ySource, POKEMON_SIZE, POKEMON_SIZE, (BATTLE_SCENE_WIDTH - POKEMON_SIZE) / 2, BATTLE_ARENA_HEIGHT - POKEMON_SIZE);
         this.playerPokemonObject.setScale(0);
-        this.enemyPokemonObject = new game_object_1.GameObject(this.ctx, this.enemyPokemonSprite, true, this.enemyPokemon.xSource, this.enemyPokemon.ySource, battle_constants_1.POKEMON_SIZE, battle_constants_1.POKEMON_SIZE, -(battle_constants_1.BATTLE_SCENE_WIDTH + battle_constants_1.POKEMON_SIZE) / 2, 22);
-        this.playerAvatar = new game_object_1.GameObject(this.ctx, this.avatarAssets, false, asset_constants_1.ASSET_AVATAR_BATTLE_OFFSET, this.genderOffsets.ASSET_AVATAR_OFFSET, game_constants_1.AVATAR_BATTLE_WIDTH, game_constants_1.AVATAR_BATTLE_HEIGHT, game_constants_1.GAME_WIDTH + battle_constants_1.BATTLE_SCENE_WIDTH / 2, battle_constants_1.BATTLE_ARENA_HEIGHT - game_constants_1.AVATAR_BATTLE_HEIGHT);
-        this.playerAvatar.setAnimation(true, 0, 0, game_constants_1.AVATAR_BATTLE_HEIGHT, 4);
-        this.pokeball = new game_object_1.GameObject(this.ctx, this.battleAssets, false, asset_constants_1.ASSET_POKEBALL_OFFSET_X, asset_constants_1.ASSET_POKEBALL_OFFSET_Y + 32, battle_constants_1.POKEBALL_SIZE, battle_constants_1.POKEBALL_SIZE, 25, 70);
-        this.pokeball.setAnimation(false, 32, 0, battle_constants_1.POKEBALL_SIZE, 8);
-        this.catchPokeball = new game_object_1.GameObject(this.ctx, this.battleAssets, false, asset_constants_1.ASSET_POKEBALL_OFFSET_X, asset_constants_1.ASSET_POKEBALL_OFFSET_Y + 32, battle_constants_1.POKEBALL_SIZE, battle_constants_1.POKEBALL_SIZE, 28, 74);
-        this.bagBackground = new game_object_1.GameObject(this.ctx, this.battleAssets, false, this.genderOffsets.ASSET_BAG_BG_OFFSET, asset_constants_1.ASSET_BAG_OFFSET, game_constants_1.GAME_WIDTH, game_constants_1.GAME_HEIGHT, 0, 0);
-        this.bag = new game_object_1.GameObject(this.ctx, this.battleAssets, false, 2 * game_constants_1.GAME_WIDTH, asset_constants_1.ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_OFFSET, asset_constants_1.ASSET_BAG_WIDTH, asset_constants_1.ASSET_BAG_HEIGHT, 30, 6);
-        this.bagText = new game_object_1.GameObject(this.ctx, this.bagTextCanvas, false, 0, 0, 64, game_constants_1.FONT_HEIGHT[0], 32, 81);
-        this.bagSelector = new game_object_1.GameObject(this.ctx, this.battleAssets, false, 2 * game_constants_1.GAME_WIDTH + 5 * asset_constants_1.ASSET_BAG_WIDTH + asset_constants_1.ASSET_BAG_POK_SIZE, asset_constants_1.ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_SEL_OFFSET, asset_constants_1.ASSET_BAG_SEL_WIDTH, asset_constants_1.ASSET_BAG_SEL_HEIGHT, 42, 75);
-        this.bagSwitchPokeball = new game_object_1.GameObject(this.ctx, this.battleAssets, false, 2 * game_constants_1.GAME_WIDTH + 6 * asset_constants_1.ASSET_BAG_WIDTH, asset_constants_1.ASSET_BAG_OFFSET, asset_constants_1.ASSET_BAG_POK_SIZE, asset_constants_1.ASSET_BAG_POK_SIZE, 8, 80);
-        this.bagSwitchPokeball.setAnimation(false, 32, 0, asset_constants_1.ASSET_BAG_POK_SIZE, 7);
+        this.enemyPokemonObject = new GameObject(this.ctx, this.enemyPokemonSprite, true, this.enemyPokemon.xSource, this.enemyPokemon.ySource, POKEMON_SIZE, POKEMON_SIZE, -(BATTLE_SCENE_WIDTH + POKEMON_SIZE) / 2, 22);
+        this.playerAvatar = new GameObject(this.ctx, this.avatarAssets, false, ASSET_AVATAR_BATTLE_OFFSET, this.genderOffsets.ASSET_AVATAR_OFFSET, AVATAR_BATTLE_WIDTH, AVATAR_BATTLE_HEIGHT, GAME_WIDTH + BATTLE_SCENE_WIDTH / 2, BATTLE_ARENA_HEIGHT - AVATAR_BATTLE_HEIGHT);
+        this.playerAvatar.setAnimation(true, 0, 0, AVATAR_BATTLE_HEIGHT, 4);
+        this.pokeball = new GameObject(this.ctx, this.battleAssets, false, ASSET_POKEBALL_OFFSET_X, ASSET_POKEBALL_OFFSET_Y + 32, POKEBALL_SIZE, POKEBALL_SIZE, 25, 70);
+        this.pokeball.setAnimation(false, 32, 0, POKEBALL_SIZE, 8);
+        this.catchPokeball = new GameObject(this.ctx, this.battleAssets, false, ASSET_POKEBALL_OFFSET_X, ASSET_POKEBALL_OFFSET_Y + 32, POKEBALL_SIZE, POKEBALL_SIZE, 28, 74);
+        this.bagBackground = new GameObject(this.ctx, this.battleAssets, false, this.genderOffsets.ASSET_BAG_BG_OFFSET, ASSET_BAG_OFFSET, GAME_WIDTH, GAME_HEIGHT, 0, 0);
+        this.bag = new GameObject(this.ctx, this.battleAssets, false, 2 * GAME_WIDTH, ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_OFFSET, ASSET_BAG_WIDTH, ASSET_BAG_HEIGHT, 30, 6);
+        this.bagText = new GameObject(this.ctx, this.bagTextCanvas, false, 0, 0, 64, FONT_HEIGHT[0], 32, 81);
+        this.bagSelector = new GameObject(this.ctx, this.battleAssets, false, 2 * GAME_WIDTH + 5 * ASSET_BAG_WIDTH + ASSET_BAG_POK_SIZE, ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_SEL_OFFSET, ASSET_BAG_SEL_WIDTH, ASSET_BAG_SEL_HEIGHT, 42, 75);
+        this.bagSwitchPokeball = new GameObject(this.ctx, this.battleAssets, false, 2 * GAME_WIDTH + 6 * ASSET_BAG_WIDTH, ASSET_BAG_OFFSET, ASSET_BAG_POK_SIZE, ASSET_BAG_POK_SIZE, 8, 80);
+        this.bagSwitchPokeball.setAnimation(false, 32, 0, ASSET_BAG_POK_SIZE, 7);
     }
-    battle() {
-        return __awaiter(this, void 0, void 0, function* () {
-            // Start the tick loop with a canvas animation request
-            window.requestAnimationFrame(this.tick.bind(this));
-            // Wait for battle finished
-            yield this.battleFinished();
-            // Battle return object
-            const battleData = {
-                result: this.battleResultWin,
-                pokemon: this.enemyPokemon,
-            };
-            // Clear battle canvas rendering context
-            this.ctx.clearRect(0, 0, game_constants_1.GAME_WIDTH, game_constants_1.GAME_HEIGHT);
-            // Return battleData
-            return battleData;
-        });
+    async battle() {
+        // Start the tick loop with a canvas animation request
+        window.requestAnimationFrame(this.tick.bind(this));
+        // Wait for battle finished
+        await this.battleFinished();
+        // Battle return object
+        const battleData = {
+            result: this.battleResultWin,
+            pokemon: this.enemyPokemon,
+        };
+        // Clear battle canvas rendering context
+        this.ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        // Return battleData
+        return battleData;
     }
     battleFinished() {
         return new Promise((resolve) => {
             // resolve if battle is finished
-            if (this.battleStatus === 37 /* Finished */) {
+            if (this.battleStatus === 37 /* BattleStatus.Finished */) {
                 resolve();
             }
             else {
                 // Check every 10 ms for battleFinished
-                setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                    yield this.battleFinished();
+                setTimeout(async () => {
+                    await this.battleFinished();
                     resolve();
-                }), 10);
+                }, 10);
             }
         });
     }
@@ -222,16 +189,16 @@ class Battle {
         this.previousElapsed = elapsed;
         this.battlers[0].updateElapsedTime(this.previousElapsed);
         this.battlers[1].updateElapsedTime(this.previousElapsed);
-        if (this.battleStatus === 0 /* SlideAvatarIn */) {
+        if (this.battleStatus === 0 /* BattleStatus.SlideAvatarIn */) {
             this.battleBackground.render();
             this.battlers[1].drawPokemonSlideIn(delta);
             const isFinished = this.battlers[0].drawAvatarSlideIn(delta);
             this.battleDialogueBox.render();
             if (isFinished) {
-                this.nextBattlePhase(1 /* WriteAppearText */);
+                this.nextBattlePhase(1 /* BattleStatus.WriteAppearText */);
             }
         }
-        else if (this.battleStatus === 1 /* WriteAppearText */) {
+        else if (this.battleStatus === 1 /* BattleStatus.WriteAppearText */) {
             this.battleBackground.render();
             this.battlers[1].drawPokemon();
             this.battlers[0].drawAvatar();
@@ -242,90 +209,90 @@ class Battle {
             if (isFinished) {
                 // Draw action dialogue box
                 this.battleDialogueBox.render();
-                this.nextBattlePhase(2 /* WriteGoText */);
+                this.nextBattlePhase(2 /* BattleStatus.WriteGoText */);
             }
         }
-        else if (this.battleStatus === 2 /* WriteGoText */) {
+        else if (this.battleStatus === 2 /* BattleStatus.WriteGoText */) {
             // Write go text to dialogue box, with next phase
             const text = 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!';
             const isFinished = this.writeToDialogueBox(delta, 1, text, '', 0, 1);
             if (isFinished) {
-                this.nextBattlePhase(3 /* SlideAvatarOut */);
+                this.nextBattlePhase(3 /* BattleStatus.SlideAvatarOut */);
             }
         }
-        else if (this.battleStatus === 3 /* SlideAvatarOut */) {
+        else if (this.battleStatus === 3 /* BattleStatus.SlideAvatarOut */) {
             this.battleBackground.render();
             this.battlers[1].drawPokemon();
             this.battlers[1].drawHealth();
             const isFinished = this.battlers[0].drawAnimatedAvatarSlideOut(delta);
             this.battleDialogueBox.render();
-            (0, helper_1.drawText)(this.ctx, this.font, 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!', 0, 1, 16, 121);
+            drawText(this.ctx, this.font, 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!', 0, 1, 16, 121);
             if (isFinished) {
-                this.nextBattlePhase(4 /* ThrowPokemon */);
+                this.nextBattlePhase(4 /* BattleStatus.ThrowPokemon */);
             }
         }
-        else if (this.battleStatus === 4 /* ThrowPokemon */) {
+        else if (this.battleStatus === 4 /* BattleStatus.ThrowPokemon */) {
             this.battleBackground.render();
             this.battlers[1].drawPokemon();
             this.battlers[1].drawHealth();
             this.battlers[0].drawAvatarSlideOut(delta);
             const isFinished = this.battlers[0].drawPokeballThrow(delta);
             this.battleDialogueBox.render();
-            (0, helper_1.drawText)(this.ctx, this.font, 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!', 0, 1, 16, 121);
+            drawText(this.ctx, this.font, 'Go! ' + this.playerPokemon.pokemonName.toUpperCase() + '!', 0, 1, 16, 121);
             if (isFinished) {
-                this.nextBattlePhase(5 /* PlayerActionSelect */);
+                this.nextBattlePhase(5 /* BattleStatus.PlayerActionSelect */);
             }
         }
-        else if (this.battleStatus === 5 /* PlayerActionSelect */) {
-            if (this.statusAfterFadeOut === 5 /* PlayerActionSelect */) {
-                this.nextBattlePhase(35 /* FadeIn */);
-                this.statusAfterFadeOut = 35 /* FadeIn */;
+        else if (this.battleStatus === 5 /* BattleStatus.PlayerActionSelect */) {
+            if (this.statusAfterFadeOut === 5 /* BattleStatus.PlayerActionSelect */) {
+                this.nextBattlePhase(35 /* BattleStatus.FadeIn */);
+                this.statusAfterFadeOut = 35 /* BattleStatus.FadeIn */;
             }
-            else if (this.statusAfterFadeOut === 35 /* FadeIn */) {
-                this.statusAfterFadeIn = 37 /* Finished */;
+            else if (this.statusAfterFadeOut === 35 /* BattleStatus.FadeIn */) {
+                this.statusAfterFadeIn = 37 /* BattleStatus.Finished */;
             }
             this.turnsPassed++;
             // Detect keyboard press and increment/ decrement battleAction accordingly
             if (!this.keyDown) {
-                if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT)) {
+                if (keyboard.isDown(keyboard.LEFT)) {
                     if (this.battleAction === 1 || this.battleAction === 3) {
                         this.battleAction--;
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.RIGHT)) {
+                else if (keyboard.isDown(keyboard.RIGHT)) {
                     if (this.battleAction === 0 || this.battleAction === 2) {
                         this.battleAction++;
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.UP)) {
+                else if (keyboard.isDown(keyboard.UP)) {
                     if (this.battleAction === 2 || this.battleAction === 3) {
                         this.battleAction -= 2;
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.DOWN)) {
+                else if (keyboard.isDown(keyboard.DOWN)) {
                     if (this.battleAction === 0 || this.battleAction === 1) {
                         this.battleAction += 2;
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
+                else if (keyboard.isDown(keyboard.ENTER)) {
                     // On enter go to next battle phase
                     if (this.battleAction === 0) {
-                        this.nextBattlePhase(20 /* PlayerSelectMove */);
+                        this.nextBattlePhase(20 /* BattleStatus.PlayerSelectMove */);
                     }
                     else if (this.battleAction === 1) {
-                        this.statusAfterFadeOut = 6 /* PlayerBag */;
-                        this.statusAfterFadeIn = 6 /* PlayerBag */;
-                        this.nextBattlePhase(34 /* FadeOut */);
+                        this.statusAfterFadeOut = 6 /* BattleStatus.PlayerBag */;
+                        this.statusAfterFadeIn = 6 /* BattleStatus.PlayerBag */;
+                        this.nextBattlePhase(34 /* BattleStatus.FadeOut */);
                     }
                     else if (this.battleAction === 2) {
-                        this.nextBattlePhase(17 /* PlayerChoosePokemon */);
+                        this.nextBattlePhase(17 /* BattleStatus.PlayerChoosePokemon */);
                     }
                     else if (this.battleAction === 3) {
-                        this.nextBattlePhase(18 /* PlayerRun */);
+                        this.nextBattlePhase(18 /* BattleStatus.PlayerRun */);
                     }
                     this.keyDown = true;
                 }
@@ -333,8 +300,8 @@ class Battle {
             this.drawCleanBattleScene(delta, true);
             // Draw action choice selector
             this.actionSelectorBox.render();
-            (0, helper_1.drawText)(this.ctx, this.font, 'What should ', 0, 1, 16, 121);
-            (0, helper_1.drawText)(this.ctx, this.font, this.battlers[this.currentBattler].pokemonData.pokemonName.toUpperCase() + ' do?', 0, 1, 16, 121 + 16);
+            drawText(this.ctx, this.font, 'What should ', 0, 1, 16, 121);
+            drawText(this.ctx, this.font, this.battlers[this.currentBattler].pokemonData.pokemonName.toUpperCase() + ' do?', 0, 1, 16, 121 + 16);
             // Set the offset and column for the battle action selector
             let xOffset = this.battleAction * 46;
             let yColumn = 0;
@@ -343,42 +310,42 @@ class Battle {
                 yColumn = 1;
             }
             // Draw the action selector
-            this.drawActionSelector(game_constants_1.GAME_WIDTH - battle_constants_1.ACTION_BOX_WIDTH + 8 + xOffset, game_constants_1.GAME_WIDTH - battle_constants_1.ACTION_BOX_WIDTH + 8 + 42 + xOffset, 121, yColumn);
+            this.drawActionSelector(GAME_WIDTH - ACTION_BOX_WIDTH + 8 + xOffset, GAME_WIDTH - ACTION_BOX_WIDTH + 8 + 42 + xOffset, 121, yColumn);
         }
-        else if (this.battleStatus === 6 /* PlayerBag */) {
-            if (this.statusAfterFadeOut === 6 /* PlayerBag */) {
-                this.nextBattlePhase(35 /* FadeIn */);
-                this.statusAfterFadeOut = 5 /* PlayerActionSelect */;
+        else if (this.battleStatus === 6 /* BattleStatus.PlayerBag */) {
+            if (this.statusAfterFadeOut === 6 /* BattleStatus.PlayerBag */) {
+                this.nextBattlePhase(35 /* BattleStatus.FadeIn */);
+                this.statusAfterFadeOut = 5 /* BattleStatus.PlayerActionSelect */;
             }
-            else if (this.statusAfterFadeOut === 5 /* PlayerActionSelect */) {
-                this.statusAfterFadeIn = 5 /* PlayerActionSelect */;
+            else if (this.statusAfterFadeOut === 5 /* BattleStatus.PlayerActionSelect */) {
+                this.statusAfterFadeIn = 5 /* BattleStatus.PlayerActionSelect */;
             }
             const items = this.playerData.inventory[this.bagSelected];
             const itemsToDisplay = Math.min(items.length + 1, 8);
             this.drawBag(true, false);
             // Detect keyboard press and increment/ decrement battleAction accordingly
             if (!this.keyDown) {
-                if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT)) {
+                if (keyboard.isDown(keyboard.LEFT)) {
                     if (this.bagSelected > 0) {
                         this.bagSelected--;
                         this.bagSwitchLeft = true;
                         this.bagSelectedItem = 0;
                         this.bagSelectedOffset = 0;
-                        this.nextBattlePhase(7 /* BagSwitch */);
+                        this.nextBattlePhase(7 /* BattleStatus.BagSwitch */);
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.RIGHT)) {
+                else if (keyboard.isDown(keyboard.RIGHT)) {
                     if (this.bagSelected < 4) {
                         this.bagSelected++;
                         this.bagSwitchLeft = false;
                         this.bagSelectedItem = 0;
                         this.bagSelectedOffset = 0;
-                        this.nextBattlePhase(7 /* BagSwitch */);
+                        this.nextBattlePhase(7 /* BattleStatus.BagSwitch */);
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.UP)) {
+                else if (keyboard.isDown(keyboard.UP)) {
                     if (this.bagSelectedItem > 0) {
                         this.bagSelectedItem--;
                     }
@@ -387,7 +354,7 @@ class Battle {
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.DOWN)) {
+                else if (keyboard.isDown(keyboard.DOWN)) {
                     if (this.bagSelectedItem < itemsToDisplay - 1) {
                         this.bagSelectedItem++;
                     }
@@ -396,47 +363,47 @@ class Battle {
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
+                else if (keyboard.isDown(keyboard.ENTER)) {
                     if (this.bagSelectedItem !== itemsToDisplay - 1) {
-                        this.nextBattlePhase(8 /* BagConfirmUseItem */);
+                        this.nextBattlePhase(8 /* BattleStatus.BagConfirmUseItem */);
                     }
                     else {
-                        this.nextBattlePhase(34 /* FadeOut */);
+                        this.nextBattlePhase(34 /* BattleStatus.FadeOut */);
                     }
                     this.keyDown = true;
                 }
             }
         }
-        else if (this.battleStatus === 7 /* BagSwitch */) {
+        else if (this.battleStatus === 7 /* BattleStatus.BagSwitch */) {
             const previousSelected = this.bagSwitchLeft ? this.bagSelected + 1 : this.bagSelected - 1;
             const limit = 64, speed = 196;
             let text = '', direction = 1;
             if (this.bagSwitchLeft) {
-                text = bag_constants_1.BAG_POCKETS[this.bagSelected] + bag_constants_1.BAG_POCKETS[previousSelected];
+                text = BAG_POCKETS[this.bagSelected] + BAG_POCKETS[previousSelected];
             }
             else {
-                text = bag_constants_1.BAG_POCKETS[previousSelected] + bag_constants_1.BAG_POCKETS[this.bagSelected];
+                text = BAG_POCKETS[previousSelected] + BAG_POCKETS[this.bagSelected];
                 direction = -1;
             }
             this.bagBackground.render();
             this.ctx.fillStyle = '#F8E0A8';
             this.ctx.fillRect(112, 16, 120, Math.abs(this.animationCounter) / limit * 128);
             if (this.animationCounter > -20 && this.animationCounter < 20) {
-                this.bag.updateSourcePosition(2 * game_constants_1.GAME_WIDTH, asset_constants_1.ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_OFFSET);
+                this.bag.updateSourcePosition(2 * GAME_WIDTH, ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_OFFSET);
                 this.bag.animate(delta, 128, 0, 1, 30, 6 - direction * this.animationCounter / 6, false, true);
             }
             else {
-                this.bag.updateSourcePosition(2 * game_constants_1.GAME_WIDTH, asset_constants_1.ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_OFFSET);
+                this.bag.updateSourcePosition(2 * GAME_WIDTH, ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_OFFSET);
                 this.bag.animate(delta, 128, 0, 1, 30, 6, false, true);
             }
             this.bag.render();
-            this.bagSelector.updateSourcePosition(2 * game_constants_1.GAME_WIDTH + 6 * asset_constants_1.ASSET_BAG_WIDTH + 16, asset_constants_1.ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_SEL_OFFSET + this.bagSelected * asset_constants_1.ASSET_BAG_SEL_HEIGHT);
+            this.bagSelector.updateSourcePosition(2 * GAME_WIDTH + 6 * ASSET_BAG_WIDTH + 16, ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_SEL_OFFSET + this.bagSelected * ASSET_BAG_SEL_HEIGHT);
             this.bagSelector.render();
             this.bagSwitchPokeball.render(delta);
             if (this.bagTextCtx) {
-                this.bagTextCtx.clearRect(0, 0, 64, game_constants_1.FONT_HEIGHT[0]);
+                this.bagTextCtx.clearRect(0, 0, 64, FONT_HEIGHT[0]);
                 const x = (!this.bagSwitchLeft) ? this.animationCounter : this.animationCounter - direction * limit;
-                (0, helper_1.drawText)(this.bagTextCtx, this.font, text, 0, 2, (0.5 + x) << 0, 0);
+                drawText(this.bagTextCtx, this.font, text, 0, 2, (0.5 + x) << 0, 0);
             }
             this.bagText.update(this.bagTextCanvas);
             this.bagText.render();
@@ -446,13 +413,13 @@ class Battle {
             for (let i = 0; i < itemsToDisplay; i++) {
                 const x = i * 16;
                 if (i === items.length) {
-                    (0, helper_1.drawText)(this.ctx, this.font, 'CLOSE BAG', 0, 3, 112, 17 + x);
+                    drawText(this.ctx, this.font, 'CLOSE BAG', 0, 3, 112, 17 + x);
                 }
                 else {
                     const itemData = this.itemIndex[items[i].itemId];
-                    (0, helper_1.drawText)(this.ctx, this.font, itemData.name.toUpperCase(), 0, 3, 112, 17 + x);
+                    drawText(this.ctx, this.font, itemData.name.toUpperCase(), 0, 3, 112, 17 + x);
                     if (items[i].amount !== -1) {
-                        (0, helper_1.drawText)(this.ctx, this.font, 'x' + items[i].amount.toString().padStart(2, '_'), 0, 3, 214, 17 + x);
+                        drawText(this.ctx, this.font, 'x' + items[i].amount.toString().padStart(2, '_'), 0, 3, 214, 17 + x);
                     }
                 }
             }
@@ -469,107 +436,107 @@ class Battle {
             else {
                 this.animationCounter = 0;
                 this.bagSwitchPokeball.resetAnimation();
-                this.nextBattlePhase(6 /* PlayerBag */);
+                this.nextBattlePhase(6 /* BattleStatus.PlayerBag */);
             }
         }
-        else if (this.battleStatus === 8 /* BagConfirmUseItem */) {
+        else if (this.battleStatus === 8 /* BattleStatus.BagConfirmUseItem */) {
             this.drawBag(false, true);
-            (0, helper_1.drawText)(this.ctx, this.font, 'What would you', 0, 3, 4, 105);
-            (0, helper_1.drawText)(this.ctx, this.font, 'like to do?', 0, 3, 4, 105 + 16);
+            drawText(this.ctx, this.font, 'What would you', 0, 3, 4, 105);
+            drawText(this.ctx, this.font, 'like to do?', 0, 3, 4, 105 + 16);
             // Draw the yes/no conformation box
-            this.ctx.drawImage(this.battleAssets, game_constants_1.GAME_WIDTH, 3 * battle_constants_1.BATTLE_ARENA_HEIGHT + 4 * battle_constants_1.BATTLE_SCENE_HEIGHT + battle_constants_1.ACTION_BOX_HEIGHT + asset_constants_1.ASSET_PLAYER_HEALTH_HEIGHT, 54, 46, 57, 57, 54, 46);
+            this.ctx.drawImage(this.battleAssets, GAME_WIDTH, 3 * BATTLE_ARENA_HEIGHT + 4 * BATTLE_SCENE_HEIGHT + ACTION_BOX_HEIGHT + ASSET_PLAYER_HEALTH_HEIGHT, 54, 46, 57, 57, 54, 46);
             // The offset for the selection box
             const column = (!this.selectedConfirm) ? 1 : 0;
             this.drawActionSelector(64, 105, 64, column);
             // if key is pressed and not yet down, change selectedConfirm accordingly
             if (!this.keyDown) {
-                if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.DOWN) && this.selectedConfirm !== false) {
+                if (keyboard.isDown(keyboard.DOWN) && this.selectedConfirm !== false) {
                     this.selectedConfirm = false;
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.UP) && this.selectedConfirm !== true) {
+                else if (keyboard.isDown(keyboard.UP) && this.selectedConfirm !== true) {
                     this.selectedConfirm = true;
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
+                else if (keyboard.isDown(keyboard.ENTER)) {
                     // Continue back to the bag or use the item
                     if (!this.selectedConfirm) {
                         this.selectedConfirm = true;
-                        this.nextBattlePhase(6 /* PlayerBag */);
+                        this.nextBattlePhase(6 /* BattleStatus.PlayerBag */);
                     }
                     else {
                         const items = this.playerData.inventory[this.bagSelected];
                         const itemCategory = this.itemIndex[items[this.bagSelectedItem + this.bagSelectedOffset].itemId].category;
                         if (itemCategory === 'standard-balls' || itemCategory === 'special-balls') {
-                            this.statusAfterFadeOut = 9 /* UsePokeBall */;
-                            this.statusAfterFadeIn = 9 /* UsePokeBall */;
-                            this.nextBattlePhase(34 /* FadeOut */);
+                            this.statusAfterFadeOut = 9 /* BattleStatus.UsePokeBall */;
+                            this.statusAfterFadeIn = 9 /* BattleStatus.UsePokeBall */;
+                            this.nextBattlePhase(34 /* BattleStatus.FadeOut */);
                         }
                         else if (itemCategory === 'healing') {
-                            this.nextBattlePhase(15 /* UseHealingItem */);
+                            this.nextBattlePhase(15 /* BattleStatus.UseHealingItem */);
                         }
                     }
                     this.keyDown = true;
                 }
             }
         }
-        else if (this.battleStatus === 9 /* UsePokeBall */) {
-            if (this.statusAfterFadeOut === 9 /* UsePokeBall */) {
-                this.nextBattlePhase(35 /* FadeIn */);
-                this.statusAfterFadeOut = 35 /* FadeIn */;
+        else if (this.battleStatus === 9 /* BattleStatus.UsePokeBall */) {
+            if (this.statusAfterFadeOut === 9 /* BattleStatus.UsePokeBall */) {
+                this.nextBattlePhase(35 /* BattleStatus.FadeIn */);
+                this.statusAfterFadeOut = 35 /* BattleStatus.FadeIn */;
             }
-            else if (this.statusAfterFadeOut === 35 /* FadeIn */) {
-                this.statusAfterFadeIn = 37 /* Finished */;
+            else if (this.statusAfterFadeOut === 35 /* BattleStatus.FadeIn */) {
+                this.statusAfterFadeIn = 37 /* BattleStatus.Finished */;
             }
             this.drawCleanBattleScene(delta, true);
             const items = this.playerData.inventory[this.bagSelected];
             const itemId = items[this.bagSelectedItem + this.bagSelectedOffset].itemId;
             const itemName = this.itemIndex[itemId].name;
             const playerName = this.accountData.playerName[0].toUpperCase() + this.accountData.playerName.substring(1);
-            if (this.statusAfterFadeIn === 37 /* Finished */) {
-                this.pokeBallXSource = asset_constants_1.ASSET_POKEBALL_OFFSET_X + items_constants_1.POKE_BALLS[itemId] * battle_constants_1.POKEBALL_SIZE;
-                this.catchPokeball.updateSourcePosition(this.pokeBallXSource, asset_constants_1.ASSET_POKEBALL_OFFSET_Y);
+            if (this.statusAfterFadeIn === 37 /* BattleStatus.Finished */) {
+                this.pokeBallXSource = ASSET_POKEBALL_OFFSET_X + POKE_BALLS[itemId] * POKEBALL_SIZE;
+                this.catchPokeball.updateSourcePosition(this.pokeBallXSource, ASSET_POKEBALL_OFFSET_Y);
                 const isFinished = this.writeToDialogueBox(delta, 0, playerName + ' used', itemName.toUpperCase() + '!', 0, 1);
                 if (isFinished) {
                     this.catchPokeball.setPosition(28, 74);
-                    this.nextBattlePhase(10 /* ThrowPokeBall */);
+                    this.nextBattlePhase(10 /* BattleStatus.ThrowPokeBall */);
                 }
             }
         }
-        else if (this.battleStatus === 10 /* ThrowPokeBall */) {
+        else if (this.battleStatus === 10 /* BattleStatus.ThrowPokeBall */) {
             this.drawCleanBattleScene(delta, false);
             const items = this.playerData.inventory[this.bagSelected];
             const itemName = this.itemIndex[items[this.bagSelectedItem + this.bagSelectedOffset].itemId].name;
             const playerName = this.accountData.playerName[0].toUpperCase() + this.accountData.playerName.substring(1);
-            (0, helper_1.drawText)(this.ctx, this.font, playerName + ' used', 0, 1, 16, 121);
-            (0, helper_1.drawText)(this.ctx, this.font, itemName.toUpperCase() + '!', 0, 1, 16, 121 + 16);
+            drawText(this.ctx, this.font, playerName + ' used', 0, 1, 16, 121);
+            drawText(this.ctx, this.font, itemName.toUpperCase() + '!', 0, 1, 16, 121 + 16);
             const isFinished = this.throwCatchPokeBall(delta);
             this.battlers[1].drawHealth();
             if (isFinished) {
-                this.nextBattlePhase(11 /* BouncePokeBall */);
+                this.nextBattlePhase(11 /* BattleStatus.BouncePokeBall */);
             }
         }
-        else if (this.battleStatus === 11 /* BouncePokeBall */) {
+        else if (this.battleStatus === 11 /* BattleStatus.BouncePokeBall */) {
             this.drawCleanBattleScene(delta, true);
             const items = this.playerData.inventory[this.bagSelected];
             const itemId = items[this.bagSelectedItem + this.bagSelectedOffset].itemId;
             const itemName = this.itemIndex[itemId].name;
             const playerName = this.accountData.playerName[0].toUpperCase() + this.accountData.playerName.substring(1);
-            (0, helper_1.drawText)(this.ctx, this.font, playerName + ' used', 0, 1, 16, 121);
-            (0, helper_1.drawText)(this.ctx, this.font, itemName.toUpperCase() + '!', 0, 1, 16, 121 + 16);
+            drawText(this.ctx, this.font, playerName + ' used', 0, 1, 16, 121);
+            drawText(this.ctx, this.font, itemName.toUpperCase() + '!', 0, 1, 16, 121 + 16);
             const isFinished = this.bouncePokeBall(delta);
             if (isFinished) {
-                this.nextBattlePhase(12 /* ShakePokeBall */);
+                this.nextBattlePhase(12 /* BattleStatus.ShakePokeBall */);
             }
         }
-        else if (this.battleStatus === 12 /* ShakePokeBall */) {
+        else if (this.battleStatus === 12 /* BattleStatus.ShakePokeBall */) {
             this.drawCleanBattleScene(delta, true);
             const items = this.playerData.inventory[this.bagSelected];
             const itemId = items[this.bagSelectedItem + this.bagSelectedOffset].itemId;
             const itemName = this.itemIndex[itemId].name;
             const playerName = this.accountData.playerName[0].toUpperCase() + this.accountData.playerName.substring(1);
-            (0, helper_1.drawText)(this.ctx, this.font, playerName + ' used', 0, 1, 16, 121);
-            (0, helper_1.drawText)(this.ctx, this.font, itemName.toUpperCase() + '!', 0, 1, 16, 121 + 16);
+            drawText(this.ctx, this.font, playerName + ' used', 0, 1, 16, 121);
+            drawText(this.ctx, this.font, itemName.toUpperCase() + '!', 0, 1, 16, 121 + 16);
             let checkPassed = false;
             if (!this.shakeCheckDone) {
                 const catchRates = {
@@ -595,7 +562,7 @@ class Battle {
                 const statusBonus = 1;
                 const a = ((3 * hpMax - 2 * hpCurrent) * rate * ballBonus) / (3 * hpMax) * statusBonus;
                 const b = 1048560 / (Math.sqrt(Math.sqrt(16711680 / a) << 0) << 0) << 0;
-                const randomInt = (0, helper_1.randomFromMinMax)(0, 65535);
+                const randomInt = randomFromMinMax(0, 65535);
                 checkPassed = randomInt < b;
                 if (a >= 255) {
                     checkPassed = true;
@@ -606,42 +573,42 @@ class Battle {
             const isFinished = this.shakePokeBall(delta);
             if (isFinished) {
                 if (!checkPassed && this.shakeCheckDone) {
-                    this.nextBattlePhase(13 /* PokemonBrokeFree */);
+                    this.nextBattlePhase(13 /* BattleStatus.PokemonBrokeFree */);
                     this.shakes = 0;
                 }
                 else if (this.shakes <= 3) {
-                    this.nextBattlePhase(12 /* ShakePokeBall */);
+                    this.nextBattlePhase(12 /* BattleStatus.ShakePokeBall */);
                 }
                 else {
                     this.battleResultWin = true;
-                    this.nextBattlePhase(14 /* PokemonCaptured */);
+                    this.nextBattlePhase(14 /* BattleStatus.PokemonCaptured */);
                 }
                 this.shakeCheckDone = false;
             }
         }
-        else if (this.battleStatus === 13 /* PokemonBrokeFree */) {
+        else if (this.battleStatus === 13 /* BattleStatus.PokemonBrokeFree */) {
             this.drawCleanBattleScene(delta, true);
-            this.enemyPokemonObject.setPosition(game_constants_1.GAME_WIDTH - (battle_constants_1.BATTLE_SCENE_WIDTH + battle_constants_1.POKEMON_SIZE) / 2, 22);
+            this.enemyPokemonObject.setPosition(GAME_WIDTH - (BATTLE_SCENE_WIDTH + POKEMON_SIZE) / 2, 22);
             this.enemyPokemonObject.setScale(1);
             this.enemyPokemonObject.resetColor();
             const text1 = 'Pokemon broke free';
             const text2 = '';
             const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
             if (isFinished) {
-                this.nextBattlePhase(28 /* NextBattlerTurn */);
+                this.nextBattlePhase(28 /* BattleStatus.NextBattlerTurn */);
             }
         }
-        else if (this.battleStatus === 14 /* PokemonCaptured */) {
+        else if (this.battleStatus === 14 /* BattleStatus.PokemonCaptured */) {
             this.drawCleanBattleScene(delta, true);
             this.catchPokeball.render();
             const text1 = 'Gotcha';
             const text2 = this.enemyPokemon.pokemonName.toUpperCase() + ' was caught!|';
             const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
             if (isFinished) {
-                this.nextBattlePhase(36 /* AddToPokedex */);
+                this.nextBattlePhase(36 /* BattleStatus.AddToPokedex */);
             }
         }
-        else if (this.battleStatus === 36 /* AddToPokedex */) {
+        else if (this.battleStatus === 36 /* BattleStatus.AddToPokedex */) {
             this.drawCleanBattleScene(delta, true);
             this.catchPokeball.opacityTo(delta, 8, false, 0);
             const text1 = this.enemyPokemon.pokemonName.toUpperCase() + '\'s data was';
@@ -650,32 +617,32 @@ class Battle {
             if (isFinished) {
                 this.drawCleanBattleScene(delta, true);
                 this.player.addPokemon(this.enemyPokemon);
-                this.nextBattlePhase(34 /* FadeOut */);
+                this.nextBattlePhase(34 /* BattleStatus.FadeOut */);
             }
         }
-        else if (this.battleStatus === 18 /* PlayerRun */) {
+        else if (this.battleStatus === 18 /* BattleStatus.PlayerRun */) {
             this.escapeAttempts++;
             const escapeGuaranteed = this.battlers[this.currentBattler].pokemonData.stats.speed >= this.battlers[this.currentTarget].pokemonData.stats.speed;
             const escapeOdds = (Math.floor(this.battlers[this.currentBattler].pokemonData.stats.speed * 128 / this.battlers[this.currentTarget].pokemonData.stats.speed) + 30 * this.escapeAttempts) % 256;
-            const escape = (0, helper_1.randomFromMinMax)(0, 255) < escapeOdds;
+            const escape = randomFromMinMax(0, 255) < escapeOdds;
             if (escapeGuaranteed || escape) {
                 console.log('Escape successfully');
                 this.battleResultWin = false;
-                this.nextBattlePhase(19 /* PlayerRunText */);
+                this.nextBattlePhase(19 /* BattleStatus.PlayerRunText */);
             }
             else {
                 console.log('escaped failed');
-                this.nextBattlePhase(28 /* NextBattlerTurn */);
+                this.nextBattlePhase(28 /* BattleStatus.NextBattlerTurn */);
             }
         }
-        else if (this.battleStatus === 19 /* PlayerRunText */) {
+        else if (this.battleStatus === 19 /* BattleStatus.PlayerRunText */) {
             const text1 = 'Got away safely!|';
             const isFinished = this.writeToDialogueBox(delta, 1, text1, '', 0, 1);
             if (isFinished) {
-                this.nextBattlePhase(34 /* FadeOut */);
+                this.nextBattlePhase(34 /* BattleStatus.FadeOut */);
             }
         }
-        else if (this.battleStatus === 20 /* PlayerSelectMove */) {
+        else if (this.battleStatus === 20 /* BattleStatus.PlayerSelectMove */) {
             // Draw the move selection box
             this.moveSelectorBox.render();
             const moveSelection = this.battlers[this.currentBattler].pokemonData.moves;
@@ -695,7 +662,7 @@ class Battle {
                 const xText = (moveNumber === 1 || moveNumber === 3) ? 8 + 80 : 8;
                 const yText = (moveNumber === 2 || moveNumber === 3) ? 121 + 16 : 121;
                 // Draw text to action selection box
-                (0, helper_1.drawText)(this.ctx, this.font, moveText.toUpperCase(), 0, 0, xText, yText);
+                drawText(this.ctx, this.font, moveText.toUpperCase(), 0, 0, xText, yText);
             }
             // Current selected move details
             const moveDetails = moveSelection[this.battleMove];
@@ -704,11 +671,11 @@ class Battle {
             const yPpText = 121;
             // Draw move pp text
             const text = 'PP_' + moveDetails.pp.toString().padStart(2, '_') + '/' + moveDetails.ppMax.toString().padStart(2, '_');
-            (0, helper_1.drawText)(this.ctx, this.font, text, 0, 0, xText, yPpText);
+            drawText(this.ctx, this.font, text, 0, 0, xText, yPpText);
             // Variable for printing move type text
             const yTypeText = 121 + 16;
             // Draw move type text
-            (0, helper_1.drawText)(this.ctx, this.font, moveDetails.type.toUpperCase(), 0, 0, xText, yTypeText);
+            drawText(this.ctx, this.font, moveDetails.type.toUpperCase(), 0, 0, xText, yTypeText);
             // Set the offset and column for the battle action selector
             let xOffset = this.battleMove * 80;
             let yColumn = 0;
@@ -720,40 +687,40 @@ class Battle {
             this.drawActionSelector(8 + xOffset, 8 + 74 + xOffset, 121, yColumn);
             // Detect keyboard press and increment/ decrement battleMove accordingly
             if (!this.keyDown) {
-                if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT)) {
+                if (keyboard.isDown(keyboard.LEFT)) {
                     if ((this.battleMove === 1 && moveSelection[0]) || (this.battleMove === 3 && moveSelection[2])) {
                         this.battleMove--;
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.RIGHT)) {
+                else if (keyboard.isDown(keyboard.RIGHT)) {
                     if ((this.battleMove === 0 && moveSelection[1]) || (this.battleMove === 2 && moveSelection[3])) {
                         this.battleMove++;
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.UP)) {
+                else if (keyboard.isDown(keyboard.UP)) {
                     if ((this.battleMove === 2 && moveSelection[0]) || (this.battleMove === 3 && moveSelection[1])) {
                         this.battleMove -= 2;
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.DOWN)) {
+                else if (keyboard.isDown(keyboard.DOWN)) {
                     if ((this.battleMove === 0 && moveSelection[2]) || (this.battleMove === 1 && moveSelection[3])) {
                         this.battleMove += 2;
                     }
                     this.keyDown = true;
                 }
-                else if (keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
+                else if (keyboard.isDown(keyboard.ENTER)) {
                     this.keyDown = true;
                     this.battleMoveName = moveSelection[this.battleMove].move;
                     moveSelection[this.battleMove].pp--;
                     console.log(this.playerPokemon.pokemonName + ' used ' + this.battleMoveName);
-                    this.nextBattlePhase(21 /* BattlerTurn */);
+                    this.nextBattlePhase(21 /* BattleStatus.BattlerTurn */);
                 }
             }
         }
-        else if (this.battleStatus === 21 /* BattlerTurn */) {
+        else if (this.battleStatus === 21 /* BattleStatus.BattlerTurn */) {
             console.log(this.currentBattler, this.currentTarget);
             const moveData = this.moveIndex[this.battleMoveName];
             const isFinished = this.writeMoveText(delta, moveData);
@@ -761,23 +728,23 @@ class Battle {
                 const accuracyBase = moveData.accuracy;
                 let isHit = true;
                 if (accuracyBase) {
-                    const stageAdjust = battle_constants_1.SPECIAL_STAGES[this.battlers[this.currentBattler].pokemonStages.accuracy -
+                    const stageAdjust = SPECIAL_STAGES[this.battlers[this.currentBattler].pokemonStages.accuracy -
                         this.battlers[this.currentTarget].pokemonStages.evasion + 6];
                     const modifier = 1;
                     const accuracy = accuracyBase * stageAdjust * modifier;
-                    isHit = (0, helper_1.randomFromMinMax)(1, 100) <= accuracy;
+                    isHit = randomFromMinMax(1, 100) <= accuracy;
                 }
                 if (isHit) {
                     if (moveData.damage_class === 'status') {
-                        this.nextBattlePhase(22 /* StatusMove */);
+                        this.nextBattlePhase(22 /* BattleStatus.StatusMove */);
                     }
                     else if (moveData.damage_class === 'special') {
-                        this.nextBattlePhase(26 /* SpecialMove */);
+                        this.nextBattlePhase(26 /* BattleStatus.SpecialMove */);
                     }
                     else {
                         this.battlers[this.currentBattler].addAttackAnim(moveData);
                         this.battlers[this.currentTarget].addDamageAnim(moveData);
-                        this.nextBattlePhase(24 /* DamageMove */);
+                        this.nextBattlePhase(24 /* BattleStatus.DamageMove */);
                     }
                 }
                 else {
@@ -785,21 +752,21 @@ class Battle {
                 }
             }
         }
-        else if (this.battleStatus === 22 /* StatusMove */) {
+        else if (this.battleStatus === 22 /* BattleStatus.StatusMove */) {
             const moveData = this.moveIndex[this.battleMoveName];
             const isFinished = this.statusMove(delta, moveData);
             if (isFinished) {
-                this.nextBattlePhase(23 /* StatusEffect */);
+                this.nextBattlePhase(23 /* BattleStatus.StatusEffect */);
             }
         }
-        else if (this.battleStatus === 23 /* StatusEffect */) {
+        else if (this.battleStatus === 23 /* BattleStatus.StatusEffect */) {
             const moveData = this.moveIndex[this.battleMoveName];
             const isFinished = this.statusEffect(delta, moveData);
             if (isFinished) {
-                this.nextBattlePhase(28 /* NextBattlerTurn */);
+                this.nextBattlePhase(28 /* BattleStatus.NextBattlerTurn */);
             }
         }
-        else if (this.battleStatus === 24 /* DamageMove */) {
+        else if (this.battleStatus === 24 /* BattleStatus.DamageMove */) {
             const moveData = this.moveIndex[this.battleMoveName];
             const text1 = this.battlers[this.currentBattler].pokemonData.pokemonName.toUpperCase() + ' used';
             const text2 = this.battleMoveName.toUpperCase() + '!';
@@ -808,13 +775,13 @@ class Battle {
             this.battlers[this.currentBattler].drawHealth();
             this.battlers[this.currentTarget].drawHealth();
             this.battleDialogueBox.render();
-            (0, helper_1.drawText)(this.ctx, this.font, text1, 0, 1, 16, 121);
-            (0, helper_1.drawText)(this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
+            drawText(this.ctx, this.font, text1, 0, 1, 16, 121);
+            drawText(this.ctx, this.font, text2, 0, 1, 16, 121 + 16);
             if (isFinished) {
-                this.nextBattlePhase(25 /* TakeDamage */);
+                this.nextBattlePhase(25 /* BattleStatus.TakeDamage */);
             }
         }
-        else if (this.battleStatus === 25 /* TakeDamage */) {
+        else if (this.battleStatus === 25 /* BattleStatus.TakeDamage */) {
             const moveData = this.moveIndex[this.battleMoveName];
             const isFinished = this.battlers[this.currentTarget].animateHealthBar(delta);
             this.battlers[this.currentTarget].drawHealth();
@@ -822,26 +789,26 @@ class Battle {
                 this.newHealth = -1;
                 if (this.battlers[this.currentTarget].pokemonData.health <= 0) {
                     this.battleResultWin = false;
-                    this.nextBattlePhase(27 /* BattlerFainted */);
+                    this.nextBattlePhase(27 /* BattleStatus.BattlerFainted */);
                 }
                 else {
                     if (moveData.damage_class === 'special') {
-                        this.nextBattlePhase(23 /* StatusEffect */);
+                        this.nextBattlePhase(23 /* BattleStatus.StatusEffect */);
                     }
                     else {
-                        this.nextBattlePhase(28 /* NextBattlerTurn */);
+                        this.nextBattlePhase(28 /* BattleStatus.NextBattlerTurn */);
                     }
                 }
             }
         }
-        else if (this.battleStatus === 26 /* SpecialMove */) {
+        else if (this.battleStatus === 26 /* BattleStatus.SpecialMove */) {
             const moveData = this.moveIndex[this.battleMoveName];
             const isFinished = this.specialMove(delta, moveData);
             if (isFinished) {
-                this.nextBattlePhase(24 /* DamageMove */);
+                this.nextBattlePhase(24 /* BattleStatus.DamageMove */);
             }
         }
-        else if (this.battleStatus === 27 /* BattlerFainted */) {
+        else if (this.battleStatus === 27 /* BattleStatus.BattlerFainted */) {
             this.battleBackground.render();
             const isFinished = this.battlers[this.currentTarget].drawPokemonSlideDown(delta);
             this.battlers[this.currentBattler].drawPokemon();
@@ -856,13 +823,13 @@ class Battle {
                 const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
                 if (isFinished) {
                     if (this.currentBattler === 0 || this.currentBattler === 2)
-                        this.nextBattlePhase(29 /* GainXpText */);
+                        this.nextBattlePhase(29 /* BattleStatus.GainXpText */);
                     if (this.currentBattler === 1 || this.currentBattler === 3)
-                        this.nextBattlePhase(34 /* FadeOut */);
+                        this.nextBattlePhase(34 /* BattleStatus.FadeOut */);
                 }
             }
         }
-        else if (this.battleStatus === 28 /* NextBattlerTurn */) {
+        else if (this.battleStatus === 28 /* BattleStatus.NextBattlerTurn */) {
             this.currentBattler++;
             if (this.currentBattler === this.battlers.length)
                 this.currentBattler = 0;
@@ -870,12 +837,12 @@ class Battle {
             if (this.currentTarget === this.battlers.length)
                 this.currentTarget = 0;
             if (this.currentBattler === 0 || this.currentBattler === 2)
-                this.nextBattlePhase(5 /* PlayerActionSelect */);
+                this.nextBattlePhase(5 /* BattleStatus.PlayerActionSelect */);
             if (this.currentBattler === 1 || this.currentBattler === 3)
-                this.nextBattlePhase(21 /* BattlerTurn */);
+                this.nextBattlePhase(21 /* BattleStatus.BattlerTurn */);
             console.log(this.currentBattler, this.currentTarget);
         }
-        else if (this.battleStatus === 29 /* GainXpText */) {
+        else if (this.battleStatus === 29 /* BattleStatus.GainXpText */) {
             if (this.newXp === -1) {
                 this.newXp = this.calculateXpGained() + this.battlers[this.currentBattler].pokemonData.xp;
             }
@@ -884,11 +851,11 @@ class Battle {
                 const text2 = this.newXp - this.battlers[this.currentBattler].pokemonData.xp + ' EXP. Points!|';
                 const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
                 if (isFinished) {
-                    this.nextBattlePhase(30 /* GainXp */);
+                    this.nextBattlePhase(30 /* BattleStatus.GainXp */);
                 }
             }
         }
-        else if (this.battleStatus === 30 /* GainXp */) {
+        else if (this.battleStatus === 30 /* BattleStatus.GainXp */) {
             // Draw action dialogue box
             this.battleDialogueBox.render();
             const isFinished = this.battlers[this.currentBattler].animateXpBar(delta, this.newXp);
@@ -897,18 +864,18 @@ class Battle {
             if (isFinished) {
                 if (this.levelGained) {
                     this.recalculatePlayerStats();
-                    this.nextBattlePhase(31 /* LevelGained */);
+                    this.nextBattlePhase(31 /* BattleStatus.LevelGained */);
                 }
                 else {
-                    this.nextBattlePhase(34 /* FadeOut */);
+                    this.nextBattlePhase(34 /* BattleStatus.FadeOut */);
                 }
             }
         }
-        else if (this.battleStatus === 31 /* LevelGained */) {
+        else if (this.battleStatus === 31 /* BattleStatus.LevelGained */) {
             // level gained animation to do!!!
-            this.nextBattlePhase(32 /* LevelGainedText */);
+            this.nextBattlePhase(32 /* BattleStatus.LevelGainedText */);
         }
-        else if (this.battleStatus === 32 /* LevelGainedText */) {
+        else if (this.battleStatus === 32 /* BattleStatus.LevelGainedText */) {
             const text1 = this.battlers[this.currentBattler].pokemonData.pokemonName.toUpperCase() + ' grew to';
             const text2 = 'LV. ' + this.battlers[this.currentBattler].pokemonData.level + '!';
             this.battlers[this.currentBattler].drawHealth();
@@ -916,22 +883,22 @@ class Battle {
             if (isFinished) {
                 const newMoveAdded = this.addNewLevelMoves();
                 if (newMoveAdded) {
-                    this.nextBattlePhase(33 /* NewMoveText */);
+                    this.nextBattlePhase(33 /* BattleStatus.NewMoveText */);
                 }
                 else {
-                    this.nextBattlePhase(34 /* FadeOut */);
+                    this.nextBattlePhase(34 /* BattleStatus.FadeOut */);
                 }
             }
         }
-        else if (this.battleStatus === 33 /* NewMoveText */) {
+        else if (this.battleStatus === 33 /* BattleStatus.NewMoveText */) {
             const text1 = this.battlers[this.currentBattler].pokemonData.pokemonName.toUpperCase() + ' learned';
             const text2 = this.battlers[this.currentBattler].pokemonData.moves[this.battlers[this.currentBattler].pokemonData.moves.length - 1].move.toUpperCase() + '!';
             const isFinished = this.writeToDialogueBox(delta, 1, text1, text2, 0, 1);
             if (isFinished) {
-                this.nextBattlePhase(34 /* FadeOut */);
+                this.nextBattlePhase(34 /* BattleStatus.FadeOut */);
             }
         }
-        else if (this.battleStatus === 34 /* FadeOut */) {
+        else if (this.battleStatus === 34 /* BattleStatus.FadeOut */) {
             const delayFinished = this.renderDelay(100);
             if (delayFinished) {
                 const speed = 3;
@@ -943,14 +910,14 @@ class Battle {
                 else {
                     this.overlayCtx.globalAlpha = this.animationCounter;
                     this.overlayCtx.fillStyle = '#000000';
-                    this.overlayCtx.clearRect(0, 0, game_constants_1.GAME_WIDTH, game_constants_1.GAME_HEIGHT);
-                    this.overlayCtx.fillRect(0, 0, game_constants_1.GAME_WIDTH, game_constants_1.GAME_HEIGHT);
+                    this.overlayCtx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+                    this.overlayCtx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
                     this.overlayCtx.globalAlpha = 1;
                     this.animationCounter += delta * speed;
                 }
             }
         }
-        else if (this.battleStatus === 35 /* FadeIn */) {
+        else if (this.battleStatus === 35 /* BattleStatus.FadeIn */) {
             const delayFinished = this.renderDelay(100);
             if (delayFinished) {
                 const speed = 3;
@@ -962,23 +929,23 @@ class Battle {
                 else {
                     this.overlayCtx.globalAlpha = 1 - this.animationCounter;
                     this.overlayCtx.fillStyle = '#000000';
-                    if (this.statusAfterFadeIn === 37 /* Finished */) {
-                        this.ctx.clearRect(0, 0, game_constants_1.GAME_WIDTH, game_constants_1.GAME_HEIGHT);
+                    if (this.statusAfterFadeIn === 37 /* BattleStatus.Finished */) {
+                        this.ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
                     }
-                    this.overlayCtx.clearRect(0, 0, game_constants_1.GAME_WIDTH, game_constants_1.GAME_HEIGHT);
-                    this.overlayCtx.fillRect(0, 0, game_constants_1.GAME_WIDTH, game_constants_1.GAME_HEIGHT);
+                    this.overlayCtx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+                    this.overlayCtx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
                     this.overlayCtx.globalAlpha = 1;
                     this.animationCounter += delta * speed;
                 }
             }
         }
         // Reset keyDown variable if not down anymore
-        if (!keyboard_1.keyboard.isDown(keyboard_1.keyboard.LEFT) && !keyboard_1.keyboard.isDown(keyboard_1.keyboard.RIGHT) &&
-            !keyboard_1.keyboard.isDown(keyboard_1.keyboard.UP) && !keyboard_1.keyboard.isDown(keyboard_1.keyboard.DOWN) &&
-            !keyboard_1.keyboard.isDown(keyboard_1.keyboard.ENTER)) {
+        if (!keyboard.isDown(keyboard.LEFT) && !keyboard.isDown(keyboard.RIGHT) &&
+            !keyboard.isDown(keyboard.UP) && !keyboard.isDown(keyboard.DOWN) &&
+            !keyboard.isDown(keyboard.ENTER)) {
             this.keyDown = false;
         }
-        if (this.battleStatus !== 37 /* Finished */) {
+        if (this.battleStatus !== 37 /* BattleStatus.Finished */) {
             // If battle is not finished request new animation frame
             window.requestAnimationFrame(this.tick.bind(this));
         }
@@ -992,14 +959,14 @@ class Battle {
         if (moveData.damage_class === 'physical') {
             attackStat = attacker.stats.attack;
             defenseStat = defender.stats.defense;
-            attackerStMp = battle_constants_1.NORMAL_STAGES[attackerStages.attack + 6];
-            defenderStMp = battle_constants_1.NORMAL_STAGES[defenderStages.defense + 6];
+            attackerStMp = NORMAL_STAGES[attackerStages.attack + 6];
+            defenderStMp = NORMAL_STAGES[defenderStages.defense + 6];
         }
         else {
             attackStat = attacker.stats.specialAttack;
             defenseStat = defender.stats.specialDefense;
-            attackerStMp = battle_constants_1.NORMAL_STAGES[attackerStages.specialAttack + 6];
-            defenderStMp = battle_constants_1.NORMAL_STAGES[defenderStages.specialDefense + 6];
+            attackerStMp = NORMAL_STAGES[attackerStages.specialAttack + 6];
+            defenderStMp = NORMAL_STAGES[defenderStages.specialDefense + 6];
         }
         // Determine necessary base stats
         const level = attacker.level;
@@ -1022,7 +989,7 @@ class Battle {
             type = type * this.getTypeEffectiveness(defender.types[i].type, moveData.type);
         }
         // Get a random value between 85-100 inclusive
-        const random = (0, helper_1.randomFromMinMax)(85, 100);
+        const random = randomFromMinMax(85, 100);
         // Calculate the damage
         if (power) {
             const damage = (((((2 * level) / 5 + 2) * power * ((attackStat * attackerStMp) / (defenseStat * defenderStMp))) / 50) * burn * screen * targets * weather * ff + 2) * crit * wbr * charge * hh * stab * type * random;
@@ -1087,7 +1054,7 @@ class Battle {
         return false;
     }
     getTypeEffectiveness(defenderType, moveType) {
-        return mon_constants_1.TYPES_EFFECTIVENESS[18 * ((mon_constants_1.TYPES.indexOf(moveType) / 18) << 0) + mon_constants_1.TYPES.indexOf(defenderType)];
+        return TYPES_EFFECTIVENESS[18 * ((TYPES.indexOf(moveType) / 18) << 0) + TYPES.indexOf(defenderType)];
     }
     damageMove(delta, moveData) {
         const nextAnim = this.battlers[this.currentBattler].drawAnim(delta);
@@ -1183,21 +1150,21 @@ class Battle {
         // Calculate the x and y for the pokeball
         const pokeballPosition = this.catchPokeball.getPosition();
         let xPixelPokeball = pokeballPosition.x + delta * speedPokeball;
-        let yPixelPokeball = 0.00809 * Math.pow(xPixelPokeball, 2) - 1.981 * xPixelPokeball + 123;
+        let yPixelPokeball = 0.00809 * xPixelPokeball ** 2 - 1.981 * xPixelPokeball + 123;
         let isFinished = false;
         if (xPixelPokeball > 170) {
             this.animationCounter += delta * speedPokeball;
             if (this.animationCounter >= 24) {
-                this.catchPokeball.updateSourcePosition(this.pokeBallXSource, asset_constants_1.ASSET_POKEBALL_OFFSET_Y + 16);
+                this.catchPokeball.updateSourcePosition(this.pokeBallXSource, ASSET_POKEBALL_OFFSET_Y + 16);
             }
             else {
-                this.catchPokeball.updateSourcePosition(this.pokeBallXSource, asset_constants_1.ASSET_POKEBALL_OFFSET_Y);
+                this.catchPokeball.updateSourcePosition(this.pokeBallXSource, ASSET_POKEBALL_OFFSET_Y);
             }
             xPixelPokeball = 170;
             yPixelPokeball = 20;
         }
         else {
-            this.catchPokeball.updateSourcePosition(this.pokeBallXSource, asset_constants_1.ASSET_POKEBALL_OFFSET_Y + 32);
+            this.catchPokeball.updateSourcePosition(this.pokeBallXSource, ASSET_POKEBALL_OFFSET_Y + 32);
         }
         if (this.animationCounter >= 24) {
             this.enemyPokemonObject.setColor(254, 191, 246);
@@ -1220,7 +1187,7 @@ class Battle {
         }
         if (this.animationCounter >= 24) {
             this.animationCounter = this.animationCounter << 0;
-            this.catchPokeball.updateSourcePosition(this.pokeBallXSource, asset_constants_1.ASSET_POKEBALL_OFFSET_Y + 32);
+            this.catchPokeball.updateSourcePosition(this.pokeBallXSource, ASSET_POKEBALL_OFFSET_Y + 32);
             if (this.animationCounter % 2 === 0) {
                 const downFinished = this.catchPokeball.animate(delta, 8, 0, 1, 170, 47, 'sigmoid90-up', true);
                 if (downFinished) {
@@ -1235,7 +1202,7 @@ class Battle {
             }
         }
         else {
-            this.catchPokeball.updateSourcePosition(this.pokeBallXSource, asset_constants_1.ASSET_POKEBALL_OFFSET_Y);
+            this.catchPokeball.updateSourcePosition(this.pokeBallXSource, ASSET_POKEBALL_OFFSET_Y);
         }
         if (22 + (this.animationCounter - 24) * 5 >= 47) {
             this.animationCounter = 0;
@@ -1254,12 +1221,12 @@ class Battle {
         this.ctx.fillStyle = '#F8E0A8';
         this.ctx.fillRect(112, 16, 120, 128);
         this.bagSwitchPokeball.render();
-        this.bag.updateSourcePosition(2 * game_constants_1.GAME_WIDTH + (this.bagSelected + 1) * asset_constants_1.ASSET_BAG_WIDTH, asset_constants_1.ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_OFFSET);
+        this.bag.updateSourcePosition(2 * GAME_WIDTH + (this.bagSelected + 1) * ASSET_BAG_WIDTH, ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_OFFSET);
         this.bag.render();
-        this.bagSelector.updateSourcePosition(2 * game_constants_1.GAME_WIDTH + 6 * asset_constants_1.ASSET_BAG_WIDTH + 16, asset_constants_1.ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_SEL_OFFSET + this.bagSelected * asset_constants_1.ASSET_BAG_SEL_HEIGHT);
+        this.bagSelector.updateSourcePosition(2 * GAME_WIDTH + 6 * ASSET_BAG_WIDTH + 16, ASSET_BAG_OFFSET + this.genderOffsets.ASSET_BAG_SEL_OFFSET + this.bagSelected * ASSET_BAG_SEL_HEIGHT);
         this.bagSelector.render();
-        const text = bag_constants_1.BAG_POCKETS[this.bagSelected];
-        (0, helper_1.drawText)(this.ctx, this.font, text, 0, 2, 32, 81);
+        const text = BAG_POCKETS[this.bagSelected];
+        drawText(this.ctx, this.font, text, 0, 2, 32, 81);
         const items = this.playerData.inventory[this.bagSelected];
         const itemsToDisplay = Math.min(items.length + 1, 8);
         for (let i = this.bagSelectedOffset; i < itemsToDisplay + this.bagSelectedOffset; i++) {
@@ -1269,22 +1236,22 @@ class Battle {
                 fontColor = 4;
             }
             if (i === items.length) {
-                (0, helper_1.drawText)(this.ctx, this.font, 'CLOSE BAG', 0, fontColor, 112, 17 + x);
+                drawText(this.ctx, this.font, 'CLOSE BAG', 0, fontColor, 112, 17 + x);
             }
             else {
                 const itemData = this.itemIndex[items[i].itemId];
-                (0, helper_1.drawText)(this.ctx, this.font, itemData.name.toUpperCase(), 0, fontColor, 112, 17 + x);
+                drawText(this.ctx, this.font, itemData.name.toUpperCase(), 0, fontColor, 112, 17 + x);
                 if (items[i].amount !== -1) {
-                    (0, helper_1.drawText)(this.ctx, this.font, 'x' + items[i].amount.toString().padStart(2, '_'), 0, fontColor, 214, 17 + x);
+                    drawText(this.ctx, this.font, 'x' + items[i].amount.toString().padStart(2, '_'), 0, fontColor, 214, 17 + x);
                 }
             }
         }
         this.drawActionSelector(112, 233, 17, this.bagSelectedItem);
         if (itemDetails && items[this.bagSelectedItem + this.bagSelectedOffset]) {
             const itemText = this.itemIndex[items[this.bagSelectedItem + this.bagSelectedOffset].itemId].flavour_text_entry.split('\n');
-            (0, helper_1.drawText)(this.ctx, this.font, itemText[0], 0, 3, 4, 105);
-            (0, helper_1.drawText)(this.ctx, this.font, itemText[1], 0, 3, 4, 105 + 16);
-            (0, helper_1.drawText)(this.ctx, this.font, itemText[2], 0, 3, 4, 105 + 32);
+            drawText(this.ctx, this.font, itemText[0], 0, 3, 4, 105);
+            drawText(this.ctx, this.font, itemText[1], 0, 3, 4, 105 + 16);
+            drawText(this.ctx, this.font, itemText[2], 0, 3, 4, 105 + 32);
         }
     }
     drawCleanBattleScene(delta, drawEnemyHealth) {
@@ -1305,7 +1272,7 @@ class Battle {
             const yText = 121;
             const textToDisplay = textCol1.slice(0, i);
             // Draw the text
-            (0, helper_1.drawText)(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
+            drawText(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
             if (i < textCol1.length) {
                 this.animationCounter += delta * speed;
             }
@@ -1318,8 +1285,8 @@ class Battle {
             const yText = 121 + 16;
             const textToDisplay = textCol2.slice(0, i);
             // Draw the text
-            (0, helper_1.drawText)(this.ctx, this.font, textCol1, 0, 1, 16, 121);
-            (0, helper_1.drawText)(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
+            drawText(this.ctx, this.font, textCol1, 0, 1, 16, 121);
+            drawText(this.ctx, this.font, textToDisplay, fontsize, fontColor, 16, yText);
             if (i < textCol2.length + delayAfter * speed * 0.8) {
                 this.animationCounter += delta * speed;
             }
@@ -1347,5 +1314,4 @@ class Battle {
         this.ctx.stroke();
     }
 }
-exports.Battle = Battle;
 //# sourceMappingURL=battle.js.map

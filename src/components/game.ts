@@ -1,19 +1,20 @@
-import tileMap from '../assets/tiles.png';
-import avatarAssets from '../assets/avatar.png';
-import battleAssets from '../assets/battle_assets.png';
-import starterAssets from '../assets/choose_starter.png';
-import pokemonGeneration1 from '../assets/pokemon_1st_generation.png';
-import pokemonGeneration2 from '../assets/pokemon_2st_generation.png';
-import pokemonGeneration3 from '../assets/pokemon_3st_generation.png';
-import font from '../assets/font.png';
-import buildingAtlas from '../assets/building_assets.png';
+import tileMap from '../../assets/tiles.png';
+import avatarAssets from '../../assets/avatar.png';
+import battleAssets from '../../assets/battle_assets.png';
+import starterAssets from '../../assets/choose_starter.png';
+import pokemonGeneration1 from '../../assets/pokemon_1st_generation.png';
+import pokemonGeneration2 from '../../assets/pokemon_2st_generation.png';
+import pokemonGeneration3 from '../../assets/pokemon_3st_generation.png';
+import font from '../../assets/font.png';
+import buildingAtlas from '../../assets/building_assets.png';
 
 import { Player } from './player';
 import { Map } from './map';
-import { Loader } from '../utils/loader';
 import { Camera } from './camera';
 import { Avatar } from './avatar';
 import { Battle } from './battle';
+import { Loader } from '../utils/loader';
+import { Timer } from '../utils/timer';
 
 import { keyboard } from '../utils/keyboard';
 import { randomFromMinMax, setLocalStorage, drawText } from '../utils/helper';
@@ -30,6 +31,7 @@ import { AccountDataType, AddMapReturnType, PlayerDataType } from '../utils/type
 export class Game {
   private player = new Player();
   private loader = new Loader();
+  private timer = new Timer();
 
   private map!: Map;
   private avatar!: Avatar;
@@ -566,6 +568,8 @@ export class Game {
     if (typeof isNextMap !== 'boolean') {
       console.log('Entered new area: ' + this.currentMap);
 
+      this.displayAreaName(delta);
+
       // Set the new entered map to currentMap
       this.currentMap = isNextMap[0];
       
@@ -598,7 +602,7 @@ export class Game {
     // Draw the full avatar spite
     this.drawPlayer(delta, false);
 
-    // Draw middle layer of the game
+    // // Draw middle layer of the game
     this.drawLayer(1);
 
     // Draw only the bottom of the avatar sprite
@@ -618,39 +622,39 @@ export class Game {
     const offsetY = -this.camera.y + startRow * TILE_SIZE;
 
     // Loop through columns and rows
-    for (let col = startCol; col <= endCol; col++) {
-      for (let row = startRow; row <= endRow; row++) {
+    for (let row = startRow; row <= endRow; row++) {
+      for (let col = startCol; col <= endCol; col++) {  
         // Get the tile identity number to draw
         let tile = this.map.getTile(layer, col, row);
 
-        if (tile === 0) break;
-        // Get the x and y coordinates of the tile location
-        const x = (col - startCol) * TILE_SIZE + offsetX;
-        const y = (row - startRow) * TILE_SIZE + offsetY;
+        if (tile !== 0) {
+          // Get the x and y coordinates of the tile location
+          const x = (col - startCol) * TILE_SIZE + offsetX;
+          const y = (row - startRow) * TILE_SIZE + offsetY;
 
-        let atlas: HTMLCanvasElement;
+          let atlas: HTMLCanvasElement;
 
-        // Tile numbers 0-499 for general tiles and tiles 500-> for building tiles
-        // Select atlas appropriately
-        if (500 <= tile) {
-          atlas = this.buildingAtlas;
-          tile = tile - 500;
-        } else {
-          atlas = this.tileAtlas;
+          // Tile numbers 0-499 for general tiles and tiles 500-> for building tiles
+          if (500 <= tile) {
+            atlas = this.buildingAtlas;
+            tile = tile - 500;
+          } else {
+            atlas = this.tileAtlas;
+          }
+
+          // Draw tile to screen
+          this.gameCtx.drawImage(
+            atlas,
+            (tile - 1) % 16 * TILE_SIZE,
+            Math.floor((tile - 1) / 16) * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE,
+            Math.round(x),
+            Math.round(y),
+            TILE_SIZE,
+            TILE_SIZE
+          );
         }
-
-        // Draw tile to screen
-        this.gameCtx.drawImage(
-          atlas,
-          (tile - 1) % 16 * TILE_SIZE,
-          Math.floor((tile - 1) / 16) * TILE_SIZE,
-          TILE_SIZE,
-          TILE_SIZE,
-          Math.round(x),
-          Math.round(y),
-          TILE_SIZE,
-          TILE_SIZE
-        );
       }
     }
   }
@@ -686,6 +690,23 @@ export class Game {
         AVATAR_WIDTH,
         height
       );
+    }
+  }
+
+  private displayAreaName(delta: number) {
+    const timerId = 'AreaName';
+    const isFinished = this.timer.startTimer(delta, timerId, 1000);
+
+    if (this.timer.getTimer(timerId) < 800) {
+      // Fade Area card in
+    } else {
+      // Fade Area card out
+    }
+
+    if (!isFinished) {
+      this.displayAreaName(delta);
+    } else {
+      this.timer.resetTimer(timerId);
     }
   }
 }
