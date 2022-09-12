@@ -37,6 +37,38 @@ export function getLocalStorage(key: string) {
   return JSON.parse(data);
 }
 
+export function textLength(text: string, fontsize: number): number {
+  let totalWidth = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    let width: number = FONT_WIDTH[fontsize];
+
+    if (text[i] === '|') {
+      width = 7;
+    }
+    // characters that are three pixels wide
+    if (text[i] === ' ' || text[i] === 'l' || text[i] === '.') {
+      width = 3;
+    }
+    // characters that are four pixels wide
+    if (text[i] === 'i' || text[i] === '!') {
+      width = 5;
+    }
+    // characters that are five pixels wide
+    if (text[i] === 'r') {
+      width = 5;
+    }
+    // characters that are one pixels wide
+    if (text[i] === '*') {
+      width = 1;
+    }
+
+    totalWidth += width;
+  }
+
+  return totalWidth;
+}
+
 export function drawText(ctx: CanvasRenderingContext2D, font: HTMLCanvasElement, text: string, fontsize: number, fontColor: number, posX: number, posY: number) {
   text = text.replaceAll('É', 'é');
   

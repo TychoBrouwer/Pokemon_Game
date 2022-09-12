@@ -494,17 +494,14 @@ export class Battler {
 
   addDamageAnim(moveData: MoveType) {
     if (moveData.name === 'tackle') {
+      this.animationQueue.push([ this.fadeInOut, -1 ]);
+      this.animationQueue.push([ this.fadeInOut, -1 ]);
+      this.animationQueue.push([ this.fadeInOut, -1 ]);
+      this.animationQueue.push([ this.fadeInOut, -1 ]);
+
       if (this.playerSide) {
-        this.animationQueue.push([ this.fadeInOut, -1 ]);
-        this.animationQueue.push([ this.fadeInOut, -1 ]);
-        this.animationQueue.push([ this.fadeInOut, -1 ]);
-        this.animationQueue.push([ this.fadeInOut, -1 ]);
         this.animationQueue.push([ this.horizontalShake, 1 ]);
       } else {
-        this.animationQueue.push([ this.fadeInOut, -1 ]);
-        this.animationQueue.push([ this.fadeInOut, -1 ]);
-        this.animationQueue.push([ this.fadeInOut, -1 ]);
-        this.animationQueue.push([ this.fadeInOut, -1 ]);
         this.animationQueue.push([ this.horizontalShake, -1 ]);
         this.animationQueue.push([ this.horizontalShake, -1 ]);
       }

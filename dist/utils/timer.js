@@ -3,10 +3,10 @@ export class Timer {
         this.timers = {};
     }
     startTimer(delta, id, delay) {
-        if (id in this.timers) {
+        if (!(id in this.timers)) {
             this.timers[id] = 0;
         }
-        this.timers[id] = +delta;
+        this.timers[id] += delta;
         if (this.timers[id] >= delay) {
             return true;
         }

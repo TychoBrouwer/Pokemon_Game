@@ -27,6 +27,33 @@ export function getLocalStorage(key) {
     // returned parsed data
     return JSON.parse(data);
 }
+export function textLength(text, fontsize) {
+    let totalWidth = 0;
+    for (let i = 0; i < text.length; i++) {
+        let width = FONT_WIDTH[fontsize];
+        if (text[i] === '|') {
+            width = 7;
+        }
+        // characters that are three pixels wide
+        if (text[i] === ' ' || text[i] === 'l' || text[i] === '.') {
+            width = 3;
+        }
+        // characters that are four pixels wide
+        if (text[i] === 'i' || text[i] === '!') {
+            width = 5;
+        }
+        // characters that are five pixels wide
+        if (text[i] === 'r') {
+            width = 5;
+        }
+        // characters that are one pixels wide
+        if (text[i] === '*') {
+            width = 1;
+        }
+        totalWidth += width;
+    }
+    return totalWidth;
+}
 export function drawText(ctx, font, text, fontsize, fontColor, posX, posY) {
     text = text.replaceAll('É', 'é');
     // Loop through the text to Draw

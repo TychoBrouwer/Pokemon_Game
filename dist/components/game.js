@@ -1,6 +1,7 @@
 import tileMap from '../../assets/tiles.png';
 import avatarAssets from '../../assets/avatar.png';
 import battleAssets from '../../assets/battle_assets.png';
+import generalAssets from '../../assets/general_assets.png';
 import starterAssets from '../../assets/choose_starter.png';
 import pokemonGeneration1 from '../../assets/pokemon_1st_generation.png';
 import pokemonGeneration2 from '../../assets/pokemon_2st_generation.png';
@@ -14,8 +15,9 @@ import { Avatar } from './avatar';
 import { Battle } from './battle';
 import { Loader } from '../utils/loader';
 import { Timer } from '../utils/timer';
+import { GameObject } from '../utils/game_object';
 import { keyboard } from '../utils/keyboard';
-import { randomFromMinMax, setLocalStorage, drawText } from '../utils/helper';
+import { randomFromMinMax, setLocalStorage, drawText, textLength } from '../utils/helper';
 import { AVATAR_HEIGHT, AVATAR_WIDTH, GAME_HEIGHT, GAME_WIDTH, GRASS_ENCOUNTER_RATE, MAPS, TILE_SIZE } from '../constants/game_constants';
 import { POKEMON_SIZE } from '../constants/battle_constants';
 import { ASSET_GENERATION_OFFSET, ASSET_POKEMON_SPRITE_WIDTH, } from '../constants/asset_constants';
@@ -32,6 +34,8 @@ export class Game {
         this.currentPlayerCol = 0;
         this.currentPlayerRow = 0;
         this.gameStatus = 'game';
+        this.newArea = false;
+        this.newAreaTwice = false;
         this.selectedStarter = 1;
         this.selectedConfirm = true;
         this.keyDown = false;
@@ -74,6 +78,12 @@ export class Game {
             this.camera = new Camera(MAPS[playerData.location]);
             // Set the camera object to follow the avatar object
             this.camera.follow(this.avatar);
+            this.newAreaTextCanvas = document.createElement('canvas');
+            this.newAreaTextCanvas.width = 110;
+            this.newAreaTextCanvas.height = 30;
+            this.newAreaTextCtx = this.newAreaTextCanvas.getContext('2d');
+            this.areaNameBox = new GameObject(this.overlayCtx, this.generalAtlas, false, 0, 0, 110, 30, 2, -30);
+            this.areaNameText = new GameObject(this.overlayCtx, this.newAreaTextCanvas, false, 0, 0, 110, 30, 2, -30);
             // Update the map object to the currentMap's properties
             this.map.updateMap(this.currentMap);
             // Load the adjacent maps
@@ -91,6 +101,7 @@ export class Game {
             this.loader.loadImage('tiles', tileMap),
             this.loader.loadImage('avatar', avatarAssets),
             this.loader.loadImage('battleAssets', battleAssets),
+            this.loader.loadImage('generalAssets', generalAssets),
             this.loader.loadImage('starterAssets', starterAssets),
             this.loader.loadImage('pokemonGeneration1', pokemonGeneration1),
             this.loader.loadImage('pokemonGeneration2', pokemonGeneration2),
@@ -104,6 +115,7 @@ export class Game {
         keyboard.listenForEvents([keyboard.LEFT, keyboard.RIGHT, keyboard.UP, keyboard.DOWN, keyboard.ENTER]);
         // Set the necessary images to class variables
         this.tileAtlas = this.loader.getImageCanvas('tiles');
+        this.generalAtlas = this.loader.getImageCanvas('generalAssets');
         this.starterAtlas = this.loader.getImageCanvas('starterAssets');
         this.font = this.loader.getImageCanvas('font');
         this.buildingAtlas = this.loader.getImageCanvas('buildingAtlas');
@@ -130,6 +142,8 @@ export class Game {
             }
             // Render layers to canvas.
             this.render(delta);
+            // Display area name box
+            this.displayAreaName(delta);
         }
         // Request new animation frame
         window.requestAnimationFrame(this.tick.bind(this));
@@ -389,10 +403,15 @@ export class Game {
         const isNextMap = this.map.isNextMap(this.avatar.x, this.avatar.y);
         // If new map is entered, update accordingly
         if (typeof isNextMap !== 'boolean') {
-            console.log('Entered new area: ' + this.currentMap);
-            this.displayAreaName(delta);
             // Set the new entered map to currentMap
             this.currentMap = isNextMap[0];
+            console.log('Entered new area: ' + this.currentMap);
+            if (this.newArea) {
+                this.newAreaTwice = this.currentMap;
+            }
+            else {
+                this.newArea = this.currentMap;
+            }
             // Update the map object to the currentMap's properties
             this.map.updateMap(this.currentMap);
             // Load the adjacent maps and retrieve the tiles added above and to the left of the currentMap
@@ -477,20 +496,33 @@ export class Game {
             this.gameCtx.drawImage(this.avatar.avatarAsset, xSource, this.genderOffsets.ASSET_AVATAR_OFFSET, AVATAR_WIDTH, height, (0.5 + this.avatar.screenX - AVATAR_WIDTH / 2) << 0, (0.5 + this.avatar.screenY - AVATAR_HEIGHT / 2 + (((1 < this.animation && this.animation < 2) || (3 < this.animation && this.animation < 4)) ? 1 : 0)) << 0, AVATAR_WIDTH, height);
         }
     }
-    displayAreaName(delta) {
-        const timerId = 'AreaName';
-        const isFinished = this.timer.startTimer(delta, timerId, 1000);
-        if (this.timer.getTimer(timerId) < 800) {
-            // Fade Area card in
-        }
-        else {
-            // Fade Area card out
-        }
-        if (!isFinished) {
-            this.displayAreaName(delta);
-        }
-        else {
-            this.timer.resetTimer(timerId);
+    async displayAreaName(delta) {
+        if (this.newArea || this.newAreaTwice) {
+            if (!this.newArea) {
+                this.newArea = this.newAreaTwice;
+                this.newAreaTwice = false;
+            }
+            if (this.newArea) {
+                const timerId = 'AreaName';
+                const isFinished = this.timer.startTimer(delta, timerId, 3);
+                if (this.newAreaTextCtx) {
+                    this.newAreaTextCtx.clearRect(0, 0, 110, 30);
+                    drawText(this.newAreaTextCtx, this.font, this.newArea, 0, 3, ((110 - textLength(this.newArea, 0)) / 2 << 0), 8);
+                    this.areaNameText.update(this.newAreaTextCanvas);
+                }
+                if (this.timer.getTimer(timerId) < 2) {
+                    this.areaNameBox.animate(delta, 128, 0, 1, this.areaNameBox.x, 2, false, true);
+                    this.areaNameText.animate(delta, 128, 0, 1, this.areaNameText.x, 2, false, true);
+                }
+                else {
+                    this.areaNameBox.animate(delta, 128, 0, -1, this.areaNameBox.x, -30, false, true);
+                    this.areaNameText.animate(delta, 128, 0, -1, this.areaNameText.x, -30, false, true);
+                }
+                if (isFinished) {
+                    this.newArea = false;
+                    this.timer.resetTimer(timerId);
+                }
+            }
         }
     }
 }
